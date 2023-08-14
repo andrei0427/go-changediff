@@ -1,0 +1,6 @@
+.env
+dist/
+bin/
+tmp/
+
+tailwindcss

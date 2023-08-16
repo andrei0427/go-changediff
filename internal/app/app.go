@@ -1,6 +1,7 @@
 package app
 
 import (
+	"log"
 	"os"
 
 	"github.com/andrei0427/go-changediff/internal/app/services"
@@ -19,14 +20,15 @@ type App struct {
 func NewApp() *App {
 	dbConn := data.InitPostgresDb()
 
-	engine := django.New("web", ".html")
+	engine := django.New("web/views", ".html")
 	engine.Reload(os.Getenv("ENV") == "development")
 	// engine.AddFuncMap()
 
 	fiber := fiber.New(fiber.Config{
 		DisableStartupMessage: true,
 		Views:                 engine,
-		// ErrorHandler:          handlers.HandleError,
+		ErrorHandler:          handleError,
+		PassLocalsToViews:     true,
 	})
 
 	fiber.Static("/static", "web/static")
@@ -38,4 +40,16 @@ func NewApp() *App {
 		Fiber:          fiber,
 		ProjectService: projectService,
 	}
+}
+
+func handleError(c *fiber.Ctx, err error) error {
+	e, ok := err.(*fiber.Error)
+
+	log.Println(e.Message, e.Code)
+
+	if ok {
+		return c.Render("error", fiber.Map{"Code": e.Code, "Message": e.Message})
+	}
+
+	return c.Render("error", fiber.Map{"Code": fiber.StatusInternalServerError, "Message": err.Error()})
 }

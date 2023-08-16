@@ -5,6 +5,7 @@ go 1.21.0
 require (
 	github.com/gofiber/fiber/v2 v2.48.0
 	github.com/gofiber/template/django/v3 v3.1.5
+	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/golang-migrate/migrate/v4 v4.16.2
 	github.com/google/uuid v1.3.0
 	github.com/joho/godotenv v1.5.1

@@ -1,5 +1,5 @@
 const sb = supabase.createClient(
-  "https://nplfvngvqamyeanblotv.supabase.co",
+  "https://pqbimhkkkfkdgdmvxwlw.supabase.co",
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBxYmltaGtra2ZrZGdkbXZ4d2x3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE2OTIwNDM2NjcsImV4cCI6MjAwNzYxOTY2N30.OcQzGB79P63ugphDGdh3Amc6OtNtTpH0f6JIZXLDqqw",
   {
     auth: {

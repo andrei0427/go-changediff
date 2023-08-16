@@ -1,11 +1,11 @@
 dev-css: 
-	./tailwindcss -i views/main.css -o static/output.css --watch
+	./tailwindcss -i web/views/main.css -o web/static/output.css --watch
 
 dev: 
 	~/go/bin/air
 
 run:
-	go run main.go
+	go run cmd/server/main.go
 
 migrate:
 	go run cmd/db/migrate.go -up

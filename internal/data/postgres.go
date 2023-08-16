@@ -5,23 +5,23 @@ import (
 	"fmt"
 	"log"
 	"os"
+
+	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 )
 
-var Db *Queries
-
-const MigrationFilesURL = "file://pkg/data/migrations"
+const MigrationFilesURL = "file://internal/data/migrations"
 
 func GetConnectionString() string {
 	return fmt.Sprintf("postgres://%s:%s@%s:%s/%s", os.Getenv("DB_USER"), os.Getenv("DB_PASS"), os.Getenv("DB_HOST"), os.Getenv("DB_PORT"), os.Getenv("DB_NAME"))
 
 }
 
-func InitPostgresDb() {
+func InitPostgresDb() *Queries {
 	sqlc, err := sql.Open("postgres", GetConnectionString())
 
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	Db = New(sqlc)
+	return New(sqlc)
 }

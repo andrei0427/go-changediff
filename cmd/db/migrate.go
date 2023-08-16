@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/andrei0427/go-changediff/pkg/data"
+	"github.com/andrei0427/go-changediff/internal/data"
 	mig "github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"

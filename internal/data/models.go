@@ -11,9 +11,23 @@ import (
 	"github.com/google/uuid"
 )
 
+type Post struct {
+	ID             int32
+	Title          string
+	Body           string
+	PublishedOn    sql.NullTime
+	BannerImageUrl sql.NullString
+	AuthorID       uuid.UUID
+	PorjectID      int32
+	CreatedOn      time.Time
+	UpdatedOn      sql.NullTime
+}
+
 type Project struct {
 	ID          int32
-	ProjectName string
+	Name        string
+	Description string
+	AccentColor string
 	LogoUrl     sql.NullString
 	AppKey      string
 	UserID      uuid.UUID

@@ -1,1 +1,1 @@
-drop table projects;
+drop table if exists projects;

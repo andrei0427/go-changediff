@@ -11,12 +11,12 @@ import (
 	"github.com/google/uuid"
 )
 
-const getProjects = `-- name: GetProjects :many
-SELECT id, project_name, logo_url, app_key, user_id, created_on, updated_on FROM projects WHERE user_id = $1 ORDER BY created_on DESC
+const getProject = `-- name: GetProject :many
+SELECT id, name, description, accent_color, logo_url, app_key, user_id, created_on, updated_on FROM projects WHERE user_id = $1 LIMIT 1
 `
 
-func (q *Queries) GetProjects(ctx context.Context, userID uuid.UUID) ([]Project, error) {
-	rows, err := q.db.QueryContext(ctx, getProjects, userID)
+func (q *Queries) GetProject(ctx context.Context, userID uuid.UUID) ([]Project, error) {
+	rows, err := q.db.QueryContext(ctx, getProject, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -26,7 +26,9 @@ func (q *Queries) GetProjects(ctx context.Context, userID uuid.UUID) ([]Project,
 		var i Project
 		if err := rows.Scan(
 			&i.ID,
-			&i.ProjectName,
+			&i.Name,
+			&i.Description,
+			&i.AccentColor,
 			&i.LogoUrl,
 			&i.AppKey,
 			&i.UserID,

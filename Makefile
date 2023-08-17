@@ -4,6 +4,9 @@ dev-css:
 dev: 
 	~/go/bin/air
 
+test:
+	go test ./...
+
 run:
 	go run cmd/server/main.go
 

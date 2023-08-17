@@ -15,7 +15,13 @@ func NewProjectService(db *data.Queries) *ProjectService {
 	return &ProjectService{db: db}
 }
 
-func (s *ProjectService) GetProjectsForUser(ctx context.Context, userId uuid.UUID) ([]data.Project, error) {
-	projects, err := s.db.GetProjects(ctx, userId)
-	return projects, err
+func (s *ProjectService) GetProjectForUser(ctx context.Context, userId uuid.UUID) (*data.Project, error) {
+	projects, err := s.db.GetProject(ctx, userId)
+
+	if len(projects) == 0 {
+		return nil, err
+
+	}
+
+	return &projects[0], err
 }

@@ -1,7 +1,10 @@
 -- Create Projects table
 CREATE TABLE IF NOT EXISTS projects (
     id SERIAL PRIMARY KEY,
-    project_name VARCHAR(100) NOT NULL,
+    name VARCHAR(100) NOT NULL,
+    description TEXT NOT NULL,
+    accent_color VARCHAR(7) NOT NULL DEFAULT '#000000',
+
 	logo_url VARCHAR(200) NULL,
 
 	app_key VARCHAR(256) NOT NULL,

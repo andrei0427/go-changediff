@@ -78,7 +78,7 @@ func (s *CDNService) GetFileExt(fileName string) string {
 
 func (s *CDNService) isValidFileType(file *multipart.FileHeader) bool {
 	allowedExtensions := []string{".jpg", ".jpeg", ".png"}
-	ext := s.GetFileExt(file.Filename)
+	ext := "." + s.GetFileExt(file.Filename)
 
 	for _, allowedExt := range allowedExtensions {
 		if ext == allowedExt {
@@ -91,13 +91,12 @@ func (s *CDNService) isValidFileType(file *multipart.FileHeader) bool {
 
 func (s *CDNService) isValidFileSize(file *multipart.FileHeader) bool {
 	maxSize := int64(10 * 1024 * 1024) // 10MB
-	return maxSize <= file.Size
+	return maxSize >= file.Size
 }
 
 func (s *CDNService) generateUniqueFileName(file *multipart.FileHeader) string {
 	uid := uuid.New()
 	return uid.String() + "_" + file.Filename
-
 }
 
 func (s *CDNService) uploadFile(r io.Reader, fileName string, mime string) error {

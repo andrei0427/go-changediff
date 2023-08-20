@@ -7,6 +7,7 @@ package data
 
 import (
 	"context"
+	"database/sql"
 
 	"github.com/google/uuid"
 )
@@ -46,4 +47,41 @@ func (q *Queries) GetProject(ctx context.Context, userID uuid.UUID) ([]Project, 
 		return nil, err
 	}
 	return items, nil
+}
+
+const insertProject = `-- name: InsertProject :one
+INSERT INTO projects (name, description, accent_color, logo_url, app_key, user_id) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, name, description, accent_color, logo_url, app_key, user_id, created_on, updated_on
+`
+
+type InsertProjectParams struct {
+	Name        string
+	Description string
+	AccentColor string
+	LogoUrl     sql.NullString
+	AppKey      string
+	UserID      uuid.UUID
+}
+
+func (q *Queries) InsertProject(ctx context.Context, arg InsertProjectParams) (Project, error) {
+	row := q.db.QueryRowContext(ctx, insertProject,
+		arg.Name,
+		arg.Description,
+		arg.AccentColor,
+		arg.LogoUrl,
+		arg.AppKey,
+		arg.UserID,
+	)
+	var i Project
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Description,
+		&i.AccentColor,
+		&i.LogoUrl,
+		&i.AppKey,
+		&i.UserID,
+		&i.CreatedOn,
+		&i.UpdatedOn,
+	)
+	return i, err
 }

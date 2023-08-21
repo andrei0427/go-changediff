@@ -7,9 +7,8 @@ CREATE TABLE IF NOT EXISTS posts (
     banner_image_url TEXT NULL,
 
     author_id uuid REFERENCES auth.users(id) NOT NULL,
-    porject_id integer REFERENCES projects(id) NOT NULL,
+    project_id integer REFERENCES projects(id) NOT NULL,
 
     created_on timestamp NOT NULL DEFAULT current_timestamp,
     updated_on timestamp NULL
 );
-

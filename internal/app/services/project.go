@@ -3,7 +3,6 @@ package services
 import (
 	"context"
 	"database/sql"
-	"fmt"
 
 	"github.com/andrei0427/go-changediff/internal/app/models"
 	"github.com/andrei0427/go-changediff/internal/data"
@@ -30,14 +29,20 @@ func (s *ProjectService) GetProjectForUser(ctx context.Context, userId uuid.UUID
 }
 
 func (s *ProjectService) SaveProject(ctx context.Context, userId uuid.UUID, project models.OnboardingModel, imageUrl *string) (data.Project, error) {
-	fmt.Println(uuid.NewString(), *imageUrl)
-	inserted, err := s.db.InsertProject(ctx, data.InsertProjectParams{
+	toInsert := data.InsertProjectParams{
 		Name:        project.Name,
 		Description: project.Description,
 		AccentColor: project.AccentColor,
-		LogoUrl:     sql.NullString{String: *imageUrl, Valid: len(*imageUrl) > 0},
 		UserID:      userId,
-		AppKey:      uuid.NewString()})
+		AppKey:      uuid.NewString(),
+		LogoUrl:     sql.NullString{},
+	}
+
+	if imageUrl != nil {
+		toInsert.LogoUrl = sql.NullString{String: *imageUrl}
+	}
+
+	inserted, err := s.db.InsertProject(ctx, toInsert)
 
 	return inserted, err
 }

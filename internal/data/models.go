@@ -18,7 +18,7 @@ type Post struct {
 	PublishedOn    sql.NullTime
 	BannerImageUrl sql.NullString
 	AuthorID       uuid.UUID
-	PorjectID      int32
+	ProjectID      int32
 	CreatedOn      time.Time
 	UpdatedOn      sql.NullTime
 }

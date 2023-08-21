@@ -2,7 +2,6 @@ package middleware
 
 import (
 	"fmt"
-	"log"
 	"os"
 
 	"github.com/gofiber/fiber/v2"
@@ -45,13 +44,11 @@ func UseAuth(c *fiber.Ctx) error {
 	})
 
 	if err != nil {
-		log.Fatal(err)
 		return fiber.NewError(fiber.StatusUnauthorized)
 	}
 
 	// validate the essential claims
 	if !token.Valid {
-		log.Println("pee")
 		return fiber.NewError(fiber.StatusUnauthorized)
 	}
 

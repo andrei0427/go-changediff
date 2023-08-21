@@ -12,6 +12,17 @@ import (
 	"github.com/google/uuid"
 )
 
+const getPosts = `-- name: GetPosts :one
+SELECT COUNT(id) total_posts FROM posts WHERE author_id = $1
+`
+
+func (q *Queries) GetPosts(ctx context.Context, authorID uuid.UUID) (int64, error) {
+	row := q.db.QueryRowContext(ctx, getPosts, authorID)
+	var total_posts int64
+	err := row.Scan(&total_posts)
+	return total_posts, err
+}
+
 const getProject = `-- name: GetProject :many
 SELECT id, name, description, accent_color, logo_url, app_key, user_id, created_on, updated_on FROM projects WHERE user_id = $1 LIMIT 1
 `
@@ -47,6 +58,17 @@ func (q *Queries) GetProject(ctx context.Context, userID uuid.UUID) ([]Project, 
 		return nil, err
 	}
 	return items, nil
+}
+
+const getUpcomingPosts = `-- name: GetUpcomingPosts :one
+SELECT COUNT(id) upcoming_posts FROM posts WHERE author_id = $1 AND published_on > current_timestamp
+`
+
+func (q *Queries) GetUpcomingPosts(ctx context.Context, authorID uuid.UUID) (int64, error) {
+	row := q.db.QueryRowContext(ctx, getUpcomingPosts, authorID)
+	var upcoming_posts int64
+	err := row.Scan(&upcoming_posts)
+	return upcoming_posts, err
 }
 
 const insertProject = `-- name: InsertProject :one

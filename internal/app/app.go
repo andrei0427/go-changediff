@@ -16,6 +16,7 @@ type App struct {
 
 	CDNService     *services.CDNService
 	ProjectService *services.ProjectService
+	PostService    *services.PostService
 }
 
 func NewApp() *App {
@@ -35,12 +36,14 @@ func NewApp() *App {
 	fiber.Static("/static", "web/static")
 
 	projectService := services.NewProjectService(dbConn)
+	postService := services.NewPostService(dbConn)
 	cdnService := services.NewCDNService()
 
 	return &App{
 		DB:             dbConn,
 		Fiber:          fiber,
 		ProjectService: projectService,
+		PostService:    postService,
 		CDNService:     cdnService,
 	}
 }

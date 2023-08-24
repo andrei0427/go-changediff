@@ -2,7 +2,9 @@ package services
 
 import (
 	"context"
+	"database/sql"
 
+	"github.com/andrei0427/go-changediff/internal/app/models"
 	"github.com/andrei0427/go-changediff/internal/data"
 	"github.com/google/uuid"
 )
@@ -19,4 +21,20 @@ func (s *PostService) GetPostCountForUser(ctx context.Context, userId uuid.UUID)
 	posts, err := s.db.GetPosts(ctx, userId)
 
 	return posts, err
+}
+
+func (s *PostService) InsertPost(ctx context.Context, post models.PostModel, bannerUrl *string, userId uuid.UUID, projectId int32) (data.Post, error) {
+	toInsert := data.InsertPostParams{
+		Title:       post.Title,
+		Body:        post.Content,
+		PublishedOn: sql.NullTime{},
+		AuthorID:    userId,
+		ProjectID:   projectId,
+	}
+
+	if bannerUrl != nil {
+		toInsert.BannerImageUrl = sql.NullString{String: *bannerUrl}
+	}
+
+	return s.db.InsertPost(ctx, toInsert)
 }

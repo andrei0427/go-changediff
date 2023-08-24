@@ -9,3 +9,7 @@ SELECT COUNT(id) total_posts FROM posts WHERE author_id = $1;
 
 -- name: GetUpcomingPosts :one
 SELECT COUNT(id) upcoming_posts FROM posts WHERE author_id = $1 AND published_on > current_timestamp;
+
+-- name: InsertPost :one
+INSERT INTO posts (title, body, published_on, banner_image_url, author_id, project_id) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *;
+

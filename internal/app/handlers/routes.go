@@ -26,10 +26,11 @@ func InitRoutes(app *app.App) {
 	app.Fiber.Get("/", appHandler.Home)
 
 	app.Fiber.Use(middleware.UseAuth)
-	app.Fiber.Get("/dashboard", appHandler.Dashboard)
-	app.Fiber.Get("/project", appHandler.GetProject)
-	app.Fiber.Post("/onboarding", appHandler.PostOnboarding)
-
+	admin := app.Fiber.Group("/admin")
+	admin.Get("/dashboard", appHandler.Dashboard)
+	admin.Get("/project", appHandler.GetProject)
+	admin.Post("/onboarding", appHandler.PostOnboarding)
+	admin.Post("/save-post", appHandler.SavePost)
 }
 
 func (a *AppHandler) Home(c *fiber.Ctx) error {
@@ -106,4 +107,43 @@ func (a *AppHandler) PostOnboarding(c *fiber.Ctx) error {
 	}
 
 	return c.Render("first_post", fiber.Map{"project": savedProject})
+}
+
+func (a *AppHandler) SavePost(c *fiber.Ctx) error {
+	curUser := c.Locals("user").(*middleware.SessionUser)
+
+	form := new(models.PostModel)
+	if err := c.BodyParser(form); err != nil {
+		return c.Render("partials/components/post_form", fiber.Map{"error": err.Error()})
+	}
+
+	errs := make(map[string]string)
+	if len(strings.TrimSpace(form.Title)) == 0 {
+		errs["Title"] = "Title is required"
+	}
+
+	if len(strings.TrimSpace(form.Content)) == 0 {
+		errs["Content"] = "Post content is required"
+	}
+
+	if len(errs) > 0 {
+		return c.Render("partials/components/post_form", fiber.Map{"form": form, "errors": errs})
+	}
+
+	var fileName *string
+	if file, err := c.FormFile("banner"); err == nil {
+		uploadedFile, err := a.CDNService.UploadImage(file, 250)
+		if err != nil {
+			return c.Render("partials/components/post_form", fiber.Map{"error": err.Error(), "form": form})
+		}
+
+		fileName = uploadedFile
+	}
+
+	_, err := a.PostService.InsertPost(c.Context(), *form, fileName, curUser.Id, 1)
+	if err != nil {
+		return c.Render("partials/components/post_form", fiber.Map{"error": err.Error(), "form": form})
+	}
+
+	return c.Render("dashboard", fiber.Map{})
 }

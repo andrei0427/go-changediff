@@ -71,6 +71,43 @@ func (q *Queries) GetUpcomingPosts(ctx context.Context, authorID uuid.UUID) (int
 	return upcoming_posts, err
 }
 
+const insertPost = `-- name: InsertPost :one
+INSERT INTO posts (title, body, published_on, banner_image_url, author_id, project_id) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, title, body, published_on, banner_image_url, author_id, project_id, created_on, updated_on
+`
+
+type InsertPostParams struct {
+	Title          string
+	Body           string
+	PublishedOn    sql.NullTime
+	BannerImageUrl sql.NullString
+	AuthorID       uuid.UUID
+	ProjectID      int32
+}
+
+func (q *Queries) InsertPost(ctx context.Context, arg InsertPostParams) (Post, error) {
+	row := q.db.QueryRowContext(ctx, insertPost,
+		arg.Title,
+		arg.Body,
+		arg.PublishedOn,
+		arg.BannerImageUrl,
+		arg.AuthorID,
+		arg.ProjectID,
+	)
+	var i Post
+	err := row.Scan(
+		&i.ID,
+		&i.Title,
+		&i.Body,
+		&i.PublishedOn,
+		&i.BannerImageUrl,
+		&i.AuthorID,
+		&i.ProjectID,
+		&i.CreatedOn,
+		&i.UpdatedOn,
+	)
+	return i, err
+}
+
 const insertProject = `-- name: InsertProject :one
 INSERT INTO projects (name, description, accent_color, logo_url, app_key, user_id) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, name, description, accent_color, logo_url, app_key, user_id, created_on, updated_on
 `

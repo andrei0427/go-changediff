@@ -220,6 +220,20 @@
 		}
 		);
 	</script>
+
+	<script>
+		localStorage.removeItem('editor-html-content');
+
+		document.addEventListener('htmx:afterRequest', function (detail) {
+			if (event.detail.target.matches('#post-form')) {
+				if (document.getElementById('root')) {
+					window.dispatchEvent(new Event('initlexical'));
+				}
+			}
+		});
+	</script>
+
+
 </body>
 
 </html>

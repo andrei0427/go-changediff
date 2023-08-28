@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"html/template"
 	"strings"
 
 	"github.com/andrei0427/go-changediff/internal/app"
@@ -30,7 +31,11 @@ func InitRoutes(app *app.App) {
 	admin.Get("/dashboard", appHandler.Dashboard)
 	admin.Get("/project", appHandler.GetProject)
 	admin.Post("/onboarding", appHandler.PostOnboarding)
-	admin.Post("/save-post", appHandler.SavePost)
+
+	posts := admin.Group("/posts")
+	posts.Get("/", appHandler.Posts)
+	posts.Post("/save", appHandler.SavePost)
+	posts.Get("/load", appHandler.LoadPosts)
 }
 
 func (a *AppHandler) Home(c *fiber.Ctx) error {
@@ -39,6 +44,22 @@ func (a *AppHandler) Home(c *fiber.Ctx) error {
 
 func (a *AppHandler) Dashboard(c *fiber.Ctx) error {
 	return c.Render("dashboard", fiber.Map{})
+}
+
+func (a *AppHandler) Posts(c *fiber.Ctx) error {
+	return c.Render("posts", fiber.Map{})
+}
+
+func (a *AppHandler) LoadPosts(c *fiber.Ctx) error {
+	curUser := c.Locals("user").(*middleware.SessionUser)
+
+	posts, err := a.PostService.GetPosts(c.Context(), curUser.Id)
+
+	if err != nil {
+		return fiber.NewError(503, "Could not get posts for user")
+	}
+
+	return c.Render("partials/components/post_table", fiber.Map{"Posts": posts})
 }
 
 func (a *AppHandler) GetProject(c *fiber.Ctx) error {
@@ -59,7 +80,7 @@ func (a *AppHandler) GetProject(c *fiber.Ctx) error {
 	}
 
 	if posts == 0 {
-		return c.Render("first_post", fiber.Map{"project": project})
+		return c.Render("partials/components/post_form", fiber.Map{"project": project, "firstPost": true})
 	}
 
 	return c.Render("partials/components/dashboard_widget", fiber.Map{"Project": project})
@@ -106,7 +127,7 @@ func (a *AppHandler) PostOnboarding(c *fiber.Ctx) error {
 		return c.Render("get_started", fiber.Map{"error": err.Error(), "form": form})
 	}
 
-	return c.Render("first_post", fiber.Map{"project": savedProject})
+	return c.Render("partials/components/post_form", fiber.Map{"project": savedProject, "firstPost": true})
 }
 
 func (a *AppHandler) SavePost(c *fiber.Ctx) error {
@@ -127,6 +148,7 @@ func (a *AppHandler) SavePost(c *fiber.Ctx) error {
 	}
 
 	if len(errs) > 0 {
+		form.Content = template.HTMLEscapeString(form.Content)
 		return c.Render("partials/components/post_form", fiber.Map{"form": form, "errors": errs})
 	}
 
@@ -145,5 +167,6 @@ func (a *AppHandler) SavePost(c *fiber.Ctx) error {
 		return c.Render("partials/components/post_form", fiber.Map{"error": err.Error(), "form": form})
 	}
 
-	return c.Render("dashboard", fiber.Map{})
+	c.Response().Header.Add("HX-Redirect", "/admin/posts")
+	return c.Render("partials/components/dashboard_widget", fiber.Map{})
 }

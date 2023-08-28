@@ -15,7 +15,7 @@ type Post struct {
 	ID             int32
 	Title          string
 	Body           string
-	PublishedOn    sql.NullTime
+	PublishedOn    time.Time
 	BannerImageUrl sql.NullString
 	AuthorID       uuid.UUID
 	ProjectID      int32

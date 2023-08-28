@@ -26,7 +26,7 @@ function isUserAuthenticated() {
   sb.auth.getSession().then(({ data, error }) => {
     if (data.session != null) {
       handleUserAuthenticated(data.session.access_token);
-    } else if (window.location.pathname === "/dashboard") {
+    } else if (window.location.pathname === "/admin/dashboard") {
       window.location = "/";
     }
   });
@@ -36,13 +36,13 @@ function handleUserAuthenticated(access_token) {
   document.querySelectorAll(".btnLogin").forEach((ele) => {
     ele.innerHTML = "Dashboard";
     ele.addEventListener("click", () => {
-      window.location = "/dashboard";
+      window.location = "/admin/dashboard";
     });
   });
 
   if (access_token) {
     document.cookie = `${AUTH_USER_COOKIE_NAME}=${access_token};max-age=3600;secure`;
-    window.location = "/dashboard";
+    window.location = "/admin/dashboard";
   }
 
   document.getElementById("signInCTA")?.style.setProperty("display", "none");

@@ -8,19 +8,53 @@ package data
 import (
 	"context"
 	"database/sql"
+	"time"
 
 	"github.com/google/uuid"
 )
 
-const getPosts = `-- name: GetPosts :one
+const getPostCount = `-- name: GetPostCount :one
 SELECT COUNT(id) total_posts FROM posts WHERE author_id = $1
 `
 
-func (q *Queries) GetPosts(ctx context.Context, authorID uuid.UUID) (int64, error) {
-	row := q.db.QueryRowContext(ctx, getPosts, authorID)
+func (q *Queries) GetPostCount(ctx context.Context, authorID uuid.UUID) (int64, error) {
+	row := q.db.QueryRowContext(ctx, getPostCount, authorID)
 	var total_posts int64
 	err := row.Scan(&total_posts)
 	return total_posts, err
+}
+
+const getPosts = `-- name: GetPosts :many
+SELECT id, title, published_on FROM posts WHERE author_id = $1
+`
+
+type GetPostsRow struct {
+	ID          int32
+	Title       string
+	PublishedOn time.Time
+}
+
+func (q *Queries) GetPosts(ctx context.Context, authorID uuid.UUID) ([]GetPostsRow, error) {
+	rows, err := q.db.QueryContext(ctx, getPosts, authorID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetPostsRow
+	for rows.Next() {
+		var i GetPostsRow
+		if err := rows.Scan(&i.ID, &i.Title, &i.PublishedOn); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const getProject = `-- name: GetProject :many
@@ -78,7 +112,7 @@ INSERT INTO posts (title, body, published_on, banner_image_url, author_id, proje
 type InsertPostParams struct {
 	Title          string
 	Body           string
-	PublishedOn    sql.NullTime
+	PublishedOn    time.Time
 	BannerImageUrl sql.NullString
 	AuthorID       uuid.UUID
 	ProjectID      int32

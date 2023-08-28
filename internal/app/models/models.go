@@ -7,7 +7,8 @@ type OnboardingModel struct {
 }
 
 type PostModel struct {
-	Id      *int64 `form:"id"`
-	Title   string `form:"title"`
-	Content string `form:"content"`
+	Id          *int64  `form:"id"`
+	Title       string  `form:"title"`
+	Content     string  `form:"content"`
+	PublishedOn *string `form:"published_on"`
 }

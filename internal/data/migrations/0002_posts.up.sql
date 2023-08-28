@@ -3,7 +3,7 @@ CREATE TABLE IF NOT EXISTS posts (
     id SERIAL PRIMARY KEY,
     title VARCHAR(255) NOT NULL,
 	body TEXT NOT NULL,
-    published_on timestamp NULL,
+    published_on timestamp NOT NULL,
     banner_image_url TEXT NULL,
 
     author_id uuid REFERENCES auth.users(id) NOT NULL,

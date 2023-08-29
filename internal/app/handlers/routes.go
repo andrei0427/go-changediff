@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"html/template"
 	"strings"
 
@@ -23,7 +24,6 @@ func NewAppHandler(projectService *services.ProjectService, postService *service
 
 func InitRoutes(app *app.App) {
 	appHandler := NewAppHandler(app.ProjectService, app.PostService, app.CDNService)
-
 	app.Fiber.Get("/", appHandler.Home)
 
 	app.Fiber.Use(middleware.UseAuth)
@@ -36,6 +36,8 @@ func InitRoutes(app *app.App) {
 	posts.Get("/", appHandler.Posts)
 	posts.Post("/save", appHandler.SavePost)
 	posts.Get("/load", appHandler.LoadPosts)
+	posts.Delete("/delete/:id", appHandler.DeletePost)
+	posts.Delete("/confirm-delete/:id", appHandler.ConfirmDeletePost)
 }
 
 func (a *AppHandler) Home(c *fiber.Ctx) error {
@@ -60,6 +62,32 @@ func (a *AppHandler) LoadPosts(c *fiber.Ctx) error {
 	}
 
 	return c.Render("partials/components/post_table", fiber.Map{"Posts": posts})
+}
+
+func (a *AppHandler) DeletePost(c *fiber.Ctx) error {
+	curUser := c.Locals("user").(*middleware.SessionUser)
+
+	id, err := c.ParamsInt("id")
+	if err != nil {
+		return fiber.NewError(400, "Invalid id parameter supplied")
+	}
+
+	if _, err := a.PostService.DeletePost(c.Context(), int32(id), curUser.Id); err != nil {
+		return fiber.NewError(503, "An error occured when deleting the post")
+	}
+
+	return c.SendStatus(200)
+}
+
+func (a *AppHandler) ConfirmDeletePost(c *fiber.Ctx) error {
+	id, err := c.ParamsInt("id")
+	if err != nil {
+		return fiber.NewError(400, "Invalid id parameter supplied")
+	}
+
+	return c.Render("partials/components/delete_confirm_modal", fiber.Map{"Title": "Confirm deletion of post",
+		"Body":        "Are you sure you want to delete this post",
+		"EndpointUri": "/admin/posts/delete/" + fmt.Sprint(id)})
 }
 
 func (a *AppHandler) GetProject(c *fiber.Ctx) error {

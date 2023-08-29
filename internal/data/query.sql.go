@@ -13,6 +13,22 @@ import (
 	"github.com/google/uuid"
 )
 
+const deletePost = `-- name: DeletePost :one
+DELETE FROM posts WHERE id = $1 AND author_id = $2 RETURNING id
+`
+
+type DeletePostParams struct {
+	ID       int32
+	AuthorID uuid.UUID
+}
+
+func (q *Queries) DeletePost(ctx context.Context, arg DeletePostParams) (int32, error) {
+	row := q.db.QueryRowContext(ctx, deletePost, arg.ID, arg.AuthorID)
+	var id int32
+	err := row.Scan(&id)
+	return id, err
+}
+
 const getPostCount = `-- name: GetPostCount :one
 SELECT COUNT(id) total_posts FROM posts WHERE author_id = $1
 `

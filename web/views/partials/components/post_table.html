@@ -11,7 +11,7 @@
 				post</button>
 		</div>
 	</div>
-	{{Posts}}
+
 	<div class="-mx-4 mt-8 sm:-mx-0">
 		<table class="min-w-full divide-y divide-gray-300">
 			<thead>
@@ -53,7 +53,8 @@
 						<a href="#" class="text-orange hover:text-orange">Edit<span class="sr-only">, post</span></a>
 					</td>
 					<td class="py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-0">
-						<a href="#" class="text-orange hover:text-orange">Edit<span class="sr-only">, post</span></a>
+						<button hx-delete="/admin/posts/confirm-delete/{{post.ID}}" hx-target="body" hx-swap="beforeend"
+							class="text-orange hover:text-orange">Delete<span class="sr-only">, post</span></button>
 					</td>
 				</tr>
 				{% endfor %}

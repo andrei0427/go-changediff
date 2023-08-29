@@ -49,3 +49,7 @@ func (s *PostService) InsertPost(ctx context.Context, post models.PostModel, ban
 
 	return s.db.InsertPost(ctx, toInsert)
 }
+
+func (s *PostService) DeletePost(ctx context.Context, postId int32, userId uuid.UUID) (int32, error) {
+	return s.db.DeletePost(ctx, data.DeletePostParams{ID: postId, AuthorID: userId})
+}

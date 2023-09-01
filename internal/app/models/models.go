@@ -11,4 +11,5 @@ type PostModel struct {
 	Title       string  `form:"title"`
 	Content     string  `form:"content"`
 	PublishedOn *string `form:"published_on"`
+	First       *bool   `form:"first"`
 }

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"html/template"
 	"strings"
+	"time"
 
 	"github.com/andrei0427/go-changediff/internal/app"
 	"github.com/andrei0427/go-changediff/internal/app/middleware"
@@ -34,6 +35,7 @@ func InitRoutes(app *app.App) {
 
 	posts := admin.Group("/posts")
 	posts.Get("/", appHandler.Posts)
+	posts.Get("/compose/:id?", appHandler.ComposePost)
 	posts.Post("/save", appHandler.SavePost)
 	posts.Get("/load", appHandler.LoadPosts)
 	posts.Delete("/delete/:id", appHandler.DeletePost)
@@ -52,6 +54,30 @@ func (a *AppHandler) Posts(c *fiber.Ctx) error {
 	return c.Render("posts", fiber.Map{})
 }
 
+func (a *AppHandler) ComposePost(c *fiber.Ctx) error {
+	curUser := c.Locals("user").(*middleware.SessionUser)
+
+	id, _ := c.ParamsInt("id")
+
+	form := new(models.PostModel)
+	if id > 0 {
+		post, err := a.PostService.GetPost(c.Context(), int32(id), curUser.Id)
+		if err != nil {
+			return fiber.NewError(404, "Post not found")
+		}
+
+		postId := int64(post.ID)
+		publishedOn := post.PublishedOn.Format(time.DateOnly)
+
+		form.Content = template.HTMLEscapeString(post.Body)
+		form.Id = &postId
+		form.Title = post.Title
+		form.PublishedOn = &publishedOn
+	}
+
+	return c.Render("post", fiber.Map{"form": form, "Id": id})
+}
+
 func (a *AppHandler) LoadPosts(c *fiber.Ctx) error {
 	curUser := c.Locals("user").(*middleware.SessionUser)
 
@@ -61,7 +87,7 @@ func (a *AppHandler) LoadPosts(c *fiber.Ctx) error {
 		return fiber.NewError(503, "Could not get posts for user")
 	}
 
-	return c.Render("partials/components/post_table", fiber.Map{"Posts": posts})
+	return c.Render("partials/components/post_table", fiber.Map{"Posts": posts, "Empty": len(posts) == 0})
 }
 
 func (a *AppHandler) DeletePost(c *fiber.Ctx) error {
@@ -69,14 +95,14 @@ func (a *AppHandler) DeletePost(c *fiber.Ctx) error {
 
 	id, err := c.ParamsInt("id")
 	if err != nil {
-		return fiber.NewError(400, "Invalid id parameter supplied")
+		return c.Render("partials/components/banner", fiber.Map{"Message": "Invalid id parameter supplied"})
 	}
 
 	if _, err := a.PostService.DeletePost(c.Context(), int32(id), curUser.Id); err != nil {
-		return fiber.NewError(503, "An error occured when deleting the post")
+		return c.Render("partials/components/banner", fiber.Map{"Message": "An error occured when deleting the post"})
 	}
 
-	return c.SendStatus(200)
+	return c.Render("partials/components/banner", fiber.Map{"Message": "Post successfully deleted", "Success": true})
 }
 
 func (a *AppHandler) ConfirmDeletePost(c *fiber.Ctx) error {
@@ -177,22 +203,34 @@ func (a *AppHandler) SavePost(c *fiber.Ctx) error {
 
 	if len(errs) > 0 {
 		form.Content = template.HTMLEscapeString(form.Content)
-		return c.Render("partials/components/post_form", fiber.Map{"form": form, "errors": errs})
+		return c.Render("partials/components/post_form", fiber.Map{"form": form, "errors": errs, "firstPost": form.First})
 	}
 
 	var fileName *string
 	if file, err := c.FormFile("banner"); err == nil {
 		uploadedFile, err := a.CDNService.UploadImage(file, 250)
 		if err != nil {
-			return c.Render("partials/components/post_form", fiber.Map{"error": err.Error(), "form": form})
+			return c.Render("partials/components/post_form", fiber.Map{"error": err.Error(), "form": form, "firstPost": form.First})
 		}
 
 		fileName = uploadedFile
 	}
 
-	_, err := a.PostService.InsertPost(c.Context(), *form, fileName, curUser.Id, 1)
+	project, err := a.ProjectService.GetProjectForUser(c.Context(), curUser.Id)
 	if err != nil {
-		return c.Render("partials/components/post_form", fiber.Map{"error": err.Error(), "form": form})
+		return c.Render("partials/components/post_form", fiber.Map{"error": "Could not locate project for user", "form": form, "firstPost": form.First})
+	}
+
+	if form.Id != nil && *form.Id > 0 {
+		_, err := a.PostService.UpdatePost(c.Context(), *form, fileName, curUser.Id, project.ID)
+		if err != nil {
+			return c.Render("partials/components/post_form", fiber.Map{"error": err.Error(), "form": form, "firstForm": form.First})
+		}
+	} else {
+		_, err := a.PostService.InsertPost(c.Context(), *form, fileName, curUser.Id, project.ID)
+		if err != nil {
+			return c.Render("partials/components/post_form", fiber.Map{"error": err.Error(), "form": form, "firstForm": form.First})
+		}
 	}
 
 	c.Response().Header.Add("HX-Redirect", "/admin/posts")

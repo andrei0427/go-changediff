@@ -29,10 +29,37 @@ func (q *Queries) DeletePost(ctx context.Context, arg DeletePostParams) (int32, 
 	return id, err
 }
 
+const getPost = `-- name: GetPost :one
+SELECT id, title, body, published_on, banner_image_url, author_id, project_id, created_on, updated_on FROM posts WHERE id = $1 AND author_id = $2
+`
+
+type GetPostParams struct {
+	ID       int32
+	AuthorID uuid.UUID
+}
+
+func (q *Queries) GetPost(ctx context.Context, arg GetPostParams) (Post, error) {
+	row := q.db.QueryRowContext(ctx, getPost, arg.ID, arg.AuthorID)
+	var i Post
+	err := row.Scan(
+		&i.ID,
+		&i.Title,
+		&i.Body,
+		&i.PublishedOn,
+		&i.BannerImageUrl,
+		&i.AuthorID,
+		&i.ProjectID,
+		&i.CreatedOn,
+		&i.UpdatedOn,
+	)
+	return i, err
+}
+
 const getPostCount = `-- name: GetPostCount :one
 SELECT COUNT(id) total_posts FROM posts WHERE author_id = $1
 `
 
+// POSTS --
 func (q *Queries) GetPostCount(ctx context.Context, authorID uuid.UUID) (int64, error) {
 	row := q.db.QueryRowContext(ctx, getPostCount, authorID)
 	var total_posts int64
@@ -77,6 +104,7 @@ const getProject = `-- name: GetProject :many
 SELECT id, name, description, accent_color, logo_url, app_key, user_id, created_on, updated_on FROM projects WHERE user_id = $1 LIMIT 1
 `
 
+// PROJECTS --
 func (q *Queries) GetProject(ctx context.Context, userID uuid.UUID) ([]Project, error) {
 	rows, err := q.db.QueryContext(ctx, getProject, userID)
 	if err != nil {
@@ -189,6 +217,43 @@ func (q *Queries) InsertProject(ctx context.Context, arg InsertProjectParams) (P
 		&i.LogoUrl,
 		&i.AppKey,
 		&i.UserID,
+		&i.CreatedOn,
+		&i.UpdatedOn,
+	)
+	return i, err
+}
+
+const updatePost = `-- name: UpdatePost :one
+UPDATE posts SET title = $1, body = $2, published_on = $3, banner_image_url = $4 WHERE id = $5 AND author_id = $6 RETURNING id, title, body, published_on, banner_image_url, author_id, project_id, created_on, updated_on
+`
+
+type UpdatePostParams struct {
+	Title          string
+	Body           string
+	PublishedOn    time.Time
+	BannerImageUrl sql.NullString
+	ID             int32
+	AuthorID       uuid.UUID
+}
+
+func (q *Queries) UpdatePost(ctx context.Context, arg UpdatePostParams) (Post, error) {
+	row := q.db.QueryRowContext(ctx, updatePost,
+		arg.Title,
+		arg.Body,
+		arg.PublishedOn,
+		arg.BannerImageUrl,
+		arg.ID,
+		arg.AuthorID,
+	)
+	var i Post
+	err := row.Scan(
+		&i.ID,
+		&i.Title,
+		&i.Body,
+		&i.PublishedOn,
+		&i.BannerImageUrl,
+		&i.AuthorID,
+		&i.ProjectID,
 		&i.CreatedOn,
 		&i.UpdatedOn,
 	)

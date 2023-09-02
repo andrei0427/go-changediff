@@ -28,6 +28,11 @@ func (s *ProjectService) GetProjectForUser(ctx context.Context, userId uuid.UUID
 	return &projects[0], err
 }
 
+func (s *ProjectService) GetProjectByKey(ctx context.Context, key string) (data.Project, error) {
+	project, err := s.db.GetProjectByKey(ctx, key)
+	return project, err
+}
+
 func (s *ProjectService) SaveProject(ctx context.Context, userId uuid.UUID, project models.OnboardingModel, imageUrl *string) (data.Project, error) {
 	toInsert := data.InsertProjectParams{
 		Name:        project.Name,

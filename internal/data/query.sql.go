@@ -138,6 +138,27 @@ func (q *Queries) GetProject(ctx context.Context, userID uuid.UUID) ([]Project, 
 	return items, nil
 }
 
+const getProjectByKey = `-- name: GetProjectByKey :one
+SELECT id, name, description, accent_color, logo_url, app_key, user_id, created_on, updated_on FROM projects where app_key = $1 LIMIT 1
+`
+
+func (q *Queries) GetProjectByKey(ctx context.Context, appKey string) (Project, error) {
+	row := q.db.QueryRowContext(ctx, getProjectByKey, appKey)
+	var i Project
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Description,
+		&i.AccentColor,
+		&i.LogoUrl,
+		&i.AppKey,
+		&i.UserID,
+		&i.CreatedOn,
+		&i.UpdatedOn,
+	)
+	return i, err
+}
+
 const getUpcomingPosts = `-- name: GetUpcomingPosts :one
 SELECT COUNT(id) upcoming_posts FROM posts WHERE author_id = $1 AND published_on > current_timestamp
 `

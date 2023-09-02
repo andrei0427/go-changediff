@@ -1,6 +1,9 @@
 dev-css: 
 	./tailwindcss -i web/views/main.css -o web/static/output.css --watch
 
+dev-widget-css: 
+	./tailwindcss -i web/views/widget.css -o web/static/output-widget.css --watch
+
 dev: 
 	~/go/bin/air
 
@@ -21,7 +24,7 @@ migrate-ver:
 
 build-css: 
 	./tailwindcss -i views/main.css -o static/output.css --minify
-	
+
 sql-gen:
 	sqlc generate
 	

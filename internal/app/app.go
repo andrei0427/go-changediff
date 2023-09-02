@@ -6,6 +6,7 @@ import (
 
 	"github.com/andrei0427/go-changediff/internal/app/services"
 	"github.com/andrei0427/go-changediff/internal/data"
+	"github.com/andrei0427/go-changediff/web/views"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/template/django/v3"
 )
@@ -23,6 +24,7 @@ func NewApp() *App {
 	dbConn := data.InitPostgresDb()
 
 	engine := django.New("web/views", ".html")
+	engine.AddFuncMap(views.HelperFuncMap)
 	engine.Reload(os.Getenv("ENV") == "development")
 	// engine.AddFuncMap()
 

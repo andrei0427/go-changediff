@@ -1,10 +1,8 @@
 module.exports = {
-  content: ["./web/views/**/*.html", "!./web/views/widget/**/*.html"],
+  content: ["./web/views/widget/**/*.html"],
   theme: {
     extend: {
-      colors: {
-        orange: "#f67c4c",
-      },
+      colors: {},
     },
   },
   plugins: [require("@tailwindcss/forms"), require("@tailwindcss/typography")],

@@ -27,6 +27,9 @@ func InitRoutes(app *app.App) {
 	appHandler := NewAppHandler(app.ProjectService, app.PostService, app.CDNService)
 	app.Fiber.Get("/", appHandler.Home)
 
+	widget := app.Fiber.Group("/widget")
+	widget.Get("/:key", appHandler.WidgetHome)
+
 	app.Fiber.Use(middleware.UseAuth)
 	admin := app.Fiber.Group("/admin")
 	admin.Get("/dashboard", appHandler.Dashboard)
@@ -42,9 +45,28 @@ func InitRoutes(app *app.App) {
 	posts.Delete("/confirm-delete/:id", appHandler.ConfirmDeletePost)
 }
 
+// Public Routes
+
 func (a *AppHandler) Home(c *fiber.Ctx) error {
 	return c.Render("index", fiber.Map{})
 }
+
+func (a *AppHandler) WidgetHome(c *fiber.Ctx) error {
+	key := c.Params("key")
+	project, err := a.ProjectService.GetProjectByKey(c.Context(), key)
+	if err != nil {
+		return fiber.NewError(404, "Project not found")
+	}
+
+	logoUrl := "/static/logo.png"
+	if project.LogoUrl.Valid {
+		logoUrl = project.LogoUrl.String
+	}
+
+	return c.Render("widget/index", fiber.Map{"Project": project, "LogoUrl": logoUrl})
+}
+
+// Protected Routes
 
 func (a *AppHandler) Dashboard(c *fiber.Ctx) error {
 	return c.Render("dashboard", fiber.Map{})

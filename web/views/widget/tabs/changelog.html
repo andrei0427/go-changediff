@@ -1,1 +1,13 @@
-this is a test!
+<div
+  id="changelog-content"
+  hx-get="/widget/changelog/posts/{{Project.AppKey}}"
+  hx-indicator="#skeleton"
+  hx-trigger="load"
+></div>
+
+<div id="skeleton" class="htmx-indicator h-screen space-y-4 flex-shrink-0 flex flex-col">
+  <div class="w-full flex basis-52 bg-gray-200 rounded animate-pulse"></div>
+  <div class="w-full flex basis-52 bg-gray-200 rounded animate-pulse"></div>
+  <div class="w-full flex basis-52 bg-gray-200 rounded animate-pulse"></div>
+  <div class="w-full flex basis-52 bg-gray-200 rounded animate-pulse"></div>
+</div>

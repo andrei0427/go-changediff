@@ -34,6 +34,17 @@ func (s *PostService) GetPost(ctx context.Context, postId int32, userId uuid.UUI
 	return post, err
 }
 
+func (s *PostService) GetPublishedPagedPosts(ctx context.Context, projectKey string, pageNo int32) ([]data.Post, error) {
+	var offset int32 = 0
+	if pageNo > 1 {
+		offset = pageNo - 1*5
+	}
+
+	posts, err := s.db.GetPublishedPagedPosts(ctx, data.GetPublishedPagedPostsParams{AppKey: projectKey, Limit: 5, Offset: offset})
+
+	return posts, err
+}
+
 func (s *PostService) InsertPost(ctx context.Context, post models.PostModel, bannerUrl *string, userId uuid.UUID, projectId int32) (data.Post, error) {
 	toInsert := data.InsertPostParams{
 		Title:       post.Title,

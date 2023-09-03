@@ -29,7 +29,11 @@ func InitRoutes(app *app.App) {
 
 	widget := app.Fiber.Group("/widget")
 	widget.Get("/:key", appHandler.WidgetHome)
-	widget.Get("/changelog/:key", appHandler.WidgetChangelog)
+
+	changelog := widget.Group("/changelog")
+	changelog.Get("/:key", appHandler.WidgetChangelog)
+	changelog.Get("/posts/:key/:pageNo?", appHandler.WidgetChangelogPosts)
+
 	widget.Get("/roadmap/:key", appHandler.WidgetRoadmap)
 	widget.Get("/feedback/:key", appHandler.WidgetFeedback)
 
@@ -77,6 +81,23 @@ func (a *AppHandler) WidgetChangelog(c *fiber.Ctx) error {
 	}
 
 	return c.Render("widget/tabs/changelog", fiber.Map{"Project": project})
+}
+
+func (a *AppHandler) WidgetChangelogPosts(c *fiber.Ctx) error {
+	key := c.Params("key")
+	paramPageNo, _ := c.ParamsInt("pageNo")
+	pageNo := 1
+	if paramPageNo > 0 {
+		pageNo = paramPageNo
+	}
+
+	posts, err := a.PostService.GetPublishedPagedPosts(c.Context(), key, int32(pageNo))
+	if err != nil {
+		fmt.Println(err, pageNo)
+		return fiber.NewError(503, "Error fetching posts")
+	}
+
+	return c.Render("widget/components/posts", fiber.Map{"Posts": posts})
 }
 
 func (a *AppHandler) WidgetRoadmap(c *fiber.Ctx) error {

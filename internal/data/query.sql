@@ -19,8 +19,8 @@ SELECT id, title, published_on FROM posts WHERE author_id = $1;
 -- name: GetPost :one
 SELECT * FROM posts WHERE id = $1 AND author_id = $2;
 
--- name: GetUpcomingPosts :one
-SELECT COUNT(id) upcoming_posts FROM posts WHERE author_id = $1 AND published_on > current_timestamp;
+-- name: GetPublishedPagedPosts :many
+SELECT post.* FROM posts post join projects proj on post.project_id = proj.id WHERE proj.app_key = $1 AND post.published_on <= CURRENT_TIMESTAMP ORDER BY post.published_on LIMIT $2 OFFSET $3;
 
 -- name: InsertPost :one
 INSERT INTO posts (title, body, published_on, banner_image_url, author_id, project_id) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *;

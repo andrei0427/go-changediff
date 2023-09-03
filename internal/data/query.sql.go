@@ -159,15 +159,47 @@ func (q *Queries) GetProjectByKey(ctx context.Context, appKey string) (Project, 
 	return i, err
 }
 
-const getUpcomingPosts = `-- name: GetUpcomingPosts :one
-SELECT COUNT(id) upcoming_posts FROM posts WHERE author_id = $1 AND published_on > current_timestamp
+const getPublishedPagedPosts = `-- name: GetPublishedPagedPosts :many
+SELECT post.id, post.title, post.body, post.published_on, post.banner_image_url, post.author_id, post.project_id, post.created_on, post.updated_on FROM posts post join projects proj on post.project_id = proj.id WHERE proj.app_key = $1 AND post.published_on <= CURRENT_TIMESTAMP ORDER BY post.published_on LIMIT $2 OFFSET $3
 `
 
-func (q *Queries) GetUpcomingPosts(ctx context.Context, authorID uuid.UUID) (int64, error) {
-	row := q.db.QueryRowContext(ctx, getUpcomingPosts, authorID)
-	var upcoming_posts int64
-	err := row.Scan(&upcoming_posts)
-	return upcoming_posts, err
+type GetPublishedPagedPostsParams struct {
+	AppKey string
+	Limit  int32
+	Offset int32
+}
+
+func (q *Queries) GetPublishedPagedPosts(ctx context.Context, arg GetPublishedPagedPostsParams) ([]Post, error) {
+	rows, err := q.db.QueryContext(ctx, getPublishedPagedPosts, arg.AppKey, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Post
+	for rows.Next() {
+		var i Post
+		if err := rows.Scan(
+			&i.ID,
+			&i.Title,
+			&i.Body,
+			&i.PublishedOn,
+			&i.BannerImageUrl,
+			&i.AuthorID,
+			&i.ProjectID,
+			&i.CreatedOn,
+			&i.UpdatedOn,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const insertPost = `-- name: InsertPost :one

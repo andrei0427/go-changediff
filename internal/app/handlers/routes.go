@@ -29,6 +29,9 @@ func InitRoutes(app *app.App) {
 
 	widget := app.Fiber.Group("/widget")
 	widget.Get("/:key", appHandler.WidgetHome)
+	widget.Get("/changelog/:key", appHandler.WidgetChangelog)
+	widget.Get("/roadmap/:key", appHandler.WidgetRoadmap)
+	widget.Get("/feedback/:key", appHandler.WidgetFeedback)
 
 	app.Fiber.Use(middleware.UseAuth)
 	admin := app.Fiber.Group("/admin")
@@ -63,7 +66,37 @@ func (a *AppHandler) WidgetHome(c *fiber.Ctx) error {
 		logoUrl = project.LogoUrl.String
 	}
 
-	return c.Render("widget/index", fiber.Map{"Project": project, "LogoUrl": logoUrl})
+	return c.Render("widget/index", fiber.Map{"Project": project, "LogoUrl": logoUrl, "activeTab": "changelog"})
+}
+
+func (a *AppHandler) WidgetChangelog(c *fiber.Ctx) error {
+	key := c.Params("key")
+	project, err := a.ProjectService.GetProjectByKey(c.Context(), key)
+	if err != nil {
+		return fiber.NewError(404, "Project not found")
+	}
+
+	return c.Render("widget/tabs/changelog", fiber.Map{"Project": project})
+}
+
+func (a *AppHandler) WidgetRoadmap(c *fiber.Ctx) error {
+	key := c.Params("key")
+	project, err := a.ProjectService.GetProjectByKey(c.Context(), key)
+	if err != nil {
+		return fiber.NewError(404, "Project not found")
+	}
+
+	return c.Render("widget/tabs/roadmap", fiber.Map{"Project": project})
+}
+
+func (a *AppHandler) WidgetFeedback(c *fiber.Ctx) error {
+	key := c.Params("key")
+	project, err := a.ProjectService.GetProjectByKey(c.Context(), key)
+	if err != nil {
+		return fiber.NewError(404, "Project not found")
+	}
+
+	return c.Render("widget/tabs/feedback", fiber.Map{"Project": project})
 }
 
 // Protected Routes

@@ -1,5 +1,11 @@
 {
 	"files.associations": {
 		"*.html": "django-html"
+	},
+	"tailwindCSS.includeLanguages": {
+		"django-html": "html"
+	},
+	"emmet.includeLanguages": {
+		"django-html": "html"
 	}
 }

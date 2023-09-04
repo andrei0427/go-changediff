@@ -93,7 +93,6 @@ func (a *AppHandler) WidgetChangelogPosts(c *fiber.Ctx) error {
 
 	posts, err := a.PostService.GetPublishedPagedPosts(c.Context(), key, int32(pageNo))
 	if err != nil {
-		fmt.Println(err, pageNo)
 		return fiber.NewError(503, "Error fetching posts")
 	}
 
@@ -163,7 +162,7 @@ func (a *AppHandler) LoadPosts(c *fiber.Ctx) error {
 		return fiber.NewError(503, "Could not get posts for user")
 	}
 
-	return c.Render("partials/components/post_table", fiber.Map{"Posts": posts, "Empty": len(posts) == 0})
+	return c.Render("partials/components/post_table", fiber.Map{"Posts": posts})
 }
 
 func (a *AppHandler) DeletePost(c *fiber.Ctx) error {
@@ -187,9 +186,12 @@ func (a *AppHandler) ConfirmDeletePost(c *fiber.Ctx) error {
 		return fiber.NewError(400, "Invalid id parameter supplied")
 	}
 
-	return c.Render("partials/components/delete_confirm_modal", fiber.Map{"Title": "Confirm deletion of post",
+	return c.Render("partials/components/delete_confirm_modal", fiber.Map{"Title": "Confirm deletion",
 		"Body":        "Are you sure you want to delete this post",
-		"EndpointUri": "/admin/posts/delete/" + fmt.Sprint(id)})
+		"EndpointUri": "/admin/posts/delete/" + fmt.Sprint(id),
+		"ElementType": "table",
+		"ElementId":   "post-" + fmt.Sprint(id),
+	})
 }
 
 func (a *AppHandler) GetProject(c *fiber.Ctx) error {

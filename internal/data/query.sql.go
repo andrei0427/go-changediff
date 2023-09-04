@@ -160,7 +160,7 @@ func (q *Queries) GetProjectByKey(ctx context.Context, appKey string) (Project, 
 }
 
 const getPublishedPagedPosts = `-- name: GetPublishedPagedPosts :many
-SELECT post.id, post.title, post.body, post.published_on, post.banner_image_url, post.author_id, post.project_id, post.created_on, post.updated_on FROM posts post join projects proj on post.project_id = proj.id WHERE proj.app_key = $1 AND post.published_on <= CURRENT_TIMESTAMP ORDER BY post.published_on LIMIT $2 OFFSET $3
+SELECT post.id, post.title, post.body, post.published_on, post.banner_image_url, post.author_id, post.project_id, post.created_on, post.updated_on FROM posts post join projects proj on post.project_id = proj.id WHERE proj.app_key = $1 ORDER BY post.published_on DESC LIMIT $2 OFFSET $3
 `
 
 type GetPublishedPagedPostsParams struct {
@@ -277,7 +277,7 @@ func (q *Queries) InsertProject(ctx context.Context, arg InsertProjectParams) (P
 }
 
 const updatePost = `-- name: UpdatePost :one
-UPDATE posts SET title = $1, body = $2, published_on = $3, banner_image_url = $4 WHERE id = $5 AND author_id = $6 RETURNING id, title, body, published_on, banner_image_url, author_id, project_id, created_on, updated_on
+UPDATE posts SET title = $1, body = $2, published_on = $3, banner_image_url = $4, updated_on = CURRENT_TIMESTAMP WHERE id = $5 AND author_id = $6 RETURNING id, title, body, published_on, banner_image_url, author_id, project_id, created_on, updated_on
 `
 
 type UpdatePostParams struct {

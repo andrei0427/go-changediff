@@ -42,6 +42,13 @@ function handleUserAuthenticated(access_token) {
 
   if (access_token) {
     document.cookie = `${AUTH_USER_COOKIE_NAME}=${access_token};max-age=3600;secure`;
+
+    const tenYearsTime = new Date();
+    tenYearsTime.setFullYear(tenYearsTime.getFullYear() + 10);
+
+    document.cookie = `user_tz=${
+      Intl.DateTimeFormat().resolvedOptions().timeZone
+    };expires=${tenYearsTime.toUTCString()}`;
     window.location = "/admin/dashboard";
   }
 

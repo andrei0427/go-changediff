@@ -5,11 +5,22 @@ import (
 	"time"
 )
 
-var HelperFuncMap = map[string]interface{}{"formatDate": formatDate,
+var HelperFuncMap = map[string]interface{}{
+	"formatDate":    formatDate,
+	"convertDate":   convertDate,
 	"contrastColor": contrastColor}
 
 func formatDate(date time.Time) string {
-	return date.Format(time.DateOnly)
+	return date.Format(time.Stamp)
+}
+
+func convertDate(date time.Time, timeZone string) time.Time {
+	loc, err := time.LoadLocation(timeZone)
+	if err != nil {
+		return date
+	}
+
+	return date.In(loc)
 }
 
 // contrastColor takes a hex color code as input and returns either #000000 (black) or #FFFFFF (white) as output

@@ -51,7 +51,7 @@ func (s *PostService) InsertPost(ctx context.Context, post models.PostModel, ban
 		Body:        post.Content,
 		AuthorID:    userId,
 		ProjectID:   projectId,
-		PublishedOn: time.Now(),
+		PublishedOn: time.Now().UTC(),
 	}
 
 	if bannerUrl != nil {
@@ -60,7 +60,7 @@ func (s *PostService) InsertPost(ctx context.Context, post models.PostModel, ban
 
 	if post.PublishedOn != nil {
 		if parsedDate, err := time.Parse(time.DateOnly, *post.PublishedOn); err == nil {
-			toInsert.PublishedOn = parsedDate
+			toInsert.PublishedOn = parsedDate.UTC()
 		}
 	}
 

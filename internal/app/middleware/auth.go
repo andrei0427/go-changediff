@@ -25,10 +25,12 @@ type SessionUser struct {
 	Id       uuid.UUID
 	Email    string
 	Metadata UserMetadata
+	Timezone string
 }
 
 func UseAuth(c *fiber.Ctx) error {
 	tokenString := c.Cookies("authUser")
+	userTz := c.Cookies("user_tz")
 
 	if tokenString == "" {
 		return fiber.NewError(fiber.StatusUnauthorized)
@@ -59,6 +61,7 @@ func UseAuth(c *fiber.Ctx) error {
 			Id:       userId,
 			Email:    claims.Email,
 			Metadata: claims.Metadata,
+			Timezone: userTz,
 		})
 	}
 

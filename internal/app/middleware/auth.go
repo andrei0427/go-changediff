@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/andrei0427/go-changediff/internal/app/services"
+	"github.com/andrei0427/go-changediff/internal/data"
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt"
 	"github.com/google/uuid"
@@ -22,13 +24,14 @@ type AuthTokenClaim struct {
 }
 
 type SessionUser struct {
-	Id       uuid.UUID
-	Email    string
-	Metadata UserMetadata
-	Timezone string
+	Id        uuid.UUID
+	Email     string
+	Metadata  UserMetadata
+	Timezone  string
+	ProjectId *int32
 }
 
-func UseAuth(c *fiber.Ctx) error {
+func UseAuth(c *fiber.Ctx, cacheService *services.CacheService, projectService *services.ProjectService) error {
 	tokenString := c.Cookies("authUser")
 	userTz := c.Cookies("user_tz")
 
@@ -57,12 +60,31 @@ func UseAuth(c *fiber.Ctx) error {
 	claims := token.Claims.(*AuthTokenClaim)
 
 	if userId, err := uuid.Parse(claims.Subject); err == nil {
-		c.Locals("user", &SessionUser{
+		cacheKey := "user-" + fmt.Sprint(userId) + "project_id"
+		cachedProject, ok := cacheService.Get(cacheKey)
+
+		if !ok {
+			project, _ := projectService.GetProjectForUser(c.Context(), userId)
+
+			if project != nil {
+				cachedProject = project
+				cacheService.Set(cacheKey, cachedProject, nil)
+			}
+		}
+
+		sessionUser := &SessionUser{
 			Id:       userId,
 			Email:    claims.Email,
 			Metadata: claims.Metadata,
 			Timezone: userTz,
-		})
+		}
+
+		if cachedProject != nil {
+			cachedProject := cachedProject.(*data.Project)
+			sessionUser.ProjectId = &cachedProject.ID
+		}
+
+		c.Locals("user", sessionUser)
 	}
 
 	return c.Next()

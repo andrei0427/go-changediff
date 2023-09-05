@@ -9,6 +9,13 @@ SELECT * FROM projects where app_key = $1 LIMIT 1;
 INSERT INTO projects (name, description, accent_color, logo_url, app_key, user_id) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *;
 
 
+-- LABELS --
+-- name: GetLabels :many
+SELECT * from labels WHERE project_id = $1;
+
+-- name: InsertLabel :one
+INSERT INTO labels (label, color, project_id) VALUES ($1, $2, $3) RETURNING *;
+
 -- POSTS --
 -- name: GetPostCount :one
 SELECT COUNT(id) total_posts FROM posts WHERE author_id = $1;

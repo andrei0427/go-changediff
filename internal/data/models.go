@@ -11,6 +11,15 @@ import (
 	"github.com/google/uuid"
 )
 
+type Label struct {
+	ID        int32
+	Label     string
+	Color     string
+	ProjectID int32
+	CreatedOn time.Time
+	UpdatedOn sql.NullTime
+}
+
 type Post struct {
 	ID             int32
 	Title          string
@@ -21,6 +30,7 @@ type Post struct {
 	ProjectID      int32
 	CreatedOn      time.Time
 	UpdatedOn      sql.NullTime
+	LabelID        sql.NullInt32
 }
 
 type Project struct {

@@ -17,14 +17,25 @@ type AppHandler struct {
 	ProjectService *services.ProjectService
 	PostService    *services.PostService
 	CDNService     *services.CDNService
+	LabelService   *services.LabelService
+	CacheService   *services.CacheService
 }
 
-func NewAppHandler(projectService *services.ProjectService, postService *services.PostService, cdnService *services.CDNService) *AppHandler {
-	return &AppHandler{ProjectService: projectService, PostService: postService, CDNService: cdnService}
+func NewAppHandler(projectService *services.ProjectService,
+	postService *services.PostService,
+	cdnService *services.CDNService,
+	labelService *services.LabelService,
+	cacheService *services.CacheService) *AppHandler {
+	return &AppHandler{ProjectService: projectService,
+		PostService:  postService,
+		CDNService:   cdnService,
+		LabelService: labelService,
+		CacheService: cacheService,
+	}
 }
 
 func InitRoutes(app *app.App) {
-	appHandler := NewAppHandler(app.ProjectService, app.PostService, app.CDNService)
+	appHandler := NewAppHandler(app.ProjectService, app.PostService, app.CDNService, app.LabelService, app.CacheService)
 	app.Fiber.Get("/", appHandler.Home)
 
 	widget := app.Fiber.Group("/widget")
@@ -37,7 +48,9 @@ func InitRoutes(app *app.App) {
 	widget.Get("/roadmap/:key", appHandler.WidgetRoadmap)
 	widget.Get("/feedback/:key", appHandler.WidgetFeedback)
 
-	app.Fiber.Use(middleware.UseAuth)
+	app.Fiber.Use(func(c *fiber.Ctx) error {
+		return middleware.UseAuth(c, appHandler.CacheService, appHandler.ProjectService)
+	})
 	admin := app.Fiber.Group("/admin")
 	admin.Get("/dashboard", appHandler.Dashboard)
 	admin.Get("/project", appHandler.GetProject)
@@ -150,7 +163,13 @@ func (a *AppHandler) ComposePost(c *fiber.Ctx) error {
 		form.PublishedOn = &publishedOn
 	}
 
-	return c.Render("post", fiber.Map{"form": form, "Id": id})
+	// labels, err := a.LabelService.GetLabels(c.Context(), curUser.)
+	// if err != nil {
+	// 	return fiber.NewError(500, "Error when fetching labels")
+	// }
+
+	labels := ""
+	return c.Render("post", fiber.Map{"form": form, "Id": id, "Labels": labels})
 }
 
 func (a *AppHandler) LoadPosts(c *fiber.Ctx) error {

@@ -18,6 +18,8 @@ type App struct {
 	CDNService     *services.CDNService
 	ProjectService *services.ProjectService
 	PostService    *services.PostService
+	LabelService   *services.LabelService
+	CacheService   *services.CacheService
 }
 
 func NewApp() *App {
@@ -39,7 +41,9 @@ func NewApp() *App {
 
 	projectService := services.NewProjectService(dbConn)
 	postService := services.NewPostService(dbConn)
+	labelService := services.NewLabelService(dbConn)
 	cdnService := services.NewCDNService()
+	cacheService := services.NewCacheService()
 
 	return &App{
 		DB:             dbConn,
@@ -47,6 +51,8 @@ func NewApp() *App {
 		ProjectService: projectService,
 		PostService:    postService,
 		CDNService:     cdnService,
+		LabelService:   labelService,
+		CacheService:   cacheService,
 	}
 }
 

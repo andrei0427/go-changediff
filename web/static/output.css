@@ -790,6 +790,10 @@ select {
   margin: -0.625rem;
 }
 
+.m-4 {
+  margin: 1rem;
+}
+
 .-mx-1 {
   margin-left: -0.25rem;
   margin-right: -0.25rem;
@@ -1103,6 +1107,10 @@ select {
 
 .justify-between {
   justify-content: space-between;
+}
+
+.justify-around {
+  justify-content: space-around;
 }
 
 .gap-x-3 {

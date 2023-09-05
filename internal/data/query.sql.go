@@ -29,8 +29,43 @@ func (q *Queries) DeletePost(ctx context.Context, arg DeletePostParams) (int32, 
 	return id, err
 }
 
+const getLabels = `-- name: GetLabels :many
+SELECT id, label, color, project_id, created_on, updated_on from labels WHERE project_id = $1
+`
+
+// LABELS --
+func (q *Queries) GetLabels(ctx context.Context, projectID int32) ([]Label, error) {
+	rows, err := q.db.QueryContext(ctx, getLabels, projectID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Label
+	for rows.Next() {
+		var i Label
+		if err := rows.Scan(
+			&i.ID,
+			&i.Label,
+			&i.Color,
+			&i.ProjectID,
+			&i.CreatedOn,
+			&i.UpdatedOn,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getPost = `-- name: GetPost :one
-SELECT id, title, body, published_on, banner_image_url, author_id, project_id, created_on, updated_on FROM posts WHERE id = $1 AND author_id = $2
+SELECT id, title, body, published_on, banner_image_url, author_id, project_id, created_on, updated_on, label_id FROM posts WHERE id = $1 AND author_id = $2
 `
 
 type GetPostParams struct {
@@ -51,6 +86,7 @@ func (q *Queries) GetPost(ctx context.Context, arg GetPostParams) (Post, error) 
 		&i.ProjectID,
 		&i.CreatedOn,
 		&i.UpdatedOn,
+		&i.LabelID,
 	)
 	return i, err
 }
@@ -160,7 +196,7 @@ func (q *Queries) GetProjectByKey(ctx context.Context, appKey string) (Project, 
 }
 
 const getPublishedPagedPosts = `-- name: GetPublishedPagedPosts :many
-SELECT post.id, post.title, post.body, post.published_on, post.banner_image_url, post.author_id, post.project_id, post.created_on, post.updated_on FROM posts post join projects proj on post.project_id = proj.id WHERE proj.app_key = $1 ORDER BY post.published_on DESC LIMIT $2 OFFSET $3
+SELECT post.id, post.title, post.body, post.published_on, post.banner_image_url, post.author_id, post.project_id, post.created_on, post.updated_on, post.label_id FROM posts post join projects proj on post.project_id = proj.id WHERE proj.app_key = $1 AND post.published_on <= CURRENT_TIMESTAMP ORDER BY post.published_on DESC LIMIT $2 OFFSET $3
 `
 
 type GetPublishedPagedPostsParams struct {
@@ -188,6 +224,7 @@ func (q *Queries) GetPublishedPagedPosts(ctx context.Context, arg GetPublishedPa
 			&i.ProjectID,
 			&i.CreatedOn,
 			&i.UpdatedOn,
+			&i.LabelID,
 		); err != nil {
 			return nil, err
 		}
@@ -202,8 +239,32 @@ func (q *Queries) GetPublishedPagedPosts(ctx context.Context, arg GetPublishedPa
 	return items, nil
 }
 
+const insertLabel = `-- name: InsertLabel :one
+INSERT INTO labels (label, color, project_id) VALUES ($1, $2, $3) RETURNING id, label, color, project_id, created_on, updated_on
+`
+
+type InsertLabelParams struct {
+	Label     string
+	Color     string
+	ProjectID int32
+}
+
+func (q *Queries) InsertLabel(ctx context.Context, arg InsertLabelParams) (Label, error) {
+	row := q.db.QueryRowContext(ctx, insertLabel, arg.Label, arg.Color, arg.ProjectID)
+	var i Label
+	err := row.Scan(
+		&i.ID,
+		&i.Label,
+		&i.Color,
+		&i.ProjectID,
+		&i.CreatedOn,
+		&i.UpdatedOn,
+	)
+	return i, err
+}
+
 const insertPost = `-- name: InsertPost :one
-INSERT INTO posts (title, body, published_on, banner_image_url, author_id, project_id) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, title, body, published_on, banner_image_url, author_id, project_id, created_on, updated_on
+INSERT INTO posts (title, body, published_on, banner_image_url, author_id, project_id) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, title, body, published_on, banner_image_url, author_id, project_id, created_on, updated_on, label_id
 `
 
 type InsertPostParams struct {
@@ -235,6 +296,7 @@ func (q *Queries) InsertPost(ctx context.Context, arg InsertPostParams) (Post, e
 		&i.ProjectID,
 		&i.CreatedOn,
 		&i.UpdatedOn,
+		&i.LabelID,
 	)
 	return i, err
 }
@@ -277,7 +339,7 @@ func (q *Queries) InsertProject(ctx context.Context, arg InsertProjectParams) (P
 }
 
 const updatePost = `-- name: UpdatePost :one
-UPDATE posts SET title = $1, body = $2, published_on = $3, banner_image_url = $4, updated_on = CURRENT_TIMESTAMP WHERE id = $5 AND author_id = $6 RETURNING id, title, body, published_on, banner_image_url, author_id, project_id, created_on, updated_on
+UPDATE posts SET title = $1, body = $2, published_on = $3, banner_image_url = $4, updated_on = CURRENT_TIMESTAMP WHERE id = $5 AND author_id = $6 RETURNING id, title, body, published_on, banner_image_url, author_id, project_id, created_on, updated_on, label_id
 `
 
 type UpdatePostParams struct {
@@ -309,6 +371,7 @@ func (q *Queries) UpdatePost(ctx context.Context, arg UpdatePostParams) (Post, e
 		&i.ProjectID,
 		&i.CreatedOn,
 		&i.UpdatedOn,
+		&i.LabelID,
 	)
 	return i, err
 }

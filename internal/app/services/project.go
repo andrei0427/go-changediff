@@ -49,5 +49,16 @@ func (s *ProjectService) SaveProject(ctx context.Context, userId uuid.UUID, proj
 
 	inserted, err := s.db.InsertProject(ctx, toInsert)
 
+	defaultLabels := []data.InsertLabelParams{
+		{Label: "Release", Color: "#10B981", ProjectID: inserted.ID},
+		{Label: "Fix", Color: "#EF4444", ProjectID: inserted.ID},
+		{Label: "Announcement", Color: "#3B82F6", ProjectID: inserted.ID},
+	}
+
+	labelService := NewLabelService(s.db)
+	for _, l := range defaultLabels {
+		labelService.InsertLabel(ctx, l.Label, l.Color, l.ProjectID)
+	}
+
 	return inserted, err
 }

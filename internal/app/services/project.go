@@ -33,7 +33,7 @@ func (s *ProjectService) GetProjectByKey(ctx context.Context, key string) (data.
 	return project, err
 }
 
-func (s *ProjectService) SaveProject(ctx context.Context, userId uuid.UUID, project models.OnboardingModel, imageUrl *string) (data.Project, error) {
+func (s *ProjectService) SaveProject(ctx context.Context, userId uuid.UUID, project models.ProjectModel, imageUrl *string) (data.Project, error) {
 	toInsert := data.InsertProjectParams{
 		Name:        project.Name,
 		Description: project.Description,

@@ -24,11 +24,11 @@ type AuthTokenClaim struct {
 }
 
 type SessionUser struct {
-	Id        uuid.UUID
-	Email     string
-	Metadata  UserMetadata
-	Timezone  string
-	ProjectId *int32
+	Id       uuid.UUID
+	Email    string
+	Metadata UserMetadata
+	Timezone string
+	Project  *data.Project
 }
 
 func UseAuth(c *fiber.Ctx, cacheService *services.CacheService, projectService *services.ProjectService) error {
@@ -81,7 +81,7 @@ func UseAuth(c *fiber.Ctx, cacheService *services.CacheService, projectService *
 
 		if cachedProject != nil {
 			cachedProject := cachedProject.(*data.Project)
-			sessionUser.ProjectId = &cachedProject.ID
+			sessionUser.Project = cachedProject
 		}
 
 		c.Locals("user", sessionUser)

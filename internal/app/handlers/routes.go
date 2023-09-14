@@ -63,6 +63,9 @@ func InitRoutes(app *app.App) {
 	posts.Get("/load", appHandler.LoadPosts)
 	posts.Delete("/delete/:id", appHandler.DeletePost)
 	posts.Delete("/confirm-delete/:id", appHandler.ConfirmDeletePost)
+
+	settings := admin.Group("/settings")
+	settings.Get("/", appHandler.GetSettings)
 }
 
 // Public Routes
@@ -140,6 +143,11 @@ func (a *AppHandler) Dashboard(c *fiber.Ctx) error {
 
 func (a *AppHandler) Posts(c *fiber.Ctx) error {
 	return c.Render("posts", fiber.Map{})
+}
+
+func (a *AppHandler) GetSettings(c *fiber.Ctx) error {
+	curUser := c.Locals("user").(*middleware.SessionUser)
+	return c.Render("settings", fiber.Map{"Form": curUser.Project})
 }
 
 func (a *AppHandler) ComposePost(c *fiber.Ctx) error {
@@ -240,7 +248,7 @@ func (a *AppHandler) GetProject(c *fiber.Ctx) error {
 func (a *AppHandler) PostOnboarding(c *fiber.Ctx) error {
 	curUser := c.Locals("user").(*middleware.SessionUser)
 
-	form := new(models.OnboardingModel)
+	form := new(models.ProjectModel)
 	if err := c.BodyParser(form); err != nil {
 		return c.Render("get_started", fiber.Map{"error": err.Error()})
 	}

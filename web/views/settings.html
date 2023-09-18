@@ -36,131 +36,20 @@
               <div class="hidden lg:block">
                 <div class="border-b border-gray-200">
                   <nav class="-mb-px flex space-x-8">
-                    <!-- Current: "border-orange text-orange Default: "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700" -->
-                    <a href="#"
-                      class="border-orange text-orange whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium">General</a>
-                    <a href="#"
-                      class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium">Labels</a>
+                    <button onclick="updateNavTabs('general')"
+                      class="border-orange text-orange whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium">
+                      General
+                    </button>
+                    <button onclick="updateNavTabs('labels')"
+                      class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium">
+                      Labels
+                    </button>
                   </nav>
                 </div>
               </div>
 
-              <!-- Description list with inline editing -->
-              <div class="mt-10 divide-y divide-gray-200">
-                <div class="space-y-1">
-                  <h3 class="text-lg font-medium leading-6 text-gray-900">
-                    Account<span class="text-sm font-medium">&nbsp;(from Google)</span>
-                  </h3>
-                </div>
-                <div class="mt-6">
-                  <dl class="divide-y divide-gray-200">
-                    <div class="py-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:py-5">
-                      <dt class="text-sm font-medium text-gray-500">Name</dt>
-                      <dd class="mt-1 flex text-sm text-gray-900 sm:col-span-2 sm:mt-0">
-                        <span class="flex-grow">{{user.Metadata.FullName}}</span>
-                      </dd>
-                    </div>
-                    <div class="py-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:py-5 sm:pt-5">
-                      <dt class="text-sm font-medium text-gray-500">Email</dt>
-                      <dd class="mt-1 flex text-sm text-gray-900 sm:col-span-2 sm:mt-0">
-                        <span class="flex-grow">{{user.Email}}</span>
-                      </dd>
-                    </div>
-                  </dl>
-                </div>
-              </div>
-
-              <div class="mt-10 divide-y divide-gray-200">
-                <div class="space-y-1">
-                  <h3 class="text-lg font-medium leading-6 text-gray-900">
-                    Project
-                  </h3>
-                  <p class="max-w-2xl text-sm text-gray-500">
-                    Customize how your product is displayed to your clients.
-                  </p>
-                </div>
-                <div class="mt-6">
-                  <dl class="divide-y divide-gray-200">
-                    <div class="py-4 sm:grid sm:grid-cols-3 items-center sm:gap-4 sm:py-5 sm:pt-5">
-                      <dt class="text-sm font-medium text-gray-500">Name</dt>
-                      <dd class="mt-1 flex text-sm text-gray-900 sm:col-span-2 sm:mt-0">
-                        <input type="text" name="name" id="name" value="{{Form.Name}}" aria-describedby="title-error"
-                          placeholder="Best Todo App Ever"
-                          class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-orange">
-
-                        {% if errors['Name']%}
-                        <p class="mt-2 text-sm text-red-600" id="title-error">
-                          {{errors['Name']}}</p>
-                        {% endif %}
-                      </dd>
-                    </div>
-                    <div class="py-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:py-5 sm:pt-5 items-center">
-                      <dt class="text-sm font-medium text-gray-500">Logo</dt>
-                      <dd class="mt-1 flex text-sm text-gray-900 sm:col-span-2 sm:mt-0">
-                        <span class="flex-grow">
-                          <img class="h-8 w-8"
-                            src="{%if Form.ImageUrl.Valid%}{{Form.ImageUrl.String}}{%else%}/static/logo.png{%endif%}"
-                            alt="project logo" />
-                        </span>
-                        <span class="ml-4 flex flex-shrink-0 items-start space-x-4">
-                          <input type="file" name="photo"
-                            class="rounded-md bg-white font-medium text-orange hover:text-orange focus:outline-none focus:ring-2 focus:ring-orange focus:ring-offset-2"></input>
-                        </span>
-                      </dd>
-                    </div>
-                    <div class="py-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:border-b sm:border-gray-200 sm:py-5">
-                      <dt class="text-sm font-medium text-gray-500">
-                        Description
-                      </dt>
-                      <dd class="mt-1 flex text-sm text-gray-900 sm:col-span-2 sm:mt-0">
-                        <textarea id="description" name="description" rows="3" required
-                          placeholder="Saves AND does your todos for you..." aria-describedby="desc-error"
-                          class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-orange">{{Form.Description}}</textarea>
-
-                        {% if errors['Description']%}
-                        <p class="mt-2 text-sm text-red-600" id="desc-error">
-                          {{errors['Description']}}</p>
-                        {% endif %}
-                      </dd>
-                    </div>
-                    <div class="py-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:py-5 items-center">
-                      <dt class="text-sm font-medium text-gray-500">
-                        Accent Color
-                      </dt>
-                      <dd class="mt-1 flex text-sm text-gray-900 sm:col-span-2 sm:mt-0">
-                        <input type="color" name="accent_color" id="accent_color" required
-                          aria-describedby="color-error" value="{{Form.AccentColor}}"
-                          class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-orange">
-
-                        {% if errors['AccentColor']%}
-                        <p class="mt-2 text-sm text-red-600" id="color-error">
-                          {{errors['AccentColor']}}</p>
-                        {% endif %}
-
-                      </dd>
-                    </div>
-                    <div class="py-4 sm:grid sm:grid-cols-3 items-center sm:gap-4 sm:py-5 sm:pt-5">
-                      <dt class="text-sm font-medium text-gray-500">
-                        App Key
-                      </dt>
-                      <dd class="mt-1 flex text-sm cursor-pointer text-gray-900 sm:col-span-2 sm:mt-0"
-                        onclick="navigator.clipboard.writeText('{{Form.AppKey}}'); document.getElementById('copied').classList.remove('hidden');">
-                        <div class="relative w-full">
-                          <input type="text" readonly name="appkey" id="appkey" value="{{Form.AppKey}}"
-                            class="pointer-events-none block w-full rounded-md border-0 py-1.5 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 bg-gray-200 focus:ring-2 focus:ring-inset focus:ring-orange sm:text-sm sm:leading-6">
-                          <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
-                            <p class="mr-2 text-sm text-orange hidden" id="copied">Copied!</p>
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                              stroke="currentColor" class="w-6 h-6 text-orange">
-                              <path stroke-linecap="round" stroke-linejoin="round"
-                                d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 01-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 011.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 00-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 01-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 00-3.375-3.375h-1.5a1.125 1.125 0 01-1.125-1.125v-1.5a3.375 3.375 0 00-3.375-3.375H9.75" />
-                            </svg>
-                          </div>
-                        </div>
-                      </dd>
-                    </div>
-                  </dl>
-                </div>
+              <div id="tab-content" hx-get="/admin/settings/tab" hx-swap="innerHtml"
+                hx-vals="js:{hash: window.location.hash.replace('#', '')}" hx-trigger="load, tabchange">
               </div>
             </div>
           </div>
@@ -169,5 +58,38 @@
     </main>
   </div>
 </div>
+
+<script>
+  updateNavTabs(window.location.hash);
+
+  function updateNavTabs(tabName) {
+    const navElms = document.querySelectorAll("nav > button");
+    const fixedTabName = tabName.replace("#", "").toLowerCase().trim() || "general";
+
+    const defaultClasses = [
+      "border-transparent",
+      "text-gray-500",
+      "hover:border-gray-300",
+      "hover:text-gray-700",
+    ];
+    const currentClasses = ["border-orange", "text-orange"];
+
+    navElms.forEach((e) => {
+      if (e.innerHTML.toLowerCase().trim() === fixedTabName) {
+        e.classList.remove(...defaultClasses);
+        e.classList.add(...currentClasses);
+      } else {
+        e.classList.add(...defaultClasses);
+        e.classList.remove(...currentClasses);
+      }
+    });
+
+    location.hash = '#' + fixedTabName;
+  }
+
+  window.onhashchange = function () {
+    document.getElementById('tab-content').dispatchEvent(new Event('tabchange'));
+    updateNavTabs(window.location.hash);
+  }
+</script>
 {% endblock %}
-</div>

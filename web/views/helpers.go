@@ -1,6 +1,7 @@
 package views
 
 import (
+	"os"
 	"strconv"
 	"time"
 )
@@ -8,7 +9,9 @@ import (
 var HelperFuncMap = map[string]interface{}{
 	"formatDate":    formatDate,
 	"convertDate":   convertDate,
-	"contrastColor": contrastColor}
+	"contrastColor": contrastColor,
+	"CDNUrl":        CDNUrl,
+}
 
 func formatDate(date time.Time) string {
 	return date.Format(time.Stamp)
@@ -21,6 +24,10 @@ func convertDate(date time.Time, timeZone string) time.Time {
 	}
 
 	return date.In(loc)
+}
+
+func CDNUrl(filePath string) string {
+	return os.Getenv("CLOUDFLARE_R2_PUBLIC_URL") + "/" + filePath
 }
 
 // contrastColor takes a hex color code as input and returns either #000000 (black) or #FFFFFF (white) as output

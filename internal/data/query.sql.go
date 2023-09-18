@@ -13,6 +13,22 @@ import (
 	"github.com/google/uuid"
 )
 
+const deleteLabel = `-- name: DeleteLabel :one
+DELETE FROM labels WHERE id = $1 AND project_id = $2 RETURNING id
+`
+
+type DeleteLabelParams struct {
+	ID        int32
+	ProjectID int32
+}
+
+func (q *Queries) DeleteLabel(ctx context.Context, arg DeleteLabelParams) (int32, error) {
+	row := q.db.QueryRowContext(ctx, deleteLabel, arg.ID, arg.ProjectID)
+	var id int32
+	err := row.Scan(&id)
+	return id, err
+}
+
 const deletePost = `-- name: DeletePost :one
 DELETE FROM posts WHERE id = $1 AND author_id = $2 RETURNING id
 `
@@ -30,7 +46,7 @@ func (q *Queries) DeletePost(ctx context.Context, arg DeletePostParams) (int32, 
 }
 
 const getLabels = `-- name: GetLabels :many
-SELECT id, label, color, project_id, created_on, updated_on from labels WHERE project_id = $1
+SELECT id, label, color, project_id, created_on, updated_on from labels WHERE project_id = $1 ORDER BY created_on
 `
 
 // LABELS --
@@ -338,6 +354,68 @@ func (q *Queries) InsertProject(ctx context.Context, arg InsertProjectParams) (P
 	return i, err
 }
 
+const unsetLabels = `-- name: UnsetLabels :many
+UPDATE posts SET label_id = NULL WHERE id = $1 AND project_id = $2 RETURNING id
+`
+
+type UnsetLabelsParams struct {
+	ID        int32
+	ProjectID int32
+}
+
+func (q *Queries) UnsetLabels(ctx context.Context, arg UnsetLabelsParams) ([]int32, error) {
+	rows, err := q.db.QueryContext(ctx, unsetLabels, arg.ID, arg.ProjectID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []int32
+	for rows.Next() {
+		var id int32
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		items = append(items, id)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const updateLabel = `-- name: UpdateLabel :one
+UPDATE labels SET label = $1, color = $2 WHERE id = $3 AND project_id = $4 RETURNING id, label, color, project_id, created_on, updated_on
+`
+
+type UpdateLabelParams struct {
+	Label     string
+	Color     string
+	ID        int32
+	ProjectID int32
+}
+
+func (q *Queries) UpdateLabel(ctx context.Context, arg UpdateLabelParams) (Label, error) {
+	row := q.db.QueryRowContext(ctx, updateLabel,
+		arg.Label,
+		arg.Color,
+		arg.ID,
+		arg.ProjectID,
+	)
+	var i Label
+	err := row.Scan(
+		&i.ID,
+		&i.Label,
+		&i.Color,
+		&i.ProjectID,
+		&i.CreatedOn,
+		&i.UpdatedOn,
+	)
+	return i, err
+}
+
 const updatePost = `-- name: UpdatePost :one
 UPDATE posts SET title = $1, body = $2, published_on = $3, banner_image_url = $4, updated_on = CURRENT_TIMESTAMP WHERE id = $5 AND author_id = $6 RETURNING id, title, body, published_on, banner_image_url, author_id, project_id, created_on, updated_on, label_id
 `
@@ -372,6 +450,43 @@ func (q *Queries) UpdatePost(ctx context.Context, arg UpdatePostParams) (Post, e
 		&i.CreatedOn,
 		&i.UpdatedOn,
 		&i.LabelID,
+	)
+	return i, err
+}
+
+const updateProject = `-- name: UpdateProject :one
+UPDATE projects SET name = $1, description = $2, accent_color = $3, logo_url = $4, updated_on = CURRENT_TIMESTAMP WHERE id = $5 AND user_id = $6 RETURNING id, name, description, accent_color, logo_url, app_key, user_id, created_on, updated_on
+`
+
+type UpdateProjectParams struct {
+	Name        string
+	Description string
+	AccentColor string
+	LogoUrl     sql.NullString
+	ID          int32
+	UserID      uuid.UUID
+}
+
+func (q *Queries) UpdateProject(ctx context.Context, arg UpdateProjectParams) (Project, error) {
+	row := q.db.QueryRowContext(ctx, updateProject,
+		arg.Name,
+		arg.Description,
+		arg.AccentColor,
+		arg.LogoUrl,
+		arg.ID,
+		arg.UserID,
+	)
+	var i Project
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Description,
+		&i.AccentColor,
+		&i.LogoUrl,
+		&i.AppKey,
+		&i.UserID,
+		&i.CreatedOn,
+		&i.UpdatedOn,
 	)
 	return i, err
 }

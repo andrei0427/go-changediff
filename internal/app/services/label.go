@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 
+	"github.com/andrei0427/go-changediff/internal/app/models"
 	"github.com/andrei0427/go-changediff/internal/data"
 )
 
@@ -19,7 +20,36 @@ func (s *LabelService) GetLabels(ctx context.Context, projectId int32) ([]data.L
 	return labels, err
 }
 
-func (s *LabelService) InsertLabel(ctx context.Context, label string, color string, project_id int32) (data.Label, error) {
-	inserted, err := s.db.InsertLabel(ctx, data.InsertLabelParams{Label: label, Color: color, ProjectID: project_id})
-	return inserted, err
+func (s *LabelService) DeleteLabel(ctx context.Context, labelId int32, projectId int32) error {
+	if _, err := s.db.UnsetLabels(ctx, data.UnsetLabelsParams{ID: labelId, ProjectID: projectId}); err != nil {
+		return err
+	}
+
+	if _, err := s.db.DeleteLabel(ctx, data.DeleteLabelParams{ID: labelId, ProjectID: projectId}); err != nil {
+		return err
+	}
+
+	return nil
+
+}
+
+func (s *LabelService) SaveLabel(ctx context.Context, model models.LabelModel, project_id int32) (data.Label, error) {
+	if model.ID != nil {
+		toUpdate := data.UpdateLabelParams{
+			ID:        *model.ID,
+			Label:     model.Label,
+			Color:     model.Color,
+			ProjectID: project_id,
+		}
+
+		return s.db.UpdateLabel(ctx, toUpdate)
+	} else {
+		toInsert := data.InsertLabelParams{
+			Label:     model.Label,
+			Color:     model.Color,
+			ProjectID: project_id,
+		}
+
+		return s.db.InsertLabel(ctx, toInsert)
+	}
 }

@@ -60,7 +60,7 @@ func UseAuth(c *fiber.Ctx, cacheService *services.CacheService, projectService *
 	claims := token.Claims.(*AuthTokenClaim)
 
 	if userId, err := uuid.Parse(claims.Subject); err == nil {
-		cacheKey := "user-" + fmt.Sprint(userId) + "project_id"
+		cacheKey := "user-" + fmt.Sprint(userId) + "project"
 		cachedProject, ok := cacheService.Get(cacheKey)
 
 		if !ok {

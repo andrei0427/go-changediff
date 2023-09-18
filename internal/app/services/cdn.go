@@ -6,7 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"image"
-	"image/jpeg"
+	"image/png"
 	"io"
 	"mime"
 	"mime/multipart"
@@ -50,14 +50,14 @@ func (s *CDNService) UploadImage(file *multipart.FileHeader, maxWidth int) (*str
 	resizedImage := imaging.Resize(inputImage, maxWidth, 0, imaging.Lanczos)
 
 	var resizedImageBuf bytes.Buffer
-	err = jpeg.Encode(&resizedImageBuf, resizedImage, nil)
+	err = png.Encode(&resizedImageBuf, resizedImage)
 	if err != nil {
 		return nil, errors.New("error resizing image")
 	}
 
 	uniqueFileName := s.generateUniqueFileName(file)
 
-	err = s.uploadFile(bytes.NewReader(resizedImageBuf.Bytes()), uniqueFileName, mime.TypeByExtension(s.GetFileExt(file.Filename)))
+	err = s.uploadFile(bytes.NewReader(resizedImageBuf.Bytes()), uniqueFileName, mime.TypeByExtension("png"))
 	if err != nil {
 		return nil, err
 

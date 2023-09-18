@@ -126,8 +126,8 @@
             type="button"
             hx-delete="{{EndpointUri}}"
             hx-on::after-request="confirmDelete()"
-            hx-target="#banner-container"
-            hx-swap="beforeEnd"
+            hx-target="{%if TargetSelector%}{{TargetSelector}}{%else%}#banner-container{%endif%}"
+            hx-swap="{%if Swap%}{{Swap}}{%else%}beforeEnd{%endif%}"
             class="inline-flex w-full justify-center rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-500 sm:ml-3 sm:w-auto"
           >
             Delete

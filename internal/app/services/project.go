@@ -34,31 +34,49 @@ func (s *ProjectService) GetProjectByKey(ctx context.Context, key string) (data.
 }
 
 func (s *ProjectService) SaveProject(ctx context.Context, userId uuid.UUID, project models.ProjectModel, imageUrl *string) (data.Project, error) {
-	toInsert := data.InsertProjectParams{
-		Name:        project.Name,
-		Description: project.Description,
-		AccentColor: project.AccentColor,
-		UserID:      userId,
-		AppKey:      uuid.NewString(),
-		LogoUrl:     sql.NullString{},
+	if project.ID != nil {
+		toUpdate := data.UpdateProjectParams{
+			Name:        project.Name,
+			Description: project.Description,
+			AccentColor: project.AccentColor,
+			ID:          *project.ID,
+			LogoUrl:     sql.NullString{},
+			UserID:      userId,
+		}
+
+		if imageUrl != nil {
+			toUpdate.LogoUrl = sql.NullString{String: *imageUrl, Valid: true}
+		}
+
+		return s.db.UpdateProject(ctx, toUpdate)
+
+	} else {
+		toInsert := data.InsertProjectParams{
+			Name:        project.Name,
+			Description: project.Description,
+			AccentColor: project.AccentColor,
+			UserID:      userId,
+			AppKey:      uuid.NewString(),
+			LogoUrl:     sql.NullString{},
+		}
+
+		if imageUrl != nil {
+			toInsert.LogoUrl = sql.NullString{String: *imageUrl}
+		}
+
+		inserted, err := s.db.InsertProject(ctx, toInsert)
+
+		defaultLabels := []data.InsertLabelParams{
+			{Label: "Release", Color: "#10B981", ProjectID: inserted.ID},
+			{Label: "Fix", Color: "#EF4444", ProjectID: inserted.ID},
+			{Label: "Announcement", Color: "#3B82F6", ProjectID: inserted.ID},
+		}
+
+		labelService := NewLabelService(s.db)
+		for _, l := range defaultLabels {
+			labelService.SaveLabel(ctx, models.LabelModel{Label: l.Label, Color: l.Color}, l.ProjectID)
+		}
+
+		return inserted, err
 	}
-
-	if imageUrl != nil {
-		toInsert.LogoUrl = sql.NullString{String: *imageUrl}
-	}
-
-	inserted, err := s.db.InsertProject(ctx, toInsert)
-
-	defaultLabels := []data.InsertLabelParams{
-		{Label: "Release", Color: "#10B981", ProjectID: inserted.ID},
-		{Label: "Fix", Color: "#EF4444", ProjectID: inserted.ID},
-		{Label: "Announcement", Color: "#3B82F6", ProjectID: inserted.ID},
-	}
-
-	labelService := NewLabelService(s.db)
-	for _, l := range defaultLabels {
-		labelService.InsertLabel(ctx, l.Label, l.Color, l.ProjectID)
-	}
-
-	return inserted, err
 }

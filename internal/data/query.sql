@@ -8,13 +8,24 @@ SELECT * FROM projects where app_key = $1 LIMIT 1;
 -- name: InsertProject :one
 INSERT INTO projects (name, description, accent_color, logo_url, app_key, user_id) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *;
 
+-- name: UpdateProject :one
+UPDATE projects SET name = $1, description = $2, accent_color = $3, logo_url = $4, updated_on = CURRENT_TIMESTAMP WHERE id = $5 AND user_id = $6 RETURNING *;
 
 -- LABELS --
 -- name: GetLabels :many
-SELECT * from labels WHERE project_id = $1;
+SELECT * from labels WHERE project_id = $1 ORDER BY created_on;
 
 -- name: InsertLabel :one
 INSERT INTO labels (label, color, project_id) VALUES ($1, $2, $3) RETURNING *;
+
+-- name: UpdateLabel :one
+UPDATE labels SET label = $1, color = $2 WHERE id = $3 AND project_id = $4 RETURNING *;
+
+-- name: UnsetLabels :many
+UPDATE posts SET label_id = NULL WHERE id = $1 AND project_id = $2 RETURNING id;
+
+-- name: DeleteLabel :one
+DELETE FROM labels WHERE id = $1 AND project_id = $2 RETURNING id;
 
 -- POSTS --
 -- name: GetPostCount :one

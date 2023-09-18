@@ -1,9 +1,17 @@
 package models
 
 type ProjectModel struct {
-	Name        string `form:"name"`
-	Description string `form:"description"`
-	AccentColor string `form:"accent_color"`
+	ID          *int32  `form:"id"`
+	Name        string  `form:"name"`
+	Description string  `form:"description"`
+	AccentColor string  `form:"accent_color"`
+	AppKey      *string `form:"appkey"`
+}
+
+type LabelModel struct {
+	ID    *int32 `form:"id"`
+	Label string `form:"label"`
+	Color string `form:"color"`
 }
 
 type PostModel struct {

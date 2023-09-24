@@ -81,7 +81,7 @@ func (q *Queries) GetLabels(ctx context.Context, projectID int32) ([]Label, erro
 }
 
 const getPost = `-- name: GetPost :one
-SELECT p.id, p.title, p.body, p.published_on, p.author_id, p.project_id, p.created_on, p.updated_on, p.label_id, l.label as Label FROM posts p LEFT JOIN labels l on p.label_id = l.id WHERE p.id = $1 AND author_id = $2
+SELECT p.id, p.title, p.body, p.published_on, p.author_id, p.project_id, p.created_on, p.updated_on, p.label_id, l.label as Label FROM posts p LEFT JOIN labels l on p.label_id = l.id or p.label_id is null WHERE p.id = $1 AND author_id = $2
 `
 
 type GetPostParams struct {
@@ -133,13 +133,15 @@ func (q *Queries) GetPostCount(ctx context.Context, authorID uuid.UUID) (int64, 
 }
 
 const getPosts = `-- name: GetPosts :many
-SELECT id, title, published_on FROM posts WHERE author_id = $1
+SELECT p.id, p.title, p.published_on, l.label, l.color FROM posts p left join labels l on p.label_id = l.id or p.label_id is null WHERE author_id = $1
 `
 
 type GetPostsRow struct {
 	ID          int32
 	Title       string
 	PublishedOn time.Time
+	Label       sql.NullString
+	Color       sql.NullString
 }
 
 func (q *Queries) GetPosts(ctx context.Context, authorID uuid.UUID) ([]GetPostsRow, error) {
@@ -151,7 +153,13 @@ func (q *Queries) GetPosts(ctx context.Context, authorID uuid.UUID) ([]GetPostsR
 	var items []GetPostsRow
 	for rows.Next() {
 		var i GetPostsRow
-		if err := rows.Scan(&i.ID, &i.Title, &i.PublishedOn); err != nil {
+		if err := rows.Scan(
+			&i.ID,
+			&i.Title,
+			&i.PublishedOn,
+			&i.Label,
+			&i.Color,
+		); err != nil {
 			return nil, err
 		}
 		items = append(items, i)

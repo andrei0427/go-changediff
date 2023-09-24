@@ -19,9 +19,7 @@
 		</div>
 		<div class="mt-4 flex md:ml-4 md:mt-0">
 			<a href="/admin/posts"
-				class="inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50">Cancel</a>
-			<button type="submit"
-				class="ml-3 inline-flex items-center rounded-md bg-orange px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-orange focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange">Publish</button>
+				class="inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50">Back</a>
 		</div>
 	</div>
 
@@ -60,12 +58,13 @@
 										<div class="w-5 h-5 rounded-md" id="selected-label-color"
 											style="background-color: {{label.Color}};"></div>
 										<span id="selected-label">{{label.Label}}</span>
-										{%endif%}
+										{% endif %}
 										{% endfor %}
 										{% else %}
 										<div id="selected-label-color" class="w-5 h-5" style="background-color: white;">
 										</div>
-										<span id="selected-label">Choose one</span>{%endif%}
+										<span id="selected-label">Choose one</span>
+										{% endif %}
 										<svg class="-mr-1 h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor"
 											aria-hidden="true">
 											<path fill-rule="evenodd"
@@ -93,7 +92,7 @@
 								</div>
 							</div>
 
-							<input id="labelId" type="hidden" name="label_id" value="{{form.labelId}}" />
+							<input id="labelId" type="hidden" name="label_id" value="{{form.LabelId}}" />
 						</div>
 
 
@@ -112,7 +111,7 @@
 					<p class="mt-2 text-sm text-red-600">{{error}}</p>
 
 					<button type="submit" id="btn-submit"
-						class="rounded-md bg-orange px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-orange focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange">Publish</button>
+						class="rounded-md bg-orange px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-orange focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange">Save</button>
 				</div>
 			</div>
 		</div>

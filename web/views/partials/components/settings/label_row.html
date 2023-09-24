@@ -31,7 +31,7 @@
       hx-target="#tab-content"
       hx-swap="innerHtml"
       hx-include="#form-{%if label.ID%}{{label.ID}}{%else%}new{%endif%}"
-      class="text-orange hover:text-orange"
+      class="save-btn text-orange hover:text-orange"
     >
       Save<span class="sr-only">, {{label.Label}}</span>
     </button>
@@ -47,6 +47,13 @@
       class="text-orange hover:text-orange"
     >
       Delete<span class="sr-only">, {{label.Label}}</span>
+    </button>
+    {% else %}
+    <button
+      onclick="this.parentElement.parentElement.remove(); return false;"
+      class="text-orange hover:text-orange"
+    >
+      Clear<span class="sr-only">, {{label.Label}}</span>
     </button>
     {%endif%}
   </td>

@@ -13,6 +13,7 @@
 		</div>
 		<div class="mt-4 sm:ml-16 sm:mt-0 sm:flex-none">
 			<button type="button" hx-get="/admin/settings/labels/new" hx-target="#table-labels" hx-swap="beforeend"
+				hx-on::after-request="fixIds()"
 				class="block rounded-md bg-orange px-3 py-2 text-center text-sm font-semibold text-white shadow-sm hover:bg-orange focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange">
 				Add label
 			</button>
@@ -53,3 +54,14 @@
 <div class="mt-6 flex items-center justify-end gap-x-6">
 	<p class="mt-2 text-sm text-red-600">{{Error}}</p>
 </div>
+
+<script>
+	function fixIds() {
+		const labelTableRows = document.querySelectorAll('#table-labels tr');
+
+		labelTableRows.forEach((elm, i) => {
+			elm.setAttribute('id', 'form-'.concat(i));
+			document.querySelector('#form-'.concat(i).concat(' .save-btn')).setAttribute('hx-include', '#form-'.concat(i).concat(' input'));
+		});
+	}
+</script>

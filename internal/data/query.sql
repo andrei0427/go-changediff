@@ -32,10 +32,10 @@ DELETE FROM labels WHERE id = $1 AND project_id = $2 RETURNING id;
 SELECT COUNT(id) total_posts FROM posts WHERE author_id = $1;
 
 -- name: GetPosts :many
-SELECT id, title, published_on FROM posts WHERE author_id = $1;
+SELECT p.id, p.title, p.published_on, l.label, l.color FROM posts p left join labels l on p.label_id = l.id or p.label_id is null WHERE author_id = $1;
 
 -- name: GetPost :one
-SELECT p.*, l.label as Label FROM posts p LEFT JOIN labels l on p.label_id = l.id WHERE p.id = $1 AND author_id = $2;
+SELECT p.*, l.label as Label FROM posts p LEFT JOIN labels l on p.label_id = l.id or p.label_id is null WHERE p.id = $1 AND author_id = $2;
 
 -- name: GetPublishedPagedPosts :many
 SELECT post.* FROM posts post join projects proj on post.project_id = proj.id WHERE proj.app_key = $1 AND post.published_on <= CURRENT_TIMESTAMP ORDER BY post.published_on DESC LIMIT $2 OFFSET $3;

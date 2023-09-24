@@ -339,6 +339,11 @@ func (a *AppHandler) ComposePost(c *fiber.Ctx) error {
 		form.Id = &postId
 		form.Title = post.Title
 		form.PublishedOn = &publishedOn
+
+		if post.LabelID.Valid {
+			labelId := int(post.LabelID.Int32)
+			form.LabelId = &labelId
+		}
 	}
 
 	labels, err := a.LabelService.GetLabels(c.Context(), curUser.Project.ID)
@@ -408,7 +413,12 @@ func (a *AppHandler) GetProject(c *fiber.Ctx) error {
 	}
 
 	if posts == 0 {
-		return c.Render("partials/components/post_form", fiber.Map{"project": project, "firstPost": true})
+		labels, err := a.LabelService.GetLabels(c.Context(), curUser.Project.ID)
+		if err != nil {
+			return fiber.NewError(500, "Error when fetching labels")
+		}
+
+		return c.Render("partials/components/post_form", fiber.Map{"project": project, "firstPost": true, "Labels": labels})
 	}
 
 	return c.Render("partials/components/dashboard_widget", fiber.Map{"Project": project})

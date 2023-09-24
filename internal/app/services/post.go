@@ -29,7 +29,7 @@ func (s *PostService) GetPosts(ctx context.Context, userId uuid.UUID) ([]data.Ge
 	return posts, err
 }
 
-func (s *PostService) GetPost(ctx context.Context, postId int32, userId uuid.UUID) (data.Post, error) {
+func (s *PostService) GetPost(ctx context.Context, postId int32, userId uuid.UUID) (data.GetPostRow, error) {
 	post, err := s.db.GetPost(ctx, data.GetPostParams{ID: postId, AuthorID: userId})
 	return post, err
 }
@@ -54,14 +54,14 @@ func (s *PostService) InsertPost(ctx context.Context, post models.PostModel, ban
 		PublishedOn: time.Now().UTC(),
 	}
 
-	if bannerUrl != nil {
-		toInsert.BannerImageUrl = sql.NullString{String: *bannerUrl}
-	}
-
 	if post.PublishedOn != nil {
 		if parsedDate, err := time.Parse(time.DateOnly, *post.PublishedOn); err == nil {
 			toInsert.PublishedOn = parsedDate.UTC()
 		}
+	}
+
+	if post.LabelId != nil {
+		toInsert.LabelID = sql.NullInt32{Int32: int32(*post.LabelId), Valid: true}
 	}
 
 	return s.db.InsertPost(ctx, toInsert)
@@ -89,18 +89,18 @@ func (s *PostService) UpdatePost(ctx context.Context, post models.PostModel, ban
 		return data.Post{}, errors.New("could not find post to update")
 	}
 
-	if bannerUrl != nil {
-		toUpdate.BannerImageUrl = sql.NullString{String: *bannerUrl}
-	} else {
-		toUpdate.BannerImageUrl = existingPost.BannerImageUrl
-	}
-
 	if post.PublishedOn != nil {
 		if parsedDate, err := time.Parse(time.DateOnly, *post.PublishedOn); err == nil {
 			toUpdate.PublishedOn = parsedDate
 		}
 	} else {
 		toUpdate.PublishedOn = existingPost.PublishedOn
+	}
+
+	if post.LabelId != nil {
+		toUpdate.LabelID = sql.NullInt32{Int32: int32(*post.LabelId), Valid: true}
+	} else {
+		toUpdate.LabelID = sql.NullInt32{Valid: false}
 	}
 
 	return s.db.UpdatePost(ctx, toUpdate)

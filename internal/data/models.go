@@ -21,16 +21,15 @@ type Label struct {
 }
 
 type Post struct {
-	ID             int32
-	Title          string
-	Body           string
-	PublishedOn    time.Time
-	BannerImageUrl sql.NullString
-	AuthorID       uuid.UUID
-	ProjectID      int32
-	CreatedOn      time.Time
-	UpdatedOn      sql.NullTime
-	LabelID        sql.NullInt32
+	ID          int32
+	Title       string
+	Body        string
+	PublishedOn time.Time
+	AuthorID    uuid.UUID
+	ProjectID   int32
+	CreatedOn   time.Time
+	UpdatedOn   sql.NullTime
+	LabelID     sql.NullInt32
 }
 
 type Project struct {

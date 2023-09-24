@@ -4,7 +4,6 @@ CREATE TABLE IF NOT EXISTS posts (
     title VARCHAR(255) NOT NULL,
 	body TEXT NOT NULL,
     published_on timestamp NOT NULL,
-    banner_image_url TEXT NULL,
 
     author_id uuid REFERENCES auth.users(id) NOT NULL,
     project_id integer REFERENCES projects(id) NOT NULL,

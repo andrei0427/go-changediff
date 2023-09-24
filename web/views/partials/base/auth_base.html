@@ -398,5 +398,23 @@
         }, 300);
       }
     </script>
+
+    <script>
+      document.addEventListener('click', function(e){
+        const ddlElms = document.querySelectorAll('.ddl');
+
+        let clickedAway = true;
+        ddlElms.forEach(elm => {
+          if(elm.parentElement.contains(e.target)){
+            clickedAway = false;
+          }
+        })
+
+        if(clickedAway){
+          ddlElms.forEach(elm => elm.classList.add('hidden'));
+        }
+      });
+
+    </script>
   </body>
 </html>

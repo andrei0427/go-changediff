@@ -11,6 +11,17 @@ import (
 	"github.com/google/uuid"
 )
 
+type Author struct {
+	ID         int32
+	FirstName  string
+	LastName   string
+	PictureUrl sql.NullString
+	UserID     uuid.UUID
+	ProjectID  int32
+	CreatedOn  time.Time
+	UpdatedOn  sql.NullTime
+}
+
 type Label struct {
 	ID        int32
 	Label     string
@@ -25,7 +36,7 @@ type Post struct {
 	Title       string
 	Body        string
 	PublishedOn time.Time
-	AuthorID    uuid.UUID
+	AuthorID    int32
 	ProjectID   int32
 	CreatedOn   time.Time
 	UpdatedOn   sql.NullTime

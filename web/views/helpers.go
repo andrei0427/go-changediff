@@ -7,14 +7,30 @@ import (
 )
 
 var HelperFuncMap = map[string]interface{}{
-	"formatDate":    formatDate,
-	"convertDate":   convertDate,
-	"contrastColor": contrastColor,
-	"CDNUrl":        CDNUrl,
+	"formatDate":              formatDate,
+	"formatHTMLInputDateTime": formatHTMLInputDateTime,
+	"parseDateTime":           parseDateTime,
+	"convertDate":             convertDate,
+	"contrastColor":           contrastColor,
+	"CDNUrl":                  CDNUrl,
 }
 
 func formatDate(date time.Time) string {
-	return date.Format(time.Stamp)
+	return date.Format(time.RFC822)
+}
+
+func formatHTMLInputDateTime(date time.Time) string {
+	return date.Format("2006-01-02T15:04")
+}
+
+func parseDateTime(dateTime string) time.Time {
+	parsed, err := time.Parse(time.DateTime, dateTime)
+	if err != nil {
+		return time.Now()
+
+	}
+
+	return parsed
 }
 
 func convertDate(date time.Time, timeZone string) time.Time {

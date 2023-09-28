@@ -8,7 +8,6 @@ import (
 
 	"github.com/andrei0427/go-changediff/internal/app/models"
 	"github.com/andrei0427/go-changediff/internal/data"
-	"github.com/google/uuid"
 )
 
 type PostService struct {
@@ -19,22 +18,22 @@ func NewPostService(db *data.Queries) *PostService {
 	return &PostService{db: db}
 }
 
-func (s *PostService) GetPostCountForUser(ctx context.Context, userId uuid.UUID) (int64, error) {
-	posts, err := s.db.GetPostCount(ctx, userId)
+func (s *PostService) GetPostCountForProject(ctx context.Context, projectId int32) (int64, error) {
+	posts, err := s.db.GetPostCount(ctx, projectId)
 	return posts, err
 }
 
-func (s *PostService) GetPosts(ctx context.Context, userId uuid.UUID) ([]data.GetPostsRow, error) {
-	posts, err := s.db.GetPosts(ctx, userId)
+func (s *PostService) GetPosts(ctx context.Context, projectId int32) ([]data.GetPostsRow, error) {
+	posts, err := s.db.GetPosts(ctx, projectId)
 	return posts, err
 }
 
-func (s *PostService) GetPost(ctx context.Context, postId int32, userId uuid.UUID) (data.GetPostRow, error) {
-	post, err := s.db.GetPost(ctx, data.GetPostParams{ID: postId, AuthorID: userId})
+func (s *PostService) GetPost(ctx context.Context, postId int32, projectId int32) (data.GetPostRow, error) {
+	post, err := s.db.GetPost(ctx, data.GetPostParams{ID: postId, ProjectID: projectId})
 	return post, err
 }
 
-func (s *PostService) GetPublishedPagedPosts(ctx context.Context, projectKey string, pageNo int32) ([]data.Post, error) {
+func (s *PostService) GetPublishedPagedPosts(ctx context.Context, projectKey string, pageNo int32) ([]data.GetPublishedPagedPostsRow, error) {
 	var offset int32 = 0
 	if pageNo > 1 {
 		offset = pageNo - 1*5
@@ -45,20 +44,20 @@ func (s *PostService) GetPublishedPagedPosts(ctx context.Context, projectKey str
 	return posts, err
 }
 
-func (s *PostService) InsertPost(ctx context.Context, post models.PostModel, bannerUrl *string, userId uuid.UUID, projectId int32) (data.Post, error) {
+func (s *PostService) InsertPost(ctx context.Context, post models.PostModel, authorId int32, projectId int32, userLocation *time.Location) (data.Post, error) {
 	toInsert := data.InsertPostParams{
-		Title:       post.Title,
-		Body:        post.Content,
-		AuthorID:    userId,
-		ProjectID:   projectId,
-		PublishedOn: time.Now().UTC(),
+		Title:     post.Title,
+		Body:      post.Content,
+		AuthorID:  authorId,
+		ProjectID: projectId,
 	}
 
-	if post.PublishedOn != nil {
-		if parsedDate, err := time.Parse(time.DateOnly, *post.PublishedOn); err == nil {
-			toInsert.PublishedOn = parsedDate.UTC()
-		}
+	parsedDate, err := time.ParseInLocation("2006-01-02T15:04", post.PublishedOn, userLocation)
+	if err != nil {
+		return data.Post{}, errors.New("error parsing publish date")
 	}
+
+	toInsert.PublishedOn = parsedDate.UTC()
 
 	if post.LabelId != nil {
 		toInsert.LabelID = sql.NullInt32{Int32: int32(*post.LabelId), Valid: true}
@@ -67,15 +66,15 @@ func (s *PostService) InsertPost(ctx context.Context, post models.PostModel, ban
 	return s.db.InsertPost(ctx, toInsert)
 }
 
-func (s *PostService) DeletePost(ctx context.Context, postId int32, userId uuid.UUID) (int32, error) {
-	return s.db.DeletePost(ctx, data.DeletePostParams{ID: postId, AuthorID: userId})
+func (s *PostService) DeletePost(ctx context.Context, postId int32, projectId int32) (int32, error) {
+	return s.db.DeletePost(ctx, data.DeletePostParams{ID: postId, ProjectID: projectId})
 }
 
-func (s *PostService) UpdatePost(ctx context.Context, post models.PostModel, bannerUrl *string, userId uuid.UUID, projectId int32) (data.Post, error) {
+func (s *PostService) UpdatePost(ctx context.Context, post models.PostModel, projectId int32, userLocation *time.Location) (data.Post, error) {
 	toUpdate := data.UpdatePostParams{
-		Title:    post.Title,
-		Body:     post.Content,
-		AuthorID: userId,
+		Title:     post.Title,
+		Body:      post.Content,
+		ProjectID: projectId,
 	}
 
 	if post.Id != nil {
@@ -84,18 +83,12 @@ func (s *PostService) UpdatePost(ctx context.Context, post models.PostModel, ban
 		return data.Post{}, errors.New("ID is required when updating")
 	}
 
-	existingPost, err := s.GetPost(ctx, toUpdate.ID, userId)
+	parsedDate, err := time.ParseInLocation("2006-01-02T15:04", post.PublishedOn, userLocation)
 	if err != nil {
-		return data.Post{}, errors.New("could not find post to update")
+		return data.Post{}, errors.New("error parsing publish date")
 	}
 
-	if post.PublishedOn != nil {
-		if parsedDate, err := time.Parse(time.DateOnly, *post.PublishedOn); err == nil {
-			toUpdate.PublishedOn = parsedDate
-		}
-	} else {
-		toUpdate.PublishedOn = existingPost.PublishedOn
-	}
+	toUpdate.PublishedOn = parsedDate.UTC()
 
 	if post.LabelId != nil {
 		toUpdate.LabelID = sql.NullInt32{Int32: int32(*post.LabelId), Valid: true}

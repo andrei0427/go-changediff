@@ -30,19 +30,56 @@ func (q *Queries) DeleteLabel(ctx context.Context, arg DeleteLabelParams) (int32
 }
 
 const deletePost = `-- name: DeletePost :one
-DELETE FROM posts WHERE id = $1 AND author_id = $2 RETURNING id
+DELETE FROM posts WHERE id = $1 AND project_id = $2 RETURNING id
 `
 
 type DeletePostParams struct {
-	ID       int32
-	AuthorID uuid.UUID
+	ID        int32
+	ProjectID int32
 }
 
 func (q *Queries) DeletePost(ctx context.Context, arg DeletePostParams) (int32, error) {
-	row := q.db.QueryRowContext(ctx, deletePost, arg.ID, arg.AuthorID)
+	row := q.db.QueryRowContext(ctx, deletePost, arg.ID, arg.ProjectID)
 	var id int32
 	err := row.Scan(&id)
 	return id, err
+}
+
+const getAuthorByUser = `-- name: GetAuthorByUser :many
+SELECT id, first_name, last_name, picture_url, user_id, project_id, created_on, updated_on FROM authors WHERE user_id = $1 LIMIT 1
+`
+
+// AUTHOR --
+func (q *Queries) GetAuthorByUser(ctx context.Context, userID uuid.UUID) ([]Author, error) {
+	rows, err := q.db.QueryContext(ctx, getAuthorByUser, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Author
+	for rows.Next() {
+		var i Author
+		if err := rows.Scan(
+			&i.ID,
+			&i.FirstName,
+			&i.LastName,
+			&i.PictureUrl,
+			&i.UserID,
+			&i.ProjectID,
+			&i.CreatedOn,
+			&i.UpdatedOn,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const getLabels = `-- name: GetLabels :many
@@ -81,12 +118,12 @@ func (q *Queries) GetLabels(ctx context.Context, projectID int32) ([]Label, erro
 }
 
 const getPost = `-- name: GetPost :one
-SELECT p.id, p.title, p.body, p.published_on, p.author_id, p.project_id, p.created_on, p.updated_on, p.label_id, l.label as Label FROM posts p LEFT JOIN labels l on p.label_id = l.id or p.label_id is null WHERE p.id = $1 AND author_id = $2
+SELECT p.id, p.title, p.body, p.published_on, p.author_id, p.project_id, p.created_on, p.updated_on, p.label_id, l.label as Label FROM posts p LEFT JOIN labels l on p.label_id = l.id or p.label_id is null WHERE p.id = $1 AND p.project_id = $2
 `
 
 type GetPostParams struct {
-	ID       int32
-	AuthorID uuid.UUID
+	ID        int32
+	ProjectID int32
 }
 
 type GetPostRow struct {
@@ -94,7 +131,7 @@ type GetPostRow struct {
 	Title       string
 	Body        string
 	PublishedOn time.Time
-	AuthorID    uuid.UUID
+	AuthorID    int32
 	ProjectID   int32
 	CreatedOn   time.Time
 	UpdatedOn   sql.NullTime
@@ -103,7 +140,7 @@ type GetPostRow struct {
 }
 
 func (q *Queries) GetPost(ctx context.Context, arg GetPostParams) (GetPostRow, error) {
-	row := q.db.QueryRowContext(ctx, getPost, arg.ID, arg.AuthorID)
+	row := q.db.QueryRowContext(ctx, getPost, arg.ID, arg.ProjectID)
 	var i GetPostRow
 	err := row.Scan(
 		&i.ID,
@@ -121,19 +158,19 @@ func (q *Queries) GetPost(ctx context.Context, arg GetPostParams) (GetPostRow, e
 }
 
 const getPostCount = `-- name: GetPostCount :one
-SELECT COUNT(id) total_posts FROM posts WHERE author_id = $1
+SELECT COUNT(id) total_posts FROM posts WHERE project_id = $1
 `
 
 // POSTS --
-func (q *Queries) GetPostCount(ctx context.Context, authorID uuid.UUID) (int64, error) {
-	row := q.db.QueryRowContext(ctx, getPostCount, authorID)
+func (q *Queries) GetPostCount(ctx context.Context, projectID int32) (int64, error) {
+	row := q.db.QueryRowContext(ctx, getPostCount, projectID)
 	var total_posts int64
 	err := row.Scan(&total_posts)
 	return total_posts, err
 }
 
 const getPosts = `-- name: GetPosts :many
-SELECT p.id, p.title, p.published_on, l.label, l.color FROM posts p left join labels l on p.label_id = l.id or p.label_id is null WHERE author_id = $1
+SELECT p.id, p.title, p.published_on, l.label, l.color, CASE WHEN p.published_on <= current_timestamp THEN 1 ELSE 0 END AS status FROM posts p left join labels l on p.label_id = l.id or p.label_id is null WHERE p.project_id = $1
 `
 
 type GetPostsRow struct {
@@ -142,10 +179,11 @@ type GetPostsRow struct {
 	PublishedOn time.Time
 	Label       sql.NullString
 	Color       sql.NullString
+	Status      int32
 }
 
-func (q *Queries) GetPosts(ctx context.Context, authorID uuid.UUID) ([]GetPostsRow, error) {
-	rows, err := q.db.QueryContext(ctx, getPosts, authorID)
+func (q *Queries) GetPosts(ctx context.Context, projectID int32) ([]GetPostsRow, error) {
+	rows, err := q.db.QueryContext(ctx, getPosts, projectID)
 	if err != nil {
 		return nil, err
 	}
@@ -159,6 +197,7 @@ func (q *Queries) GetPosts(ctx context.Context, authorID uuid.UUID) ([]GetPostsR
 			&i.PublishedOn,
 			&i.Label,
 			&i.Color,
+			&i.Status,
 		); err != nil {
 			return nil, err
 		}
@@ -233,7 +272,7 @@ func (q *Queries) GetProjectByKey(ctx context.Context, appKey string) (Project, 
 }
 
 const getPublishedPagedPosts = `-- name: GetPublishedPagedPosts :many
-SELECT post.id, post.title, post.body, post.published_on, post.author_id, post.project_id, post.created_on, post.updated_on, post.label_id FROM posts post join projects proj on post.project_id = proj.id WHERE proj.app_key = $1 AND post.published_on <= CURRENT_TIMESTAMP ORDER BY post.published_on DESC LIMIT $2 OFFSET $3
+SELECT post.id, post.title, post.body, post.published_on, post.author_id, post.project_id, post.created_on, post.updated_on, post.label_id, l.label, l.color, a.first_name, a.last_name, a.picture_url FROM posts post join projects proj on post.project_id = proj.id join authors a on a.id = post.author_id left join labels l on post.label_id = l.id or post.label_id is null WHERE proj.app_key = $1 AND post.published_on <= CURRENT_TIMESTAMP ORDER BY post.published_on DESC LIMIT $2 OFFSET $3
 `
 
 type GetPublishedPagedPostsParams struct {
@@ -242,15 +281,32 @@ type GetPublishedPagedPostsParams struct {
 	Offset int32
 }
 
-func (q *Queries) GetPublishedPagedPosts(ctx context.Context, arg GetPublishedPagedPostsParams) ([]Post, error) {
+type GetPublishedPagedPostsRow struct {
+	ID          int32
+	Title       string
+	Body        string
+	PublishedOn time.Time
+	AuthorID    int32
+	ProjectID   int32
+	CreatedOn   time.Time
+	UpdatedOn   sql.NullTime
+	LabelID     sql.NullInt32
+	Label       sql.NullString
+	Color       sql.NullString
+	FirstName   string
+	LastName    string
+	PictureUrl  sql.NullString
+}
+
+func (q *Queries) GetPublishedPagedPosts(ctx context.Context, arg GetPublishedPagedPostsParams) ([]GetPublishedPagedPostsRow, error) {
 	rows, err := q.db.QueryContext(ctx, getPublishedPagedPosts, arg.AppKey, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Post
+	var items []GetPublishedPagedPostsRow
 	for rows.Next() {
-		var i Post
+		var i GetPublishedPagedPostsRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.Title,
@@ -261,6 +317,11 @@ func (q *Queries) GetPublishedPagedPosts(ctx context.Context, arg GetPublishedPa
 			&i.CreatedOn,
 			&i.UpdatedOn,
 			&i.LabelID,
+			&i.Label,
+			&i.Color,
+			&i.FirstName,
+			&i.LastName,
+			&i.PictureUrl,
 		); err != nil {
 			return nil, err
 		}
@@ -273,6 +334,40 @@ func (q *Queries) GetPublishedPagedPosts(ctx context.Context, arg GetPublishedPa
 		return nil, err
 	}
 	return items, nil
+}
+
+const insertAuthor = `-- name: InsertAuthor :one
+INSERT INTO authors (first_name, last_name, picture_url, user_id, project_id) VALUES ($1, $2, $3, $4, $5) RETURNING id, first_name, last_name, picture_url, user_id, project_id, created_on, updated_on
+`
+
+type InsertAuthorParams struct {
+	FirstName  string
+	LastName   string
+	PictureUrl sql.NullString
+	UserID     uuid.UUID
+	ProjectID  int32
+}
+
+func (q *Queries) InsertAuthor(ctx context.Context, arg InsertAuthorParams) (Author, error) {
+	row := q.db.QueryRowContext(ctx, insertAuthor,
+		arg.FirstName,
+		arg.LastName,
+		arg.PictureUrl,
+		arg.UserID,
+		arg.ProjectID,
+	)
+	var i Author
+	err := row.Scan(
+		&i.ID,
+		&i.FirstName,
+		&i.LastName,
+		&i.PictureUrl,
+		&i.UserID,
+		&i.ProjectID,
+		&i.CreatedOn,
+		&i.UpdatedOn,
+	)
+	return i, err
 }
 
 const insertLabel = `-- name: InsertLabel :one
@@ -308,7 +403,7 @@ type InsertPostParams struct {
 	Body        string
 	PublishedOn time.Time
 	LabelID     sql.NullInt32
-	AuthorID    uuid.UUID
+	AuthorID    int32
 	ProjectID   int32
 }
 
@@ -436,7 +531,7 @@ func (q *Queries) UpdateLabel(ctx context.Context, arg UpdateLabelParams) (Label
 }
 
 const updatePost = `-- name: UpdatePost :one
-UPDATE posts SET title = $1, body = $2, published_on = $3, label_id = $4, updated_on = CURRENT_TIMESTAMP WHERE id = $5 AND author_id = $6 RETURNING id, title, body, published_on, author_id, project_id, created_on, updated_on, label_id
+UPDATE posts SET title = $1, body = $2, published_on = $3, label_id = $4, updated_on = CURRENT_TIMESTAMP WHERE id = $5 AND project_id = $6 RETURNING id, title, body, published_on, author_id, project_id, created_on, updated_on, label_id
 `
 
 type UpdatePostParams struct {
@@ -445,7 +540,7 @@ type UpdatePostParams struct {
 	PublishedOn time.Time
 	LabelID     sql.NullInt32
 	ID          int32
-	AuthorID    uuid.UUID
+	ProjectID   int32
 }
 
 func (q *Queries) UpdatePost(ctx context.Context, arg UpdatePostParams) (Post, error) {
@@ -455,7 +550,7 @@ func (q *Queries) UpdatePost(ctx context.Context, arg UpdatePostParams) (Post, e
 		arg.PublishedOn,
 		arg.LabelID,
 		arg.ID,
-		arg.AuthorID,
+		arg.ProjectID,
 	)
 	var i Post
 	err := row.Scan(

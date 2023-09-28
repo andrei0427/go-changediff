@@ -45,6 +45,7 @@
 							</div>
 						</div>
 
+
 						<div class="col-span-2">
 							<label for="labelId" class="block text-sm font-medium leading-6 text-gray-900">Label</label>
 							<div class="relative inline-block text-left mt-2">
@@ -74,6 +75,7 @@
 									</button>
 								</div>
 
+
 								<div id="ddlLabel"
 									class="hidden ddl absolute right-0 z-10 mt-2 max-w-56 origin-top-right divide-y divide-gray-100 rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
 									role="menu" aria-orientation="vertical" aria-labelledby="menu-button" tabindex="-1">
@@ -84,7 +86,8 @@
 											aria-valuetext="{{label.ID}}"
 											class="w-full gap-x-1.5 hover:bg-gray-50 {%if form.LabelId == label.ID%}bg-gray-100 text-gray-900{%else%}text-gray-700{%endif%} group font-semibold flex items-center px-4 py-2 text-sm"
 											role="menuitem" tabindex="-1" id="menu-item-{{label.ID}}">
-											<div class="w-5 h-5 rounded-md" style="background-color: {{label.Color}};"></div>
+											<div class="w-5 h-5 rounded-md" style="background-color: {{label.Color}};">
+											</div>
 											{{label.Label}}
 										</button>
 										{% endfor %}
@@ -95,6 +98,21 @@
 							<input id="labelId" type="hidden" name="label_id" value="{{form.LabelId}}" />
 						</div>
 
+						<div class="col-span-2">
+							<label for="published_on" class="block text-sm font-medium leading-6 text-gray-900">Publish
+								Date</label>
+							<div class="mt-2">
+								<input type="datetime-local" name="published_on" id="published_on"
+									value="{%if form.PublishedOn %}{{formatHTMLInputDateTime(convertDate(parseDateTime(form.PublishedOn), user.Timezone))}}{%endif%}"
+									aria-describedby="published-on-error" required
+									class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-orange">
+
+								{% if errors['PublishedOn']%}
+								<p class="mt-2 text-sm text-red-600" id="published-on-error">
+									{{errors['PublishedOn']}}</p>
+								{% endif %}
+							</div>
+						</div>
 
 						<div class="col-span-full">
 							<label class="block text-sm font-medium leading-6 text-gray-900">Body</label>

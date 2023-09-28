@@ -16,6 +16,7 @@ import (
 )
 
 type AppHandler struct {
+	AuthorService  *services.AuthorService
 	ProjectService *services.ProjectService
 	PostService    *services.PostService
 	CDNService     *services.CDNService
@@ -23,21 +24,26 @@ type AppHandler struct {
 	CacheService   *services.CacheService
 }
 
-func NewAppHandler(projectService *services.ProjectService,
+func NewAppHandler(
+	authorService *services.AuthorService,
+	projectService *services.ProjectService,
 	postService *services.PostService,
 	cdnService *services.CDNService,
 	labelService *services.LabelService,
-	cacheService *services.CacheService) *AppHandler {
-	return &AppHandler{ProjectService: projectService,
-		PostService:  postService,
-		CDNService:   cdnService,
-		LabelService: labelService,
-		CacheService: cacheService,
+	cacheService *services.CacheService,
+) *AppHandler {
+	return &AppHandler{
+		AuthorService:  authorService,
+		ProjectService: projectService,
+		PostService:    postService,
+		CDNService:     cdnService,
+		LabelService:   labelService,
+		CacheService:   cacheService,
 	}
 }
 
 func InitRoutes(app *app.App) {
-	appHandler := NewAppHandler(app.ProjectService, app.PostService, app.CDNService, app.LabelService, app.CacheService)
+	appHandler := NewAppHandler(app.AuthorService, app.ProjectService, app.PostService, app.CDNService, app.LabelService, app.CacheService)
 	app.Fiber.Get("/", appHandler.Home)
 
 	widget := app.Fiber.Group("/widget")
@@ -52,12 +58,17 @@ func InitRoutes(app *app.App) {
 	widget.Get("/feedback/:key", appHandler.WidgetFeedback)
 
 	admin := app.Fiber.Group("/admin")
-	admin.Use(func(c *fiber.Ctx) error {
-		return middleware.UseAuth(c, appHandler.CacheService, appHandler.ProjectService)
-	})
+	admin.Use(middleware.UseAuth)
 	admin.Get("/dashboard", appHandler.Dashboard)
+	admin.Use(func(c *fiber.Ctx) error {
+		return middleware.UseProject(c, appHandler.CacheService, appHandler.ProjectService)
+	})
 	admin.Get("/project", appHandler.GetProject)
 	admin.Post("/onboarding", appHandler.PostOnboarding)
+
+	admin.Use(func(c *fiber.Ctx) error {
+		return middleware.UseAuthor(c, appHandler.CacheService, appHandler.AuthorService)
+	})
 
 	posts := admin.Group("/posts")
 	posts.Get("/", appHandler.Posts)
@@ -90,7 +101,7 @@ func (a *AppHandler) WidgetHome(c *fiber.Ctx) error {
 		return fiber.NewError(404, "Project not found")
 	}
 
-	logoUrl := "/static/logo.png"
+	logoUrl := ""
 	if project.LogoUrl.Valid {
 		logoUrl = project.LogoUrl.String
 	}
@@ -118,6 +129,7 @@ func (a *AppHandler) WidgetChangelogPosts(c *fiber.Ctx) error {
 
 	posts, err := a.PostService.GetPublishedPagedPosts(c.Context(), key, int32(pageNo))
 	if err != nil {
+		fmt.Println(err)
 		return fiber.NewError(503, "Error fetching posts")
 	}
 
@@ -159,7 +171,7 @@ func (a *AppHandler) Settings(c *fiber.Ctx) error {
 }
 
 func (a *AppHandler) SettingsTab(c *fiber.Ctx) error {
-	curUser := c.Locals("user").(*middleware.SessionUser)
+	curUser := c.Locals("user").(*models.SessionUser)
 	tabName := c.Query("hash", "general")
 
 	switch tabName {
@@ -182,7 +194,7 @@ func (a *AppHandler) SettingsTab(c *fiber.Ctx) error {
 }
 
 func (a *AppHandler) NewSettingsLabel(c *fiber.Ctx) error {
-	curUser := c.Locals("user").(*middleware.SessionUser)
+	curUser := c.Locals("user").(*models.SessionUser)
 	return c.Render("partials/components/settings/label_row", fiber.Map{"label": data.Label{Label: "", Color: curUser.Project.AccentColor}})
 }
 
@@ -202,7 +214,7 @@ func (a *AppHandler) ConfirmDeleteLabel(c *fiber.Ctx) error {
 
 func (a *AppHandler) DeleteSettingsLabel(c *fiber.Ctx) error {
 	viewPath := "partials/components/settings/labels_tab"
-	curUser := c.Locals("user").(*middleware.SessionUser)
+	curUser := c.Locals("user").(*models.SessionUser)
 	currentLabels, err := a.LabelService.GetLabels(c.Context(), curUser.Project.ID)
 	if err != nil {
 		return c.Render(viewPath, fiber.Map{"Error": err.Error()})
@@ -231,7 +243,7 @@ func (a *AppHandler) DeleteSettingsLabel(c *fiber.Ctx) error {
 
 func (a *AppHandler) SaveSettingsLabelsTab(c *fiber.Ctx) error {
 	viewPath := "partials/components/settings/labels_tab"
-	curUser := c.Locals("user").(*middleware.SessionUser)
+	curUser := c.Locals("user").(*models.SessionUser)
 	currentLabels, err := a.LabelService.GetLabels(c.Context(), curUser.Project.ID)
 	if err != nil {
 		return c.Render(viewPath, fiber.Map{"Error": err.Error()})
@@ -273,7 +285,7 @@ func (a *AppHandler) SaveSettingsLabelsTab(c *fiber.Ctx) error {
 
 func (a *AppHandler) SaveSettingsGeneralTab(c *fiber.Ctx) error {
 	viewPath := "partials/components/settings/general_tab"
-	curUser := c.Locals("user").(*middleware.SessionUser)
+	curUser := c.Locals("user").(*models.SessionUser)
 
 	form := new(models.ProjectModel)
 	if err := c.BodyParser(form); err != nil {
@@ -321,29 +333,31 @@ func (a *AppHandler) SaveSettingsGeneralTab(c *fiber.Ctx) error {
 }
 
 func (a *AppHandler) ComposePost(c *fiber.Ctx) error {
-	curUser := c.Locals("user").(*middleware.SessionUser)
+	curUser := c.Locals("user").(*models.SessionUser)
 
 	id, _ := c.ParamsInt("id")
 
 	form := new(models.PostModel)
 	if id > 0 {
-		post, err := a.PostService.GetPost(c.Context(), int32(id), curUser.Id)
+		post, err := a.PostService.GetPost(c.Context(), int32(id), curUser.Project.ID)
 		if err != nil {
 			return fiber.NewError(404, "Post not found")
 		}
 
 		postId := int64(post.ID)
-		publishedOn := post.PublishedOn.Format(time.DateOnly)
+		publishedOn := post.PublishedOn.Format(time.DateTime)
 
 		form.Content = template.HTMLEscapeString(post.Body)
 		form.Id = &postId
 		form.Title = post.Title
-		form.PublishedOn = &publishedOn
+		form.PublishedOn = publishedOn
 
 		if post.LabelID.Valid {
 			labelId := int(post.LabelID.Int32)
 			form.LabelId = &labelId
 		}
+	} else {
+		form.PublishedOn = time.Now().Format(time.DateTime)
 	}
 
 	labels, err := a.LabelService.GetLabels(c.Context(), curUser.Project.ID)
@@ -351,13 +365,14 @@ func (a *AppHandler) ComposePost(c *fiber.Ctx) error {
 		return fiber.NewError(500, "Error when fetching labels")
 	}
 
+	fmt.Println(form.PublishedOn)
 	return c.Render("post", fiber.Map{"form": form, "Id": id, "Labels": labels})
 }
 
 func (a *AppHandler) LoadPosts(c *fiber.Ctx) error {
-	curUser := c.Locals("user").(*middleware.SessionUser)
+	curUser := c.Locals("user").(*models.SessionUser)
 
-	posts, err := a.PostService.GetPosts(c.Context(), curUser.Id)
+	posts, err := a.PostService.GetPosts(c.Context(), curUser.Project.ID)
 
 	if err != nil {
 		return fiber.NewError(503, "Could not get posts for user")
@@ -367,14 +382,14 @@ func (a *AppHandler) LoadPosts(c *fiber.Ctx) error {
 }
 
 func (a *AppHandler) DeletePost(c *fiber.Ctx) error {
-	curUser := c.Locals("user").(*middleware.SessionUser)
+	curUser := c.Locals("user").(*models.SessionUser)
 
 	id, err := c.ParamsInt("id")
 	if err != nil {
 		return c.Render("partials/components/banner", fiber.Map{"Message": "Invalid id parameter supplied"})
 	}
 
-	if _, err := a.PostService.DeletePost(c.Context(), int32(id), curUser.Id); err != nil {
+	if _, err := a.PostService.DeletePost(c.Context(), int32(id), curUser.Project.ID); err != nil {
 		return c.Render("partials/components/banner", fiber.Map{"Message": "An error occured when deleting the post"})
 	}
 
@@ -396,18 +411,13 @@ func (a *AppHandler) ConfirmDeletePost(c *fiber.Ctx) error {
 }
 
 func (a *AppHandler) GetProject(c *fiber.Ctx) error {
-	curUser := c.Locals("user").(*middleware.SessionUser)
+	curUser := c.Locals("user").(*models.SessionUser)
 
-	project, err := a.ProjectService.GetProjectForUser(c.Context(), curUser.Id)
-	if err != nil {
-		return fiber.NewError(503, "Could not get project for user")
-	}
-
-	if project == nil {
+	if curUser.Project == nil {
 		return c.Render("get_started", fiber.Map{})
 	}
 
-	posts, err := a.PostService.GetPostCountForUser(c.Context(), curUser.Id)
+	posts, err := a.PostService.GetPostCountForProject(c.Context(), curUser.Project.ID)
 	if err != nil {
 		return fiber.NewError(503, "Could not get posts for user")
 	}
@@ -418,14 +428,14 @@ func (a *AppHandler) GetProject(c *fiber.Ctx) error {
 			return fiber.NewError(500, "Error when fetching labels")
 		}
 
-		return c.Render("partials/components/post_form", fiber.Map{"project": project, "firstPost": true, "Labels": labels})
+		return c.Render("partials/components/post_form", fiber.Map{"project": curUser.Project, "firstPost": true, "Labels": labels})
 	}
 
-	return c.Render("partials/components/dashboard_widget", fiber.Map{"Project": project})
+	return c.Render("partials/components/dashboard_widget", fiber.Map{"Project": curUser.Project})
 }
 
 func (a *AppHandler) PostOnboarding(c *fiber.Ctx) error {
-	curUser := c.Locals("user").(*middleware.SessionUser)
+	curUser := c.Locals("user").(*models.SessionUser)
 
 	form := new(models.ProjectModel)
 	if err := c.BodyParser(form); err != nil {
@@ -465,11 +475,19 @@ func (a *AppHandler) PostOnboarding(c *fiber.Ctx) error {
 		return c.Render("get_started", fiber.Map{"error": err.Error(), "form": form})
 	}
 
-	return c.Render("partials/components/post_form", fiber.Map{"project": savedProject, "firstPost": true})
+	curUser.Project = &savedProject
+	a.AuthorService.InsertAuthorForUser(c.Context(), *curUser)
+
+	labels, err := a.LabelService.GetLabels(c.Context(), curUser.Project.ID)
+	if err != nil {
+		return fiber.NewError(500, "Error when fetching labels")
+	}
+
+	return c.Render("partials/components/post_form", fiber.Map{"project": savedProject, "firstPost": true, "Labels": labels})
 }
 
 func (a *AppHandler) SavePost(c *fiber.Ctx) error {
-	curUser := c.Locals("user").(*middleware.SessionUser)
+	curUser := c.Locals("user").(*models.SessionUser)
 
 	form := new(models.PostModel)
 	if err := c.BodyParser(form); err != nil {
@@ -485,33 +503,32 @@ func (a *AppHandler) SavePost(c *fiber.Ctx) error {
 		errs["Content"] = "Post content is required"
 	}
 
+	if len(strings.TrimSpace(form.PublishedOn)) == 0 {
+		errs["PublishedOn"] = "Publish date is required"
+	}
+
+	labels, err := a.LabelService.GetLabels(c.Context(), curUser.Project.ID)
+	if err != nil {
+		return fiber.NewError(500, "Error when fetching labels")
+	}
+
 	if len(errs) > 0 {
 		form.Content = template.HTMLEscapeString(form.Content)
-		return c.Render("partials/components/post_form", fiber.Map{"form": form, "errors": errs, "firstPost": form.First})
+		return c.Render("partials/components/post_form", fiber.Map{"form": form, "errors": errs, "firstPost": form.First, "Labels": labels})
 	}
 
-	var fileName *string
-	if file, err := c.FormFile("banner"); err == nil {
-		uploadedFile, err := a.CDNService.UploadImage(file, 250)
-		if err != nil {
-			return c.Render("partials/components/post_form", fiber.Map{"error": err.Error(), "form": form, "firstPost": form.First})
-		}
-
-		fileName = uploadedFile
-	}
-
-	project, err := a.ProjectService.GetProjectForUser(c.Context(), curUser.Id)
+	loc, err := time.LoadLocation(curUser.Timezone)
 	if err != nil {
-		return c.Render("partials/components/post_form", fiber.Map{"error": "Could not locate project for user", "form": form, "firstPost": form.First})
+		return c.Render("partials/components/post_form", fiber.Map{"error": "Could not locate user timezone", "form": form, "firstPost": form.First, "Labels": labels})
 	}
 
 	if form.Id != nil && *form.Id > 0 {
-		_, err := a.PostService.UpdatePost(c.Context(), *form, fileName, curUser.Id, project.ID)
+		_, err := a.PostService.UpdatePost(c.Context(), *form, curUser.Project.ID, loc)
 		if err != nil {
 			return c.Render("partials/components/post_form", fiber.Map{"error": err.Error(), "form": form, "firstForm": form.First})
 		}
 	} else {
-		_, err := a.PostService.InsertPost(c.Context(), *form, fileName, curUser.Id, project.ID)
+		_, err := a.PostService.InsertPost(c.Context(), *form, curUser.Author.ID, curUser.Project.ID, loc)
 		if err != nil {
 			return c.Render("partials/components/post_form", fiber.Map{"error": err.Error(), "form": form, "firstForm": form.First})
 		}

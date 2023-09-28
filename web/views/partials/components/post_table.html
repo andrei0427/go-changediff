@@ -90,13 +90,13 @@
           </th>
           <th
             scope="col"
-            class="hidden px-3 py-3.5 text-left text-sm font-semibold text-gray-900 sm:table-cell"
+            class="hidden px-3 py-3.5 text-center text-sm font-semibold text-gray-900 sm:table-cell"
           >
             Views
           </th>
           <th
             scope="col"
-            class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900"
+            class="px-3 py-3.5 text-center text-sm font-semibold text-gray-900"
           >
             Status
           </th>
@@ -114,7 +114,10 @@
           <td
             class="flex align-middle gap-x-1 w-full max-w-0 py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:w-auto sm:max-w-none sm:pl-0"
           >
-            <div class="w-5 h-5 rounded-md" style="background-color: {{post.Color.String}}"></div>
+            <div
+              class="w-5 h-5 rounded-md"
+              style="background-color: {{post.Color.String}}"
+            ></div>
             {{post.Label.String}}
           </td>
           <td
@@ -128,17 +131,33 @@
               <dd class="mt-1 truncate text-gray-700">{{post.Title}}</dd>
               <dt class="sr-only sm:hidden">Date</dt>
               <dd class="mt-1 truncate text-gray-500 sm:hidden">
-                {{post.PublishedOn}}
+                {{formatDate(convertDate(post.PublishedOn, user.Timezone))}}
               </dd>
             </dl>
           </td>
           <td class="hidden px-3 py-4 text-sm text-gray-500 lg:table-cell">
             {{formatDate(convertDate(post.PublishedOn, user.Timezone))}}
           </td>
-          <td class="hidden px-3 py-4 text-sm text-gray-500 sm:table-cell">
+          <td
+            class="hidden px-3 text-center py-4 text-sm text-gray-500 sm:table-cell"
+          >
             0
           </td>
-          <td class="px-3 py-4 text-sm text-gray-500">PUBLISHED</td>
+          <td class="px-3 py-4 text-center">
+            {% if post.Status %}
+            <div
+              class="rounded-full px-2.5 py-0.5 text-sm font-medium bg-green-100 text-green-800"
+            >
+              Published
+            </div>
+            {% else %}
+            <div
+              class="rounded-full px-2.5 py-0.5 text-sm font-medium bg-yellow-100 text-yellow-800"
+            >
+              Pending
+            </div>
+            {% endif %}
+          </td>
           <td class="py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-0">
             <a
               class="text-orange hover:text-orange"

@@ -15,7 +15,7 @@ import (
 func main() {
 	up := flag.Bool("up", false, "apply migrations")
 	down := flag.Bool("down", false, "revert all migrations")
-	v := flag.Int("v", 0, "version to force")
+	v := flag.Int("v", -1, "version to force")
 	flag.Parse()
 
 	if err := godotenv.Load(); err != nil {
@@ -28,7 +28,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	if *v > 0 {
+	if *v > -1 {
 		if err := m.Force(*v); err != nil {
 			log.Fatal(err)
 		}

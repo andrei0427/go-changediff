@@ -15,12 +15,13 @@ type App struct {
 	DB    *data.Queries
 	Fiber *fiber.App
 
-	AuthorService  *services.AuthorService
-	CDNService     *services.CDNService
-	ProjectService *services.ProjectService
-	PostService    *services.PostService
-	LabelService   *services.LabelService
-	CacheService   *services.CacheService
+	AuthorService       *services.AuthorService
+	CDNService          *services.CDNService
+	ProjectService      *services.ProjectService
+	PostService         *services.PostService
+	LabelService        *services.LabelService
+	CacheService        *services.CacheService
+	PostReactionService *services.PostReactionsService
 }
 
 func NewApp() *App {
@@ -43,19 +44,21 @@ func NewApp() *App {
 	authorService := services.NewAuthorService(dbConn)
 	projectService := services.NewProjectService(dbConn)
 	postService := services.NewPostService(dbConn)
+	postReactionService := services.NewPostReactionsService(dbConn)
 	labelService := services.NewLabelService(dbConn)
 	cdnService := services.NewCDNService()
 	cacheService := services.NewCacheService()
 
 	return &App{
-		DB:             dbConn,
-		Fiber:          fiber,
-		AuthorService:  authorService,
-		ProjectService: projectService,
-		PostService:    postService,
-		CDNService:     cdnService,
-		LabelService:   labelService,
-		CacheService:   cacheService,
+		DB:                  dbConn,
+		Fiber:               fiber,
+		AuthorService:       authorService,
+		ProjectService:      projectService,
+		PostService:         postService,
+		CDNService:          cdnService,
+		LabelService:        labelService,
+		CacheService:        cacheService,
+		PostReactionService: postReactionService,
 	}
 }
 

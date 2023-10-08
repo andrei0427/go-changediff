@@ -192,6 +192,10 @@
         );
       }
 
+      if ("{{newUserId}}") {
+        document.cookie = `user_id={{newUserId}}`;
+      }
+
       updateNav("tabChangelog");
     </script>
   </body>

@@ -1,8 +1,10 @@
 package handlers
 
 import (
+	"database/sql"
 	"fmt"
 	"html/template"
+	"net/url"
 	"strings"
 	"time"
 
@@ -12,53 +14,57 @@ import (
 	"github.com/andrei0427/go-changediff/internal/app/services"
 	"github.com/andrei0427/go-changediff/internal/data"
 	"github.com/gofiber/fiber/v2"
+	"github.com/google/uuid"
 	"golang.org/x/exp/slices"
 )
 
 type AppHandler struct {
-	AuthorService  *services.AuthorService
-	ProjectService *services.ProjectService
-	PostService    *services.PostService
-	CDNService     *services.CDNService
-	LabelService   *services.LabelService
-	CacheService   *services.CacheService
+	AuthorService       *services.AuthorService
+	ProjectService      *services.ProjectService
+	PostService         *services.PostService
+	PostReactionService *services.PostReactionsService
+	CDNService          *services.CDNService
+	LabelService        *services.LabelService
+	CacheService        *services.CacheService
 }
 
 func NewAppHandler(
 	authorService *services.AuthorService,
 	projectService *services.ProjectService,
 	postService *services.PostService,
+	postReactionService *services.PostReactionsService,
 	cdnService *services.CDNService,
 	labelService *services.LabelService,
 	cacheService *services.CacheService,
 ) *AppHandler {
 	return &AppHandler{
-		AuthorService:  authorService,
-		ProjectService: projectService,
-		PostService:    postService,
-		CDNService:     cdnService,
-		LabelService:   labelService,
-		CacheService:   cacheService,
+		AuthorService:       authorService,
+		ProjectService:      projectService,
+		PostService:         postService,
+		CDNService:          cdnService,
+		LabelService:        labelService,
+		CacheService:        cacheService,
+		PostReactionService: postReactionService,
 	}
 }
 
 func InitRoutes(app *app.App) {
-	appHandler := NewAppHandler(app.AuthorService, app.ProjectService, app.PostService, app.CDNService, app.LabelService, app.CacheService)
+	appHandler := NewAppHandler(app.AuthorService, app.ProjectService, app.PostService, app.PostReactionService, app.CDNService, app.LabelService, app.CacheService)
 	app.Fiber.Get("/", appHandler.Home)
 
-	widget := app.Fiber.Group("/widget")
-	widget.Use(middleware.UseLocale)
+	widget := app.Fiber.Group("/widget", middleware.UseLocale, middleware.UseUserId)
 	widget.Get("/:key", appHandler.WidgetHome)
 
+	widget.Use(middleware.UseWithUserId)
 	changelog := widget.Group("/changelog")
 	changelog.Get("/:key", appHandler.WidgetChangelog)
 	changelog.Get("/posts/:key/:pageNo?", appHandler.WidgetChangelogPosts)
+	changelog.Put("/posts/view/:key/:postId/:reaction?", appHandler.WidgetChangelogReaction)
 
 	widget.Get("/roadmap/:key", appHandler.WidgetRoadmap)
 	widget.Get("/feedback/:key", appHandler.WidgetFeedback)
 
-	admin := app.Fiber.Group("/admin")
-	admin.Use(middleware.UseAuth)
+	admin := app.Fiber.Group("/admin", middleware.UseAuth)
 	admin.Get("/dashboard", appHandler.Dashboard)
 	admin.Use(func(c *fiber.Ctx) error {
 		return middleware.UseProject(c, appHandler.CacheService, appHandler.ProjectService)
@@ -96,6 +102,8 @@ func (a *AppHandler) Home(c *fiber.Ctx) error {
 
 func (a *AppHandler) WidgetHome(c *fiber.Ctx) error {
 	key := c.Params("key")
+	userUuid := c.Locals("userUuid").(*uuid.UUID)
+
 	project, err := a.ProjectService.GetProjectByKey(c.Context(), key)
 	if err != nil {
 		return fiber.NewError(404, "Project not found")
@@ -106,7 +114,12 @@ func (a *AppHandler) WidgetHome(c *fiber.Ctx) error {
 		logoUrl = project.LogoUrl.String
 	}
 
-	return c.Render("widget/index", fiber.Map{"Project": project, "LogoUrl": logoUrl, "activeTab": "changelog"})
+	newUserId := ""
+	if userUuid == nil {
+		newUserId = uuid.New().String()
+	}
+
+	return c.Render("widget/index", fiber.Map{"Project": project, "LogoUrl": logoUrl, "activeTab": "changelog", "newUserId": newUserId})
 }
 
 func (a *AppHandler) WidgetChangelog(c *fiber.Ctx) error {
@@ -122,18 +135,71 @@ func (a *AppHandler) WidgetChangelog(c *fiber.Ctx) error {
 func (a *AppHandler) WidgetChangelogPosts(c *fiber.Ctx) error {
 	key := c.Params("key")
 	paramPageNo, _ := c.ParamsInt("pageNo")
+	userUuid := c.Locals("userUuid").(*uuid.UUID)
 	pageNo := 1
 	if paramPageNo > 0 {
 		pageNo = paramPageNo
 	}
 
-	posts, err := a.PostService.GetPublishedPagedPosts(c.Context(), key, int32(pageNo))
+	posts, err := a.PostService.GetPublishedPagedPosts(c.Context(), key, int32(pageNo), *userUuid)
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println(err.Error())
 		return fiber.NewError(503, "Error fetching posts")
 	}
 
-	return c.Render("widget/components/posts", fiber.Map{"Posts": posts})
+	return c.Render("widget/components/posts", fiber.Map{"Posts": posts, "ProjectKey": key})
+}
+
+func (a *AppHandler) WidgetChangelogReaction(c *fiber.Ctx) error {
+	userUuid := c.Locals("userUuid").(*uuid.UUID)
+	userLocale := c.Locals("timezone").(string)
+
+	projectKey := c.Params("key")
+	reaction := c.Params("reaction")
+	postId, err := c.ParamsInt("postId")
+
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "Post ID is required")
+	}
+
+	if projectKey == "" {
+		return fiber.NewError(fiber.StatusBadRequest, "Project key is required")
+	}
+
+	project, err := a.ProjectService.GetProjectByKey(c.Context(), projectKey)
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "Project not found")
+	}
+
+	post, err := a.PostService.GetPost(c.Context(), int32(postId), project.ID)
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "Post not found")
+	}
+
+	var Reaction = sql.NullString{String: "", Valid: false}
+	if reaction != "" {
+		parsed, err := url.QueryUnescape(reaction)
+
+		if err == nil {
+			Reaction = sql.NullString{String: parsed, Valid: true}
+		}
+	}
+
+	_, err = a.PostReactionService.SaveReaction(c.Context(), data.InsertReactionParams{
+		UserUuid:  *userUuid,
+		PostID:    post.ID,
+		IpAddr:    c.IP(),
+		UserAgent: c.Get("User-Agent"),
+		Locale:    userLocale,
+		Reaction:  Reaction,
+	})
+
+	if err != nil {
+		fmt.Println(err.Error())
+		return fiber.NewError(fiber.StatusInternalServerError, "Something went wrong")
+	}
+
+	return c.SendStatus(fiber.StatusOK)
 }
 
 func (a *AppHandler) WidgetRoadmap(c *fiber.Ctx) error {
@@ -365,7 +431,6 @@ func (a *AppHandler) ComposePost(c *fiber.Ctx) error {
 		return fiber.NewError(500, "Error when fetching labels")
 	}
 
-	fmt.Println(form.PublishedOn)
 	return c.Render("post", fiber.Map{"form": form, "Id": id, "Labels": labels})
 }
 

@@ -170,7 +170,7 @@ func (q *Queries) GetPostCount(ctx context.Context, projectID int32) (int64, err
 }
 
 const getPosts = `-- name: GetPosts :many
-SELECT p.id, p.title, p.published_on, l.label, l.color, CASE WHEN p.published_on <= current_timestamp THEN 1 ELSE 0 END AS status FROM posts p left join labels l on p.label_id = l.id or p.label_id is null WHERE p.project_id = $1
+SELECT p.id, p.title, p.published_on, l.label, l.color, CASE WHEN p.published_on <= current_timestamp THEN 1 ELSE 0 END AS status, COUNT(r.id) as ViewCount FROM posts p left join labels l on p.label_id = l.id or p.label_id is null left join post_reactions r on p.id = r.post_id OR r.id is null WHERE p.project_id = $1 GROUP BY 1,2,3,4,5,6
 `
 
 type GetPostsRow struct {
@@ -180,6 +180,7 @@ type GetPostsRow struct {
 	Label       sql.NullString
 	Color       sql.NullString
 	Status      int32
+	Viewcount   int64
 }
 
 func (q *Queries) GetPosts(ctx context.Context, projectID int32) ([]GetPostsRow, error) {
@@ -198,6 +199,7 @@ func (q *Queries) GetPosts(ctx context.Context, projectID int32) ([]GetPostsRow,
 			&i.Label,
 			&i.Color,
 			&i.Status,
+			&i.Viewcount,
 		); err != nil {
 			return nil, err
 		}
@@ -272,13 +274,23 @@ func (q *Queries) GetProjectByKey(ctx context.Context, appKey string) (Project, 
 }
 
 const getPublishedPagedPosts = `-- name: GetPublishedPagedPosts :many
-SELECT post.id, post.title, post.body, post.published_on, post.author_id, post.project_id, post.created_on, post.updated_on, post.label_id, l.label, l.color, a.first_name, a.last_name, a.picture_url FROM posts post join projects proj on post.project_id = proj.id join authors a on a.id = post.author_id left join labels l on post.label_id = l.id or post.label_id is null WHERE proj.app_key = $1 AND post.published_on <= CURRENT_TIMESTAMP ORDER BY post.published_on DESC LIMIT $2 OFFSET $3
+SELECT post.id, post.title, post.body, post.published_on, post.author_id, post.project_id, post.created_on, post.updated_on, post.label_id, l.label, l.color, a.first_name, a.last_name, a.picture_url, r.reaction
+  FROM posts post 
+    join projects proj on post.project_id = proj.id 
+	join authors a on a.id = post.author_id 
+	left join labels l on post.label_id = l.id or post.label_id is null 
+	left join post_reactions r on (r.post_id = post.id and r.user_uuid = $4 and r.reaction is not null) or r.id is null 
+WHERE proj.app_key = $1 AND post.published_on <= CURRENT_TIMESTAMP 
+ORDER BY post.published_on DESC 
+LIMIT $2 
+OFFSET $3
 `
 
 type GetPublishedPagedPostsParams struct {
-	AppKey string
-	Limit  int32
-	Offset int32
+	AppKey   string
+	Limit    int32
+	Offset   int32
+	UserUuid uuid.UUID
 }
 
 type GetPublishedPagedPostsRow struct {
@@ -296,10 +308,16 @@ type GetPublishedPagedPostsRow struct {
 	FirstName   string
 	LastName    string
 	PictureUrl  sql.NullString
+	Reaction    sql.NullString
 }
 
 func (q *Queries) GetPublishedPagedPosts(ctx context.Context, arg GetPublishedPagedPostsParams) ([]GetPublishedPagedPostsRow, error) {
-	rows, err := q.db.QueryContext(ctx, getPublishedPagedPosts, arg.AppKey, arg.Limit, arg.Offset)
+	rows, err := q.db.QueryContext(ctx, getPublishedPagedPosts,
+		arg.AppKey,
+		arg.Limit,
+		arg.Offset,
+		arg.UserUuid,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -322,10 +340,43 @@ func (q *Queries) GetPublishedPagedPosts(ctx context.Context, arg GetPublishedPa
 			&i.FirstName,
 			&i.LastName,
 			&i.PictureUrl,
+			&i.Reaction,
 		); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getReaction = `-- name: GetReaction :many
+SELECT reaction FROM post_reactions WHERE user_uuid = $1 AND post_id = $2 AND reaction IS NOT NULL
+`
+
+type GetReactionParams struct {
+	UserUuid uuid.UUID
+	PostID   int32
+}
+
+func (q *Queries) GetReaction(ctx context.Context, arg GetReactionParams) ([]sql.NullString, error) {
+	rows, err := q.db.QueryContext(ctx, getReaction, arg.UserUuid, arg.PostID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []sql.NullString
+	for rows.Next() {
+		var reaction sql.NullString
+		if err := rows.Scan(&reaction); err != nil {
+			return nil, err
+		}
+		items = append(items, reaction)
 	}
 	if err := rows.Close(); err != nil {
 		return nil, err
@@ -468,6 +519,42 @@ func (q *Queries) InsertProject(ctx context.Context, arg InsertProjectParams) (P
 	return i, err
 }
 
+const insertReaction = `-- name: InsertReaction :one
+INSERT INTO post_reactions (user_uuid, ip_addr, user_agent, locale, reaction, post_id) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, user_uuid, ip_addr, user_agent, locale, reaction, post_id, created_on
+`
+
+type InsertReactionParams struct {
+	UserUuid  uuid.UUID
+	IpAddr    string
+	UserAgent string
+	Locale    string
+	Reaction  sql.NullString
+	PostID    int32
+}
+
+func (q *Queries) InsertReaction(ctx context.Context, arg InsertReactionParams) (PostReaction, error) {
+	row := q.db.QueryRowContext(ctx, insertReaction,
+		arg.UserUuid,
+		arg.IpAddr,
+		arg.UserAgent,
+		arg.Locale,
+		arg.Reaction,
+		arg.PostID,
+	)
+	var i PostReaction
+	err := row.Scan(
+		&i.ID,
+		&i.UserUuid,
+		&i.IpAddr,
+		&i.UserAgent,
+		&i.Locale,
+		&i.Reaction,
+		&i.PostID,
+		&i.CreatedOn,
+	)
+	return i, err
+}
+
 const unsetLabels = `-- name: UnsetLabels :many
 UPDATE posts SET label_id = NULL WHERE id = $1 AND project_id = $2 RETURNING id
 `
@@ -602,4 +689,46 @@ func (q *Queries) UpdateProject(ctx context.Context, arg UpdateProjectParams) (P
 		&i.UpdatedOn,
 	)
 	return i, err
+}
+
+const updateReaction = `-- name: UpdateReaction :one
+UPDATE post_reactions SET reaction = $1 WHERE user_uuid = $2 AND post_id = $3 AND reaction IS NOT NULL RETURNING id, user_uuid, ip_addr, user_agent, locale, reaction, post_id, created_on
+`
+
+type UpdateReactionParams struct {
+	Reaction sql.NullString
+	UserUuid uuid.UUID
+	PostID   int32
+}
+
+func (q *Queries) UpdateReaction(ctx context.Context, arg UpdateReactionParams) (PostReaction, error) {
+	row := q.db.QueryRowContext(ctx, updateReaction, arg.Reaction, arg.UserUuid, arg.PostID)
+	var i PostReaction
+	err := row.Scan(
+		&i.ID,
+		&i.UserUuid,
+		&i.IpAddr,
+		&i.UserAgent,
+		&i.Locale,
+		&i.Reaction,
+		&i.PostID,
+		&i.CreatedOn,
+	)
+	return i, err
+}
+
+const userViewed = `-- name: UserViewed :one
+SELECT COUNT(id) FROM post_reactions WHERE user_uuid = $1 AND post_id = $2 AND reaction IS NULL
+`
+
+type UserViewedParams struct {
+	UserUuid uuid.UUID
+	PostID   int32
+}
+
+func (q *Queries) UserViewed(ctx context.Context, arg UserViewedParams) (int64, error) {
+	row := q.db.QueryRowContext(ctx, userViewed, arg.UserUuid, arg.PostID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
 }

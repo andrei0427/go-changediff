@@ -8,6 +8,7 @@ import (
 
 	"github.com/andrei0427/go-changediff/internal/app/models"
 	"github.com/andrei0427/go-changediff/internal/data"
+	"github.com/google/uuid"
 )
 
 type PostService struct {
@@ -33,13 +34,13 @@ func (s *PostService) GetPost(ctx context.Context, postId int32, projectId int32
 	return post, err
 }
 
-func (s *PostService) GetPublishedPagedPosts(ctx context.Context, projectKey string, pageNo int32) ([]data.GetPublishedPagedPostsRow, error) {
+func (s *PostService) GetPublishedPagedPosts(ctx context.Context, projectKey string, pageNo int32, userId uuid.UUID) ([]data.GetPublishedPagedPostsRow, error) {
 	var offset int32 = 0
 	if pageNo > 1 {
 		offset = pageNo - 1*5
 	}
 
-	posts, err := s.db.GetPublishedPagedPosts(ctx, data.GetPublishedPagedPostsParams{AppKey: projectKey, Limit: 5, Offset: offset})
+	posts, err := s.db.GetPublishedPagedPosts(ctx, data.GetPublishedPagedPostsParams{AppKey: projectKey, Limit: 5, Offset: offset, UserUuid: userId})
 
 	return posts, err
 }

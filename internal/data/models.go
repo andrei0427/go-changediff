@@ -43,6 +43,17 @@ type Post struct {
 	LabelID     sql.NullInt32
 }
 
+type PostReaction struct {
+	ID        int32
+	UserUuid  uuid.UUID
+	IpAddr    string
+	UserAgent string
+	Locale    string
+	Reaction  sql.NullString
+	PostID    int32
+	CreatedOn time.Time
+}
+
 type Project struct {
 	ID          int32
 	Name        string

@@ -1,5 +1,8 @@
 {% for post in Posts %}
-<article class="flex max-w-xl flex-col items-start justify-between p-4">
+<article
+  id="post-{{post.ID}}"
+  class="flex w-full flex-col items-start justify-between p-4"
+>
   <div class="flex items-center gap-x-4 text-xs">
     <time datetime="2020-03-16" class="text-gray-500"
       >{{formatDate(convertDate(post.PublishedOn, timezone))}}</time
@@ -19,19 +22,56 @@
       <a href="#"> {{post.Title}} </a>
     </h3>
 
-    <div class="mt-5 text-sm text-gray-600">{{post.Body}}</div>
+    <div
+      class="mt-5 text-sm text-gray-600"
+      hx-put="/widget/changelog/posts/view/{{ProjectKey}}/{{post.ID}}"
+      hx-trigger="revealed delay:5000ms"
+      hx-swap="none"
+    >
+      {{post.Body}}
+    </div>
   </div>
-  <div class="relative mt-8 flex items-center gap-x-4">
-    <img
-      src="{%if post.PictureUrl.String%}{{CDNUrl(post.PictureUrl.String)}}{%else%}/static/logo.png{%endif%}"
-      alt=""
-      class="h-10 w-10 rounded-full bg-gray-50"
-    />
-    <div class="text-sm leading-6">
-      <p class="font-semibold text-gray-900">
-        <span class="absolute inset-0"></span>
-        {{post.FirstName}} {{post.LastName}}
-      </p>
+
+  <div class="flex mt-8 justify-between w-full">
+    <div class="relative flex items-center gap-x-4">
+      <img
+        src="{%if post.PictureUrl.String%}{{post.PictureUrl.String}}{%else%}/static/logo.png{%endif%}"
+        alt=""
+        class="h-10 w-10 rounded-full bg-gray-50"
+      />
+      <div class="text-sm leading-6">
+        <p class="font-semibold text-gray-900">
+          <span class="absolute inset-0"></span>
+          {{post.FirstName}} {{post.LastName}}
+        </p>
+      </div>
+    </div>
+
+    <div class="text-3xl">
+      <button
+        class="{%if post.Reaction.String == '😍'%}bg-slate-200{%endif%} rounded-md p-1"
+        hx-put="/widget/changelog/posts/view/{{ProjectKey}}/{{post.ID}}/😍"
+        hx-swap="none"
+        hx-on::before-request="toggleReaction({{post.ID}}, '😍')"
+      >
+        😍
+      </button>
+      <button
+        class="{%if post.Reaction.String == '😒'%}bg-slate-200{%endif%} rounded-md p-1"
+        hx-put="/widget/changelog/posts/view/{{ProjectKey}}/{{post.ID}}/😒"
+        hx-swap="none"
+        hx-on::before-request="toggleReaction({{post.ID}}, '😒')"
+      >
+        😒
+      </button>
+      <button
+        class="{%if post.Reaction.String == '😡'%}bg-slate-200{%endif%} rounded-md p-1"
+        hx-put="/widget/changelog/posts/view/{{ProjectKey}}/{{post.ID}}/😡"
+        hx-swap="none"
+        hx-on::before-request="toggleReaction({{post.ID}}, '😡')"
+      >
+        😡
+      </button>
     </div>
   </div>
 </article>
@@ -45,3 +85,16 @@
   </div>
 </div>
 {% endfor %}
+
+<script>
+  function toggleReaction(postId, reaction) {
+    document
+      .querySelectorAll("#post-".concat(postId).concat(" button"))
+      .forEach((elm) => {
+        elm.classList.remove("bg-slate-200");
+        if (elm.innerHTML.trim() === reaction) {
+          elm.classList.add("bg-slate-200");
+        }
+      });
+  }
+</script>

@@ -102,7 +102,8 @@ func (a *AppHandler) Home(c *fiber.Ctx) error {
 
 func (a *AppHandler) WidgetHome(c *fiber.Ctx) error {
 	key := c.Params("key")
-	userUuid := c.Locals("userUuid").(*uuid.UUID)
+	isEmbedded := c.Query("embed") == "1"
+	userUuid := c.Locals("userUuid")
 
 	project, err := a.ProjectService.GetProjectByKey(c.Context(), key)
 	if err != nil {
@@ -119,7 +120,7 @@ func (a *AppHandler) WidgetHome(c *fiber.Ctx) error {
 		newUserId = uuid.New().String()
 	}
 
-	return c.Render("widget/index", fiber.Map{"Project": project, "LogoUrl": logoUrl, "activeTab": "changelog", "newUserId": newUserId})
+	return c.Render("widget/index", fiber.Map{"Project": project, "LogoUrl": logoUrl, "activeTab": "changelog", "newUserId": newUserId, "isEmbedded": isEmbedded})
 }
 
 func (a *AppHandler) WidgetChangelog(c *fiber.Ctx) error {

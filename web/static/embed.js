@@ -11,16 +11,34 @@
     iframe.style.right = "-500px";
     iframe.style.position = "absolute";
     iframe.style.width = "499px";
-    iframe.style.height = window.innerHeight.toString().concat("px");
     iframe.style.border = "none";
     iframe.style.borderLeft = "1px solid #eee";
     iframe.style.transition = "right 0.2s ease-out";
+    iframe.style.zIndex = 999;
+    iframe.style.backgroundColor = "white";
 
-    backdrop.style.opacity = 0.3;
+    backdrop.style.opacity = 0;
     backdrop.style.backgroundColor = "black";
+    backdrop.style.zIndex = 998;
+    backdrop.style.position = "absolute";
+    backdrop.style.top = "0";
+    backdrop.style.left = "0";
+    backdrop.style.width = "100%";
+    backdrop.style.transition = "opacity 0.2s";
+    backdrop.style.display = "none";
+
+    backdrop.addEventListener("click", function () {
+      window.changediff.close();
+    });
+
+    iframe.style.height = backdrop.style.height = window.innerHeight
+      .toString()
+      .concat("px");
 
     window.addEventListener("resize", function () {
-      iframe.height = window.innerHeight.toString().concat("px");
+      iframe.height = backdrop.style.height = window.innerHeight
+        .toString()
+        .concat("px");
     });
 
     window.addEventListener(
@@ -36,7 +54,7 @@
 
         switch (event.data) {
           case "close": {
-            iframe.style.right = "-500px";
+            this.changediff.close();
           }
         }
       },
@@ -44,9 +62,21 @@
     );
 
     document.body.appendChild(iframe);
+    document.body.appendChild(backdrop);
+  };
+
+  window.changediff.close = function () {
+    this.iframe.style.right = "-500px";
+    this.backdrop.style.opacity = 0;
+
+    setTimeout(() => {
+      this.backdrop.style.display = "none";
+    }, 300);
   };
 
   window.changediff.open = function () {
     this.iframe.style.right = "0px";
+    this.backdrop.style.opacity = 0.3;
+    this.backdrop.style.display = "block";
   };
 })();

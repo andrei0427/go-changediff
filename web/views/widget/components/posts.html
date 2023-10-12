@@ -8,7 +8,6 @@
       >{{formatDate(convertDate(post.PublishedOn, timezone))}}</time
     >
     <div
-      href="#"
       class="relative z-10 rounded-full px-3 py-1.5 font-medium"
       style="color: {{contrastColor(post.Color.String)}}; background-color: {{post.Color.String}}"
     >
@@ -19,7 +18,10 @@
     <h3
       class="mt-3 text-lg font-semibold leading-6 text-gray-900 group-hover:text-gray-600"
     >
-      <a href="#"> {{post.Title}} </a>
+      {{post.Title}} {% if post.Viewed %}<span
+        class="inline-block whitespace-nowrap rounded-sm bg-red-500 text-white font-bold leading-none align-middle text-xs px-2 py-1 mb-1.5"
+        >NEW!</span
+      >{% endif %}
     </h3>
 
     <div

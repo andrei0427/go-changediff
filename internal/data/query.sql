@@ -45,12 +45,13 @@ SELECT p.id, p.title, p.published_on, l.label, l.color, CASE WHEN p.published_on
 SELECT p.*, l.label as Label FROM posts p LEFT JOIN labels l on p.label_id = l.id or p.label_id is null WHERE p.id = $1 AND p.project_id = $2;
 
 -- name: GetPublishedPagedPosts :many
-SELECT post.*, l.label, l.color, a.first_name, a.last_name, a.picture_url, r.reaction
+SELECT post.*, l.label, l.color, a.first_name, a.last_name, a.picture_url, r.reaction, CASE WHEN v.id IS NULL THEN 0 ELSE 1 END as Viewed
   FROM posts post 
     join projects proj on post.project_id = proj.id 
 	join authors a on a.id = post.author_id 
 	left join labels l on post.label_id = l.id or post.label_id is null 
 	left join post_reactions r on (r.post_id = post.id and r.user_uuid = $4 and r.reaction is not null) or r.id is null 
+	left join post_reactions v on (v.post_id = post.id and v.user_uuid = $4 and v.reaction is null) or v.id is null 
 WHERE proj.app_key = $1 AND post.published_on <= CURRENT_TIMESTAMP 
 ORDER BY post.published_on DESC 
 LIMIT $2 

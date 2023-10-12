@@ -424,7 +424,7 @@ func (a *AppHandler) ComposePost(c *fiber.Ctx) error {
 			form.LabelId = &labelId
 		}
 	} else {
-		form.PublishedOn = time.Now().Format(time.DateTime)
+		form.PublishedOn = time.Now().UTC().Format(time.DateTime)
 	}
 
 	labels, err := a.LabelService.GetLabels(c.Context(), curUser.Project.ID)

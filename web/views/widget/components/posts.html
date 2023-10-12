@@ -18,7 +18,7 @@
     <h3
       class="mt-3 text-lg font-semibold leading-6 text-gray-900 group-hover:text-gray-600"
     >
-      {{post.Title}} {% if post.Viewed %}<span
+      {{post.Title}} {% if post.Viewed %}{%else%}<span
         class="inline-block whitespace-nowrap rounded-sm bg-red-500 text-white font-bold leading-none align-middle text-xs px-2 py-1 mb-1.5"
         >NEW!</span
       >{% endif %}
@@ -49,7 +49,7 @@
       </div>
     </div>
 
-    <div class="text-3xl">
+    <div class="text-3xl text-right">
       <button
         class="{%if post.Reaction.String == '😍'%}bg-slate-200{%endif%} rounded-md p-1"
         hx-put="/widget/changelog/posts/view/{{ProjectKey}}/{{post.ID}}/😍"
@@ -76,6 +76,65 @@
       </button>
     </div>
   </div>
+  <div class="flex justify-end w-full">
+    <div class="px-1 input-comment">
+      <form
+        hx-put="/widget/changelog/posts/comment/{{ProjectKey}}/{{post.ID}}"
+        hx-swap="none"
+        hx-trigger="submit once"
+        hx-on::after-request="this.nextElementSibling.classList.remove('hidden')"
+      >
+        <div
+          class="flex rounded-md shadow-sm ring-1 ring-inset ring-gray-300 focus-within:ring-2 focus-within:ring-inset"
+        >
+          <span
+            class="flex select-none items-center pl-3 text-gray-500 sm:text-sm"
+            ><svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke-width="1.5"
+              stroke="currentColor"
+              class="w-6 h-6"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a5.969 5.969 0 01-.474-.065 4.48 4.48 0 00.978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z"
+              />
+            </svg>
+          </span>
+
+          <input
+            type="text"
+            name="comment"
+            class="block md:w-80 flex-1 border-0 bg-transparent py-1.5 pl-1 text-gray-900 placeholder:text-gray-400 focus:ring-0 sm:text-sm sm:leading-6"
+            placeholder="Write a comment"
+            autocomplete="off"
+          />
+          <span
+            class="flex cursor-pointer select-none items-center pr-3 hover:text-gray-400 text-gray-500 sm:text-sm"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke-width="1.5"
+              stroke="currentColor"
+              class="w-6 h-6"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5"
+              />
+            </svg>
+          </span>
+        </div>
+      </form>
+      <p class="hidden text-gray-700 text-sm leading-3 text-right pt-2">Thank you for your comment ❤️</p>
+    </div>
+  </div>
 </article>
 {% empty %}
 <div class="text-center">
@@ -99,4 +158,12 @@
         }
       });
   }
+
+  document
+    .querySelectorAll(".input-comment")
+    .forEach((elm) =>
+      window.isEmbedded
+        ? elm.classList.add("basis-full", "pt-3")
+        : elm.classList.add("basis-1/4")
+    );
 </script>

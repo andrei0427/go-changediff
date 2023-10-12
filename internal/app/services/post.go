@@ -45,6 +45,10 @@ func (s *PostService) GetPublishedPagedPosts(ctx context.Context, projectKey str
 	return posts, err
 }
 
+func (s *PostService) InsertPostComment(ctx context.Context, userId uuid.UUID, comment string, postId int32) (data.PostComment, error) {
+	return s.db.InsertComment(ctx, data.InsertCommentParams{UserUuid: userId, Comment: sql.NullString{String: comment, Valid: true}, PostID: postId})
+}
+
 func (s *PostService) InsertPost(ctx context.Context, post models.PostModel, authorId int32, projectId int32, userLocation *time.Location) (data.Post, error) {
 	toInsert := data.InsertPostParams{
 		Title:     post.Title,

@@ -48,3 +48,7 @@ type PostModel struct {
 	LabelId     *int   `form:"label_id"`
 	First       *bool  `form:"first"`
 }
+
+type ChangelogComment struct {
+	Comment string `form:"comment"`
+}

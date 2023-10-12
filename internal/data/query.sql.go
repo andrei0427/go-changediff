@@ -424,6 +424,29 @@ func (q *Queries) InsertAuthor(ctx context.Context, arg InsertAuthorParams) (Aut
 	return i, err
 }
 
+const insertComment = `-- name: InsertComment :one
+INSERT INTO post_comments (user_uuid, comment, post_id) VALUES ($1, $2, $3) RETURNING id, user_uuid, comment, post_id, created_on
+`
+
+type InsertCommentParams struct {
+	UserUuid uuid.UUID
+	Comment  sql.NullString
+	PostID   int32
+}
+
+func (q *Queries) InsertComment(ctx context.Context, arg InsertCommentParams) (PostComment, error) {
+	row := q.db.QueryRowContext(ctx, insertComment, arg.UserUuid, arg.Comment, arg.PostID)
+	var i PostComment
+	err := row.Scan(
+		&i.ID,
+		&i.UserUuid,
+		&i.Comment,
+		&i.PostID,
+		&i.CreatedOn,
+	)
+	return i, err
+}
+
 const insertLabel = `-- name: InsertLabel :one
 INSERT INTO labels (label, color, project_id) VALUES ($1, $2, $3) RETURNING id, label, color, project_id, created_on, updated_on
 `

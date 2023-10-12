@@ -66,6 +66,9 @@ UPDATE posts SET title = $1, body = $2, published_on = $3, label_id = $4, update
 -- name: DeletePost :one
 DELETE FROM posts WHERE id = $1 AND project_id = $2 RETURNING id;
 
+-- name: InsertComment :one
+INSERT INTO post_comments (user_uuid, comment, post_id) VALUES ($1, $2, $3) RETURNING *;
+
 -- name: InsertReaction :one
 INSERT INTO post_reactions (user_uuid, ip_addr, user_agent, locale, reaction, post_id) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *;
 

@@ -43,6 +43,14 @@ type Post struct {
 	LabelID     sql.NullInt32
 }
 
+type PostComment struct {
+	ID        int32
+	UserUuid  uuid.UUID
+	Comment   sql.NullString
+	PostID    int32
+	CreatedOn time.Time
+}
+
 type PostReaction struct {
 	ID        int32
 	UserUuid  uuid.UUID

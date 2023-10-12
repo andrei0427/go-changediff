@@ -60,6 +60,7 @@ func InitRoutes(app *app.App) {
 	changelog.Get("/:key", appHandler.WidgetChangelog)
 	changelog.Get("/posts/:key/:pageNo?", appHandler.WidgetChangelogPosts)
 	changelog.Put("/posts/view/:key/:postId/:reaction?", appHandler.WidgetChangelogReaction)
+	changelog.Put("/posts/comment/:key/:postId", appHandler.WidgetChangelogComment)
 
 	widget.Get("/roadmap/:key", appHandler.WidgetRoadmap)
 	widget.Get("/feedback/:key", appHandler.WidgetFeedback)
@@ -195,6 +196,43 @@ func (a *AppHandler) WidgetChangelogReaction(c *fiber.Ctx) error {
 		Reaction:  Reaction,
 	})
 
+	if err != nil {
+		fmt.Println(err.Error())
+		return fiber.NewError(fiber.StatusInternalServerError, "Something went wrong")
+	}
+
+	return c.SendStatus(fiber.StatusOK)
+}
+
+func (a *AppHandler) WidgetChangelogComment(c *fiber.Ctx) error {
+	userUuid := c.Locals("userUuid").(*uuid.UUID)
+	projectKey := c.Params("key")
+	postId, err := c.ParamsInt("postId")
+	body := new(models.ChangelogComment)
+
+	if err := c.BodyParser(body); err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "Comment is required")
+	}
+
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "Post ID is required")
+	}
+
+	if projectKey == "" {
+		return fiber.NewError(fiber.StatusBadRequest, "Project key is required")
+	}
+
+	project, err := a.ProjectService.GetProjectByKey(c.Context(), projectKey)
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "Project not found")
+	}
+
+	_, err = a.PostService.GetPost(c.Context(), int32(postId), project.ID)
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "Post not found")
+	}
+
+	_, err = a.PostService.InsertPostComment(c.Context(), *userUuid, body.Comment, int32(postId))
 	if err != nil {
 		fmt.Println(err.Error())
 		return fiber.NewError(fiber.StatusInternalServerError, "Something went wrong")

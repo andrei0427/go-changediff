@@ -44,6 +44,18 @@ SELECT p.id, p.title, p.published_on, l.label, l.color, CASE WHEN p.published_on
 -- name: GetPost :one
 SELECT p.*, l.label as Label FROM posts p LEFT JOIN labels l on p.label_id = l.id or p.label_id is null WHERE p.id = $1 AND p.project_id = $2;
 
+-- name: GetPostReactions :many
+SELECT r.reaction, COUNT(r.*) FROM posts p JOIN post_reactions r ON r.post_id = p.id WHERE p.id = $1 AND p.project_id = $2 GROUP BY r.reaction ORDER BY r.reaction NULLS FIRST;
+
+-- name: GetPostComments :many
+SELECT c.comment, c.created_on, r.locale, ur.reaction 
+	FROM posts p 
+		JOIN post_comments c ON c.post_id = p.id 
+		JOIN post_reactions r ON r.user_uuid = c.user_uuid AND r.post_id = p.id AND r.reaction IS NULL 
+		LEFT JOIN post_reactions ur ON ur.user_uuid = c.user_uuid AND ur.post_id = p.id AND ur.reaction IS NOT NULL 
+WHERE p.id = $1 AND p.project_id = $2
+ORDER BY c.created_on DESC;
+
 -- name: GetPublishedPagedPosts :many
 SELECT post.*, l.label, l.color, a.first_name, a.last_name, a.picture_url, r.reaction, CASE WHEN v.id IS NULL THEN 0 ELSE 1 END as Viewed
   FROM posts post 

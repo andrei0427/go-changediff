@@ -82,6 +82,7 @@ func InitRoutes(app *app.App) {
 	posts.Get("/compose/:id?", appHandler.ComposePost)
 	posts.Post("/save", appHandler.SavePost)
 	posts.Get("/load", appHandler.LoadPosts)
+	posts.Get("/load-reactions/:postId", appHandler.LoadPostReactions)
 	posts.Delete("/delete/:id", appHandler.DeletePost)
 	posts.Delete("/confirm-delete/:id", appHandler.ConfirmDeletePost)
 
@@ -471,6 +472,26 @@ func (a *AppHandler) ComposePost(c *fiber.Ctx) error {
 	}
 
 	return c.Render("post", fiber.Map{"form": form, "Id": id, "Labels": labels})
+}
+
+func (a *AppHandler) LoadPostReactions(c *fiber.Ctx) error {
+	curUser := c.Locals("user").(*models.SessionUser)
+	postId, err := c.ParamsInt("postId")
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "post id is required")
+	}
+
+	reactions, err := a.PostService.GetPostReactions(c.Context(), int32(postId), curUser.Project.ID)
+	if err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, "something went wrong")
+	}
+
+	comments, err := a.PostService.GetPostComments(c.Context(), int32(postId), curUser.Project.ID)
+	if err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, "something went wrong")
+	}
+
+	return c.Render("partials/components/simple_slideover", fiber.Map{"Title": "Post Reactions", "Reactions": reactions, "Comments": comments})
 }
 
 func (a *AppHandler) LoadPosts(c *fiber.Ctx) error {

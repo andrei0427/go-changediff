@@ -46,7 +46,7 @@ type Post struct {
 type PostComment struct {
 	ID        int32
 	UserUuid  uuid.UUID
-	Comment   sql.NullString
+	Comment   string
 	PostID    int32
 	CreatedOn time.Time
 }

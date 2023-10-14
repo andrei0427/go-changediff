@@ -8,6 +8,7 @@ import (
 
 var HelperFuncMap = map[string]interface{}{
 	"formatDate":              formatDate,
+	"formatDateShort":         formatDateShort,
 	"formatHTMLInputDateTime": formatHTMLInputDateTime,
 	"parseDateTime":           parseDateTime,
 	"convertDate":             convertDate,
@@ -17,6 +18,10 @@ var HelperFuncMap = map[string]interface{}{
 
 func formatDate(date time.Time) string {
 	return date.Format(time.RFC822)
+}
+
+func formatDateShort(date time.Time) string {
+	return date.Format(time.DateOnly)
 }
 
 func formatHTMLInputDateTime(date time.Time) string {

@@ -157,6 +157,56 @@ func (q *Queries) GetPost(ctx context.Context, arg GetPostParams) (GetPostRow, e
 	return i, err
 }
 
+const getPostComments = `-- name: GetPostComments :many
+SELECT c.comment, c.created_on, r.locale, ur.reaction 
+	FROM posts p 
+		JOIN post_comments c ON c.post_id = p.id 
+		JOIN post_reactions r ON r.user_uuid = c.user_uuid AND r.post_id = p.id AND r.reaction IS NULL 
+		LEFT JOIN post_reactions ur ON ur.user_uuid = c.user_uuid AND ur.post_id = p.id AND ur.reaction IS NOT NULL 
+WHERE p.id = $1 AND p.project_id = $2
+ORDER BY c.created_on DESC
+`
+
+type GetPostCommentsParams struct {
+	ID        int32
+	ProjectID int32
+}
+
+type GetPostCommentsRow struct {
+	Comment   string
+	CreatedOn time.Time
+	Locale    string
+	Reaction  sql.NullString
+}
+
+func (q *Queries) GetPostComments(ctx context.Context, arg GetPostCommentsParams) ([]GetPostCommentsRow, error) {
+	rows, err := q.db.QueryContext(ctx, getPostComments, arg.ID, arg.ProjectID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetPostCommentsRow
+	for rows.Next() {
+		var i GetPostCommentsRow
+		if err := rows.Scan(
+			&i.Comment,
+			&i.CreatedOn,
+			&i.Locale,
+			&i.Reaction,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getPostCount = `-- name: GetPostCount :one
 SELECT COUNT(id) total_posts FROM posts WHERE project_id = $1
 `
@@ -167,6 +217,43 @@ func (q *Queries) GetPostCount(ctx context.Context, projectID int32) (int64, err
 	var total_posts int64
 	err := row.Scan(&total_posts)
 	return total_posts, err
+}
+
+const getPostReactions = `-- name: GetPostReactions :many
+SELECT r.reaction, COUNT(r.*) FROM posts p JOIN post_reactions r ON r.post_id = p.id WHERE p.id = $1 AND p.project_id = $2 GROUP BY r.reaction ORDER BY r.reaction NULLS FIRST
+`
+
+type GetPostReactionsParams struct {
+	ID        int32
+	ProjectID int32
+}
+
+type GetPostReactionsRow struct {
+	Reaction sql.NullString
+	Count    int64
+}
+
+func (q *Queries) GetPostReactions(ctx context.Context, arg GetPostReactionsParams) ([]GetPostReactionsRow, error) {
+	rows, err := q.db.QueryContext(ctx, getPostReactions, arg.ID, arg.ProjectID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetPostReactionsRow
+	for rows.Next() {
+		var i GetPostReactionsRow
+		if err := rows.Scan(&i.Reaction, &i.Count); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const getPosts = `-- name: GetPosts :many
@@ -430,7 +517,7 @@ INSERT INTO post_comments (user_uuid, comment, post_id) VALUES ($1, $2, $3) RETU
 
 type InsertCommentParams struct {
 	UserUuid uuid.UUID
-	Comment  sql.NullString
+	Comment  string
 	PostID   int32
 }
 

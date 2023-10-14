@@ -34,6 +34,16 @@ func (s *PostService) GetPost(ctx context.Context, postId int32, projectId int32
 	return post, err
 }
 
+func (s *PostService) GetPostReactions(ctx context.Context, postId int32, projectId int32) ([]data.GetPostReactionsRow, error) {
+	reactions, err := s.db.GetPostReactions(ctx, data.GetPostReactionsParams{ID: postId, ProjectID: projectId})
+	return reactions, err
+}
+
+func (s *PostService) GetPostComments(ctx context.Context, postId int32, projectId int32) ([]data.GetPostCommentsRow, error) {
+	comments, err := s.db.GetPostComments(ctx, data.GetPostCommentsParams{ID: postId, ProjectID: projectId})
+	return comments, err
+}
+
 func (s *PostService) GetPublishedPagedPosts(ctx context.Context, projectKey string, pageNo int32, userId uuid.UUID) ([]data.GetPublishedPagedPostsRow, error) {
 	var offset int32 = 0
 	if pageNo > 1 {
@@ -46,7 +56,7 @@ func (s *PostService) GetPublishedPagedPosts(ctx context.Context, projectKey str
 }
 
 func (s *PostService) InsertPostComment(ctx context.Context, userId uuid.UUID, comment string, postId int32) (data.PostComment, error) {
-	return s.db.InsertComment(ctx, data.InsertCommentParams{UserUuid: userId, Comment: sql.NullString{String: comment, Valid: true}, PostID: postId})
+	return s.db.InsertComment(ctx, data.InsertCommentParams{UserUuid: userId, Comment: comment, PostID: postId})
 }
 
 func (s *PostService) InsertPost(ctx context.Context, post models.PostModel, authorId int32, projectId int32, userLocation *time.Location) (data.Post, error) {

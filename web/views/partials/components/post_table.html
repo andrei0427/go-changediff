@@ -101,6 +101,9 @@
             Status
           </th>
           <th scope="col" class="relative py-3.5 pl-3 pr-4 sm:pr-0">
+            <span class="sr-only">Comments &amp; Reactions</span>
+          </th>
+          <th scope="col" class="relative py-3.5 pl-3 pr-4 sm:pr-0">
             <span class="sr-only">Edit</span>
           </th>
           <th scope="col" class="relative py-3.5 pl-3 pr-4 sm:pr-0">
@@ -157,6 +160,17 @@
               Pending
             </div>
             {% endif %}
+          </td>
+          <td class="py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-0">
+            <button
+              class="text-orange hover:text-orange"
+              hx-get="/admin/posts/load-reactions/{{post.ID}}"
+              hx-target="body"
+              hx-swap="afterend"
+              hx-on:after-request="setTimeout(openSimpleSlideOver, 100)"
+            >
+              Reactions
+            </button>
           </td>
           <td class="py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-0">
             <a

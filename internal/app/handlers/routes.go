@@ -491,7 +491,7 @@ func (a *AppHandler) LoadPostReactions(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusInternalServerError, "something went wrong")
 	}
 
-	return c.Render("partials/components/simple_slideover", fiber.Map{"Title": "Post Reactions", "Reactions": reactions, "Comments": comments})
+	return c.Render("partials/components/simple_slideover", fiber.Map{"Title": "Post Reactions", "Reactions": reactions, "Comments": comments, "CommentCount": len(comments)})
 }
 
 func (a *AppHandler) LoadPosts(c *fiber.Ctx) error {

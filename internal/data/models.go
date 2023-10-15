@@ -73,3 +73,30 @@ type Project struct {
 	CreatedOn   time.Time
 	UpdatedOn   sql.NullTime
 }
+
+type RoadmapBoard struct {
+	ID          int32
+	Name        string
+	IsPrivate   interface{}
+	Description string
+	CreatedOn   time.Time
+	CreatedBy   uuid.UUID
+}
+
+type RoadmapPost struct {
+	ID        int32
+	Body      string
+	DueDate   sql.NullTime
+	BoardID   int32
+	StatusID  int32
+	CreatedOn time.Time
+	CreatedBy uuid.UUID
+}
+
+type RoadmapStatus struct {
+	ID          int32
+	Status      string
+	Description string
+	CreatedOn   time.Time
+	CreatedBy   uuid.UUID
+}

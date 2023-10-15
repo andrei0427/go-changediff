@@ -19,37 +19,34 @@ import (
 )
 
 type AppHandler struct {
-	AuthorService       *services.AuthorService
-	ProjectService      *services.ProjectService
-	PostService         *services.PostService
-	PostReactionService *services.PostReactionsService
-	CDNService          *services.CDNService
-	LabelService        *services.LabelService
-	CacheService        *services.CacheService
+	AuthorService  *services.AuthorService
+	ProjectService *services.ProjectService
+	PostService    *services.PostService
+	CDNService     *services.CDNService
+	LabelService   *services.LabelService
+	CacheService   *services.CacheService
 }
 
 func NewAppHandler(
 	authorService *services.AuthorService,
 	projectService *services.ProjectService,
 	postService *services.PostService,
-	postReactionService *services.PostReactionsService,
 	cdnService *services.CDNService,
 	labelService *services.LabelService,
 	cacheService *services.CacheService,
 ) *AppHandler {
 	return &AppHandler{
-		AuthorService:       authorService,
-		ProjectService:      projectService,
-		PostService:         postService,
-		CDNService:          cdnService,
-		LabelService:        labelService,
-		CacheService:        cacheService,
-		PostReactionService: postReactionService,
+		AuthorService:  authorService,
+		ProjectService: projectService,
+		PostService:    postService,
+		CDNService:     cdnService,
+		LabelService:   labelService,
+		CacheService:   cacheService,
 	}
 }
 
 func InitRoutes(app *app.App) {
-	appHandler := NewAppHandler(app.AuthorService, app.ProjectService, app.PostService, app.PostReactionService, app.CDNService, app.LabelService, app.CacheService)
+	appHandler := NewAppHandler(app.AuthorService, app.ProjectService, app.PostService, app.CDNService, app.LabelService, app.CacheService)
 	app.Fiber.Get("/", appHandler.Home)
 
 	widget := app.Fiber.Group("/widget", middleware.UseLocale, middleware.UseUserId)
@@ -197,7 +194,7 @@ func (a *AppHandler) WidgetChangelogReaction(c *fiber.Ctx) error {
 		}
 	}
 
-	_, err = a.PostReactionService.SaveReaction(c.Context(), data.InsertReactionParams{
+	_, err = a.PostService.SaveReaction(c.Context(), data.InsertReactionParams{
 		UserUuid:  *userUuid,
 		PostID:    post.ID,
 		IpAddr:    c.IP(),

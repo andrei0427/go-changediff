@@ -1,6 +1,9 @@
 <div class="flex justify-end">
   <div class="inline-flex">
-    <div class="flex-1 items-center justify-center px-2 lg:ml-6 lg:justify-end">
+    <div
+      id="search-container"
+      class="hidden flex-1 items-center justify-center px-2 lg:ml-6 lg:justify-end"
+    >
       <div class="w-full max-w-xs">
         <label for="search" class="sr-only">Search</label>
         <div class="relative">
@@ -42,6 +45,7 @@
         type="button"
         class="relative flex-shrink-0 rounded-full bg-white p-1 text-gray-400 hover-text-color focus:outline-none focus:ring-2 focus:ring-offset-2"
         style="--tw-ring-color: {{Project.AccentColor}}"
+        onclick="toggleSearch()"
       >
         <span class="absolute -inset-1.5"></span>
         <span class="sr-only">Search</span>
@@ -67,14 +71,42 @@
 <style>
   .hover-comment-send:hover,
   .hover-text-color:hover {
-    color: {{Project.AccentColor}};
+    color: {
+        {
+        Project.AccentColor
+      }
+    }
+
+    ;
   }
 
   .focus-ring-color:focus,
-  .focus-ring-color:focus-within{
-    --tw-ring-color: {{Project.AccentColor}};
+  .focus-ring-color:focus-within {
+    --tw-ring-color: {
+        {
+        Project.AccentColor
+      }
+    }
+
+    ;
   }
 </style>
+
+<script>
+  function toggleSearch() {
+    const searchContainerElm = document.querySelector("#search-container");
+
+    if (searchContainerElm) {
+      if (searchContainerElm.classList.contains("hidden")) {
+        searchContainerElm.classList.remove("hidden");
+        searchContainerElm.classList.add("block");
+      } else {
+        searchContainerElm.classList.add("hidden");
+        searchContainerElm.classList.remove("block");
+      }
+    }
+  }
+</script>
 
 <div
   id="changelog-content"

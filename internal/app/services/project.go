@@ -28,9 +28,21 @@ func (s *ProjectService) GetProjectForUser(ctx context.Context, userId uuid.UUID
 	return &projects[0], err
 }
 
-func (s *ProjectService) GetProjectByKey(ctx context.Context, key string) (data.Project, error) {
-	project, err := s.db.GetProjectByKey(ctx, key)
-	return project, err
+func (s *ProjectService) GetProjectByKey(ctx context.Context, c *CacheService, key string) (data.Project, error) {
+	projectCacheKey := "project-" + key
+	cachedProject, ok := c.Get(projectCacheKey)
+
+	if !ok {
+		project, err := s.db.GetProjectByKey(ctx, key)
+		if err != nil {
+			return project, err
+		}
+
+		cachedProject = project
+		c.Set(projectCacheKey, cachedProject, nil)
+	}
+
+	return cachedProject.(data.Project), nil
 }
 
 func (s *ProjectService) SaveProject(ctx context.Context, userId uuid.UUID, project models.ProjectModel, imageUrl *string) (data.Project, error) {

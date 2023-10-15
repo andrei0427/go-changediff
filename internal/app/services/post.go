@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"strings"
 	"time"
 
 	"github.com/andrei0427/go-changediff/internal/app/models"
@@ -44,13 +45,18 @@ func (s *PostService) GetPostComments(ctx context.Context, postId int32, project
 	return comments, err
 }
 
-func (s *PostService) GetPublishedPagedPosts(ctx context.Context, projectKey string, pageNo int32, userId uuid.UUID) ([]data.GetPublishedPagedPostsRow, error) {
+func (s *PostService) GetPublishedPagedPosts(ctx context.Context, projectKey string, pageNo int32, search string, userId uuid.UUID) ([]data.GetPublishedPagedPostsRow, error) {
 	var offset int32 = 0
 	if pageNo > 1 {
 		offset = pageNo - 1*5
 	}
 
-	posts, err := s.db.GetPublishedPagedPosts(ctx, data.GetPublishedPagedPostsParams{AppKey: projectKey, Limit: 5, Offset: offset, UserUuid: userId})
+	searchStr := search
+	if len(searchStr) > 0 {
+		searchStr = "%" + strings.ToLower(search) + "%"
+	}
+
+	posts, err := s.db.GetPublishedPagedPosts(ctx, data.GetPublishedPagedPostsParams{AppKey: projectKey, Limit: 5, Offset: offset, UserUuid: userId, Column5: searchStr})
 
 	return posts, err
 }

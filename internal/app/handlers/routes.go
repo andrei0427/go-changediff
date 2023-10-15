@@ -59,6 +59,7 @@ func InitRoutes(app *app.App) {
 	changelog := widget.Group("/changelog")
 	changelog.Get("/:key", appHandler.WidgetChangelog)
 	changelog.Get("/posts/:key/:pageNo?", appHandler.WidgetChangelogPosts)
+	changelog.Post("/posts/:key/:pageNo?", appHandler.WidgetChangelogPosts)
 	changelog.Put("/posts/view/:key/:postId/:reaction?", appHandler.WidgetChangelogReaction)
 	changelog.Put("/posts/comment/:key/:postId", appHandler.WidgetChangelogComment)
 
@@ -107,7 +108,7 @@ func (a *AppHandler) WidgetHome(c *fiber.Ctx) error {
 	isEmbedded := c.Query("embed") == "1"
 	userUuid := c.Locals("userUuid")
 
-	project, err := a.ProjectService.GetProjectByKey(c.Context(), key)
+	project, err := a.ProjectService.GetProjectByKey(c.Context(), a.CacheService, key)
 	if err != nil {
 		return fiber.NewError(404, "Project not found")
 	}
@@ -127,7 +128,7 @@ func (a *AppHandler) WidgetHome(c *fiber.Ctx) error {
 
 func (a *AppHandler) WidgetChangelog(c *fiber.Ctx) error {
 	key := c.Params("key")
-	project, err := a.ProjectService.GetProjectByKey(c.Context(), key)
+	project, err := a.ProjectService.GetProjectByKey(c.Context(), a.CacheService, key)
 	if err != nil {
 		return fiber.NewError(404, "Project not found")
 	}
@@ -138,19 +139,27 @@ func (a *AppHandler) WidgetChangelog(c *fiber.Ctx) error {
 func (a *AppHandler) WidgetChangelogPosts(c *fiber.Ctx) error {
 	key := c.Params("key")
 	paramPageNo, _ := c.ParamsInt("pageNo")
+
+	model := new(models.Search)
+	c.BodyParser(model)
+
 	userUuid := c.Locals("userUuid").(*uuid.UUID)
 	pageNo := 1
 	if paramPageNo > 0 {
 		pageNo = paramPageNo
 	}
 
-	posts, err := a.PostService.GetPublishedPagedPosts(c.Context(), key, int32(pageNo), *userUuid)
+	posts, err := a.PostService.GetPublishedPagedPosts(c.Context(), key, int32(pageNo), model.Search, *userUuid)
 	if err != nil {
-		fmt.Println(err.Error())
 		return fiber.NewError(503, "Error fetching posts")
 	}
 
-	return c.Render("widget/components/posts", fiber.Map{"Posts": posts, "ProjectKey": key})
+	project, err := a.ProjectService.GetProjectByKey(c.Context(), a.CacheService, key)
+	if err != nil {
+		return fiber.NewError(503, "Error fetching project")
+	}
+
+	return c.Render("widget/components/posts", fiber.Map{"Posts": posts, "ProjectKey": key, "Project": project})
 }
 
 func (a *AppHandler) WidgetChangelogReaction(c *fiber.Ctx) error {
@@ -169,7 +178,7 @@ func (a *AppHandler) WidgetChangelogReaction(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusBadRequest, "Project key is required")
 	}
 
-	project, err := a.ProjectService.GetProjectByKey(c.Context(), projectKey)
+	project, err := a.ProjectService.GetProjectByKey(c.Context(), a.CacheService, projectKey)
 	if err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, "Project not found")
 	}
@@ -223,7 +232,7 @@ func (a *AppHandler) WidgetChangelogComment(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusBadRequest, "Project key is required")
 	}
 
-	project, err := a.ProjectService.GetProjectByKey(c.Context(), projectKey)
+	project, err := a.ProjectService.GetProjectByKey(c.Context(), a.CacheService, projectKey)
 	if err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, "Project not found")
 	}
@@ -244,7 +253,7 @@ func (a *AppHandler) WidgetChangelogComment(c *fiber.Ctx) error {
 
 func (a *AppHandler) WidgetRoadmap(c *fiber.Ctx) error {
 	key := c.Params("key")
-	project, err := a.ProjectService.GetProjectByKey(c.Context(), key)
+	project, err := a.ProjectService.GetProjectByKey(c.Context(), a.CacheService, key)
 	if err != nil {
 		return fiber.NewError(404, "Project not found")
 	}
@@ -254,7 +263,7 @@ func (a *AppHandler) WidgetRoadmap(c *fiber.Ctx) error {
 
 func (a *AppHandler) WidgetFeedback(c *fiber.Ctx) error {
 	key := c.Params("key")
-	project, err := a.ProjectService.GetProjectByKey(c.Context(), key)
+	project, err := a.ProjectService.GetProjectByKey(c.Context(), a.CacheService, key)
 	if err != nil {
 		return fiber.NewError(404, "Project not found")
 	}

@@ -77,7 +77,7 @@
     </div>
   </div>
   <div class="flex justify-end w-full">
-    <div class="px-1 input-comment">
+    <div class="px-1 py-2 input-comment">
       <form
         hx-put="/widget/changelog/posts/comment/{{ProjectKey}}/{{post.ID}}"
         hx-swap="none"
@@ -85,10 +85,10 @@
         hx-on::after-request="this.classList.add('hidden');this.nextElementSibling.classList.remove('hidden')"
       >
         <div
-          class="flex rounded-md shadow-sm ring-1 ring-inset ring-gray-300 focus-within:ring-2 focus-within:ring-inset"
+          class="flex rounded-md shadow-sm ring-1 ring-inset ring-gray-300 focus-ring-color focus-within:ring-2 focus-within:ring-inset"
         >
           <span
-            class="flex select-none items-center pl-3 text-gray-500 sm:text-sm"
+            class="flex select-none items-center pl-3 text-gray-400 sm:text-sm"
             ><svg
               xmlns="http://www.w3.org/2000/svg"
               fill="none"
@@ -114,7 +114,7 @@
             required
           />
           <span
-            class="flex cursor-pointer select-none items-center pr-3 hover:text-gray-400 text-gray-500 sm:text-sm"
+            class="hover-comment-send flex cursor-pointer select-none items-center pr-3 text-gray-400 sm:text-sm"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"

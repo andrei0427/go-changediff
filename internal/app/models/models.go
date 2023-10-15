@@ -52,3 +52,7 @@ type PostModel struct {
 type ChangelogComment struct {
 	Comment string `form:"comment"`
 }
+
+type Search struct {
+	Search string `form:"search"`
+}

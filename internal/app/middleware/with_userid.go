@@ -6,7 +6,6 @@ import (
 )
 
 func UseWithUserId(c *fiber.Ctx) error {
-
 	userUuid := c.Locals("userUuid").(*uuid.UUID)
 
 	if userUuid == nil {

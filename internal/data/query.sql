@@ -39,13 +39,13 @@ INSERT INTO authors (first_name, last_name, picture_url, user_id, project_id) VA
 SELECT COUNT(id) total_posts FROM posts WHERE project_id = $1;
 
 -- name: GetPosts :many
-SELECT p.id, p.title, p.published_on, l.label, l.color, CASE WHEN p.published_on <= current_timestamp THEN 1 ELSE 0 END AS status, COUNT(r.id) as ViewCount FROM posts p left join labels l on p.label_id = l.id or p.label_id is null left join post_reactions r on p.id = r.post_id OR r.id is null WHERE p.project_id = $1 GROUP BY 1,2,3,4,5,6;
+SELECT p.id, p.title, p.published_on, l.label, l.color, CASE WHEN p.published_on <= current_timestamp THEN 1 ELSE 0 END AS status, COUNT(r.id) as ViewCount FROM posts p left join labels l on p.label_id = l.id or p.label_id is null left join post_reactions r on (p.id = r.post_id and r.reaction is null) OR r.id is null WHERE p.project_id = $1 GROUP BY 1,2,3,4,5,6;
 
 -- name: GetPost :one
 SELECT p.*, l.label as Label FROM posts p LEFT JOIN labels l on p.label_id = l.id or p.label_id is null WHERE p.id = $1 AND p.project_id = $2;
 
 -- name: GetPostReactions :many
-SELECT r.reaction, COUNT(r.*) FROM posts p JOIN post_reactions r ON r.post_id = p.id WHERE p.id = $1 AND p.project_id = $2 GROUP BY r.reaction ORDER BY r.reaction NULLS FIRST;
+SELECT CASE WHEN r.reaction IS NULL THEN '' ELSE r.reaction END as Reaction, COUNT(r.*) FROM posts p JOIN post_reactions r ON r.post_id = p.id WHERE p.id = $1 AND p.project_id = $2 GROUP BY r.reaction ORDER BY r.reaction NULLS FIRST;
 
 -- name: GetPostComments :many
 SELECT c.comment, c.created_on, r.locale, ur.reaction 
@@ -64,7 +64,7 @@ SELECT post.*, l.label, l.color, a.first_name, a.last_name, a.picture_url, r.rea
 	left join labels l on post.label_id = l.id or post.label_id is null 
 	left join post_reactions r on (r.post_id = post.id and r.user_uuid = $4 and r.reaction is not null) or r.id is null 
 	left join post_reactions v on (v.post_id = post.id and v.user_uuid = $4 and v.reaction is null) or v.id is null 
-WHERE proj.app_key = $1 AND post.published_on <= CURRENT_TIMESTAMP 
+WHERE proj.app_key = $1 AND post.published_on <= CURRENT_TIMESTAMP AND ($5 = '' OR LOWER(post.title) LIKE $5)
 ORDER BY post.published_on DESC 
 LIMIT $2 
 OFFSET $3;

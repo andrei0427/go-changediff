@@ -2,67 +2,197 @@
 <div class="pt-4">{% include 'partials/components/banner.html' %}</div>
 {% endif %}
 
-<div class="mt-10">
+<div class="mt-10 divide-y divide-gray-200">
   <div class="sm:flex sm:items-center">
     <div class="sm:flex-auto">
       <h3 class="text-lg font-medium leading-6 text-gray-900">Boards</h3>
       <p class="mt-2 text-sm text-gray-700">
-        Labels categorize and color code posts so it's easier for users to
-				identify what kind of content they're reading.
-			</p>
-		</div>
-		<div class="mt-4 sm:ml-16 sm:mt-0 sm:flex-none">
-			<button type="button" hx-get="/admin/settings/changelog/labels/new" hx-target="#table-labels" hx-swap="beforeend"
-				hx-on::after-request="fixIds()"
-				class="block rounded-md bg-orange px-3 py-2 text-center text-sm font-semibold text-white shadow-sm hover:bg-orange focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange">
-				Add label
-			</button>
-		</div>
-	</div>
+        A board is divided into columns representing different stages in the
+        development process, such as "To Do," "In Progress," and "Done." Cards
+        or tasks are moved across these columns to track progress and manage
+        workflow. You can use multiple boards for different flows.
+      </p>
+    </div>
+    <div class="mt-4 sm:ml-16 sm:mt-0 sm:flex-none">
+      <button
+        type="button"
+        hx-get="/admin/settings/roadmap/status/new"
+        hx-target="#table-labels"
+        hx-swap="beforeend"
+        class="block rounded-md bg-orange px-3 py-2 text-center text-sm font-semibold text-white shadow-sm hover:bg-orange focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange"
+      >
+        Add board
+      </button>
+    </div>
+  </div>
 
-	<div class="mt-8 flow-root">
-		<div class="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
-			<div class="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
-				<table class="min-w-full divide-y divide-gray-300">
-					<thead>
-						<tr>
-							<th scope="col"
-								class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-0">
-								Label
-							</th>
-							<th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-								Color
-							</th>
-							<th scope="col" class="relative py-3.5 pl-3 pr-4 sm:pr-0">
-								<span class="sr-only">Save</span>
-							</th>
-							<th scope="col" class="relative py-3.5 pl-3 pr-4 sm:pr-0">
-								<span class="sr-only">Delete</span>
-							</th>
-						</tr>
-					</thead>
-					<tbody class="divide-y divide-gray-200" id="table-labels">
-						{% for label in Labels %}
-						{% include 'partials/components/settings/label_row.html' %}
-						{%endfor%}
-					</tbody>
-				</table>
-			</div>
-		</div>
-	</div>
+  <div class="mt-8 flow-root">
+    <div class="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
+      <div class="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
+        <table class="min-w-full divide-y divide-gray-300">
+          <thead>
+            <tr>
+              <th
+                scope="col"
+                class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-0"
+              >
+                Name
+              </th>
+              <th
+                scope="col"
+                class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900"
+              >
+                Visibility
+              </th>
+              <th scope="col" class="relative py-3.5 pl-3 pr-4 sm:pr-0">
+                <span class="sr-only">Edit</span>
+              </th>
+              <th scope="col" class="relative py-3.5 pl-3 pr-4 sm:pr-0">
+                <span class="sr-only">Delete</span>
+              </th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-200" id="table-labels">
+            {% for board in Boards %}
+            <tr>
+              <td
+                class="w-64 whitespace-wrap py-4 pr-3 text-sm font-medium text-gray-900 sm:pl-0"
+              >
+                {{board.Name}}
+              </td>
+              <td
+                class="w-1/2 whitespace-nowrap px-3 py-4 text-sm text-gray-500"
+              >
+                {%if board.IsPrivate %}Private{%else%}Public{%endif%}
+              </td>
+              <td
+                class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-0"
+              >
+                <button
+                  hx-get="/admin/settings/roadmap/boards/edit"
+                  hx-target="body"
+                  hx-swap="beforeend"
+                  class="text-orange hover:text-orange"
+                >
+                  Edit<span class="sr-only">, {{board.Name}}</span>
+                </button>
+              </td>
+              <td
+                class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-0"
+              >
+                <button
+                  hx-get="/admin/settings/roadmap/boards/confirm-delete/{{board.ID}}"
+                  hx-target="body"
+                  hx-swap="beforeend"
+                  class="text-orange hover:text-orange"
+                >
+                  Delete<span class="sr-only">, {{board.Name}}</span>
+                </button>
+              </td>
+            </tr>
+            {%endfor%}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="mt-10 divide-y divide-gray-200">
+  <div class="sm:flex sm:items-center">
+    <div class="sm:flex-auto">
+      <h3 class="text-lg font-medium leading-6 text-gray-900">Statuses</h3>
+      <p class="mt-2 text-sm text-gray-700">
+        These statuses represent the different stages within each board. You
+        will be able to assign posts to a particular status to move it along the
+        flow.
+      </p>
+    </div>
+    <div class="mt-4 sm:ml-16 sm:mt-0 sm:flex-none">
+      <button
+        type="button"
+        hx-get="/admin/settings/roadmap/statuses/new"
+        hx-target="#table-labels"
+        hx-swap="beforeend"
+        class="block rounded-md bg-orange px-3 py-2 text-center text-sm font-semibold text-white shadow-sm hover:bg-orange focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange"
+      >
+        Add status
+      </button>
+    </div>
+  </div>
+
+  <div class="mt-8 flow-root">
+    <div class="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
+      <div class="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
+        <table class="min-w-full divide-y divide-gray-300">
+          <thead>
+            <tr>
+              <th
+                scope="col"
+                class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-0"
+              >
+                Color
+              </th>
+              <th
+                scope="col"
+                class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900"
+              >
+                Name
+              </th>
+              <th scope="col" class="relative py-3.5 pl-3 pr-4 sm:pr-0">
+                <span class="sr-only">Edit</span>
+              </th>
+              <th scope="col" class="relative py-3.5 pl-3 pr-4 sm:pr-0">
+                <span class="sr-only">Delete</span>
+              </th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-200" id="table-labels">
+            {% for status in Statuses %}
+            <tr>
+              <td
+                class="w-2 whitespace-wrap py-4 pr-3 text-sm font-medium text-gray-900 sm:pl-0"
+              >
+                {{status.Color}}
+              </td>
+              <td
+                class="w-1/2 whitespace-nowrap px-3 py-4 text-sm text-gray-500"
+              >
+                {{status.Name}}
+              </td>
+              <td
+                class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-0"
+              >
+                <button
+                  hx-get="/admin/settings/roadmap/status/edit"
+                  hx-target="body"
+                  hx-swap="beforeend"
+                  class="text-orange hover:text-orange"
+                >
+                  Edit<span class="sr-only">, {{status.Name}}</span>
+                </button>
+              </td>
+              <td
+                class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-0"
+              >
+                <button
+                  hx-get="/admin/settings/roadmap/status/confirm-delete/{{status.ID}}"
+                  hx-target="body"
+                  hx-swap="beforeend"
+                  class="text-orange hover:text-orange"
+                >
+                  Delete<span class="sr-only">, {{status.Name}}</span>
+                </button>
+              </td>
+            </tr>
+            {%endfor%}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
 </div>
 
 <div class="mt-6 flex items-center justify-end gap-x-6">
-	<p class="mt-2 text-sm text-red-600">{{Error}}</p>
+  <p class="mt-2 text-sm text-red-600">{{Error}}</p>
 </div>
-
-<script>
-	function fixIds() {
-		const labelTableRows = document.querySelectorAll('#table-labels tr');
-
-		labelTableRows.forEach((elm, i) => {
-			elm.setAttribute('id', 'form-'.concat(i));
-			document.querySelector('#form-'.concat(i).concat(' .save-btn')).setAttribute('hx-include', '#form-'.concat(i).concat(' input'));
-		});
-	}
-</script>

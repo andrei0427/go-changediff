@@ -310,14 +310,19 @@ func (a *AppHandler) SettingsTab(c *fiber.Ctx) error {
 		return c.Render("partials/components/settings/changelog_tab", fiber.Map{"Labels": labels, "Message": message})
 
 	case "roadmap":
-		labels, err := a.LabelService.GetLabels(c.Context(), curUser.Project.ID)
+		boards, boardsErr := a.RoadmapService.GetBoards(c.Context(), curUser.Project.ID)
+		statuses, statusesErr := a.RoadmapService.GetStatuses(c.Context(), curUser.Project.ID)
 
-		var message string
-		if err != nil {
-			message = err.Error()
+		var message = ""
+		if boardsErr != nil {
+			message = boardsErr.Error()
 		}
 
-		return c.Render("partials/components/settings/roadmap_tab", fiber.Map{"Labels": labels, "Message": message})
+		if statusesErr != nil {
+			message = message + "\n" + statusesErr.Error()
+		}
+
+		return c.Render("partials/components/settings/roadmap_tab", fiber.Map{"Boards": boards, "Statuses": statuses, "Message": message})
 
 	default:
 		return c.Render("partials/components/settings/general_tab", fiber.Map{"Form": curUser.Project})

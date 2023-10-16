@@ -26,7 +26,7 @@
     class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-0"
   >
     <button
-      hx-post="/admin/settings/labels/save"
+      hx-post="/admin/settings/changelog/labels/save"
       hx-encoding="multipart/form-data"
       hx-target="#tab-content"
       hx-swap="innerHtml"
@@ -41,7 +41,7 @@
   >
     {%if label.ID%}
     <button
-      hx-get="/admin/settings/labels/confirm-delete/{{label.ID}}"
+      hx-get="/admin/settings/changelog/labels/confirm-delete/{{label.ID}}"
       hx-target="body"
       hx-swap="beforeend"
       class="text-orange hover:text-orange"

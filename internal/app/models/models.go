@@ -41,7 +41,7 @@ type LabelModel struct {
 }
 
 type PostModel struct {
-	Id          *int64 `form:"id"`
+	ID          *int32 `form:"id"`
 	Title       string `form:"title"`
 	Content     string `form:"content"`
 	PublishedOn string `form:"published_on"`
@@ -55,4 +55,18 @@ type ChangelogComment struct {
 
 type Search struct {
 	Search string `form:"search"`
+}
+
+type RoadmapBoardModel struct {
+	ID          *int32 `form:"id"`
+	Name        string `form:"name"`
+	IsPrivate   bool   `form:"is_private"`
+	Description string `form:"description"`
+}
+
+type RoadmapStatusModel struct {
+	ID          *int32 `form:"id"`
+	Status      string `form:"status"`
+	Color       string `form:"color"`
+	Description string `form:"description"`
 }

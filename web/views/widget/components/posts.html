@@ -51,12 +51,12 @@
 
     <div class="text-3xl text-right">
       <button
-        class="{%if post.Reaction.String == '😍'%}bg-slate-200{%endif%} rounded-md p-1"
-        hx-put="/widget/changelog/posts/view/{{ProjectKey}}/{{post.ID}}/😍"
+        class="{%if post.Reaction.String == '😡'%}bg-slate-200{%endif%} rounded-md p-1"
+        hx-put="/widget/changelog/posts/view/{{ProjectKey}}/{{post.ID}}/😡"
         hx-swap="none"
-        hx-on::before-request="toggleReaction({{post.ID}}, '😍')"
+        hx-on::before-request="toggleReaction({{post.ID}}, '😡')"
       >
-        😍
+        😡
       </button>
       <button
         class="{%if post.Reaction.String == '😒'%}bg-slate-200{%endif%} rounded-md p-1"
@@ -67,12 +67,12 @@
         😒
       </button>
       <button
-        class="{%if post.Reaction.String == '😡'%}bg-slate-200{%endif%} rounded-md p-1"
-        hx-put="/widget/changelog/posts/view/{{ProjectKey}}/{{post.ID}}/😡"
+        class="{%if post.Reaction.String == '😍'%}bg-slate-200{%endif%} rounded-md p-1"
+        hx-put="/widget/changelog/posts/view/{{ProjectKey}}/{{post.ID}}/😍"
         hx-swap="none"
-        hx-on::before-request="toggleReaction({{post.ID}}, '😡')"
+        hx-on::before-request="toggleReaction({{post.ID}}, '😍')"
       >
-        😡
+        😍
       </button>
     </div>
   </div>

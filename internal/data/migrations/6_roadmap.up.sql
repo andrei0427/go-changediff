@@ -5,16 +5,17 @@ CREATE TABLE IF NOT EXISTS roadmap_boards (
     description text not null default '',
 
     created_on timestamp NOT NULL DEFAULT current_timestamp,
-    created_by uuid NOT NULL
+    project_id integer REFERENCES projects(id) NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS roadmap_statuses (
     id SERIAL PRIMARY KEY,
     status VARCHAR(255) NOT NULL,
+    color VARCHAR(7) NOT NULL,
     description text not null default '',
 
     created_on timestamp NOT NULL DEFAULT current_timestamp,
-    created_by uuid NOT NULL
+    project_id integer REFERENCES projects(id) NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS roadmap_posts (

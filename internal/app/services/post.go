@@ -98,8 +98,8 @@ func (s *PostService) UpdatePost(ctx context.Context, post models.PostModel, pro
 		ProjectID: projectId,
 	}
 
-	if post.Id != nil {
-		toUpdate.ID = int32(*post.Id)
+	if post.ID != nil {
+		toUpdate.ID = int32(*post.ID)
 	} else {
 		return data.Post{}, errors.New("ID is required when updating")
 	}

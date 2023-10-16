@@ -77,10 +77,10 @@ type Project struct {
 type RoadmapBoard struct {
 	ID          int32
 	Name        string
-	IsPrivate   interface{}
+	IsPrivate   bool
 	Description string
 	CreatedOn   time.Time
-	CreatedBy   uuid.UUID
+	ProjectID   int32
 }
 
 type RoadmapPost struct {
@@ -96,7 +96,8 @@ type RoadmapPost struct {
 type RoadmapStatus struct {
 	ID          int32
 	Status      string
+	Color       string
 	Description string
 	CreatedOn   time.Time
-	CreatedBy   uuid.UUID
+	ProjectID   int32
 }

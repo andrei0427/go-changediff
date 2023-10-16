@@ -13,6 +13,22 @@ import (
 	"github.com/google/uuid"
 )
 
+const deleteBoard = `-- name: DeleteBoard :one
+DELETE FROM roadmap_boards WHERE id = $1 and project_id = $2 RETURNING id
+`
+
+type DeleteBoardParams struct {
+	ID        int32
+	ProjectID int32
+}
+
+func (q *Queries) DeleteBoard(ctx context.Context, arg DeleteBoardParams) (int32, error) {
+	row := q.db.QueryRowContext(ctx, deleteBoard, arg.ID, arg.ProjectID)
+	var id int32
+	err := row.Scan(&id)
+	return id, err
+}
+
 const deleteLabel = `-- name: DeleteLabel :one
 DELETE FROM labels WHERE id = $1 AND project_id = $2 RETURNING id
 `
@@ -45,6 +61,22 @@ func (q *Queries) DeletePost(ctx context.Context, arg DeletePostParams) (int32, 
 	return id, err
 }
 
+const deleteStatus = `-- name: DeleteStatus :one
+DELETE FROM roadmap_statuses WHERE id = $1 and project_id = $2 RETURNING id
+`
+
+type DeleteStatusParams struct {
+	ID        int32
+	ProjectID int32
+}
+
+func (q *Queries) DeleteStatus(ctx context.Context, arg DeleteStatusParams) (int32, error) {
+	row := q.db.QueryRowContext(ctx, deleteStatus, arg.ID, arg.ProjectID)
+	var id int32
+	err := row.Scan(&id)
+	return id, err
+}
+
 const getAuthorByUser = `-- name: GetAuthorByUser :many
 SELECT id, first_name, last_name, picture_url, user_id, project_id, created_on, updated_on FROM authors WHERE user_id = $1 LIMIT 1
 `
@@ -69,6 +101,41 @@ func (q *Queries) GetAuthorByUser(ctx context.Context, userID uuid.UUID) ([]Auth
 			&i.CreatedOn,
 			&i.UpdatedOn,
 		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getBoards = `-- name: GetBoards :many
+
+SELECT id, name, is_private FROM roadmap_boards WHERE project_id = $1
+`
+
+type GetBoardsRow struct {
+	ID        int32
+	Name      string
+	IsPrivate bool
+}
+
+// ROADMAP --
+func (q *Queries) GetBoards(ctx context.Context, projectID int32) ([]GetBoardsRow, error) {
+	rows, err := q.db.QueryContext(ctx, getBoards, projectID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetBoardsRow
+	for rows.Next() {
+		var i GetBoardsRow
+		if err := rows.Scan(&i.ID, &i.Name, &i.IsPrivate); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -479,6 +546,61 @@ func (q *Queries) GetReaction(ctx context.Context, arg GetReactionParams) ([]sql
 	return items, nil
 }
 
+const getStatuses = `-- name: GetStatuses :many
+SELECT id, status, color FROM roadmap_statuses WHERE project_id = $1
+`
+
+type GetStatusesRow struct {
+	ID     int32
+	Status string
+	Color  string
+}
+
+func (q *Queries) GetStatuses(ctx context.Context, projectID int32) ([]GetStatusesRow, error) {
+	rows, err := q.db.QueryContext(ctx, getStatuses, projectID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetStatusesRow
+	for rows.Next() {
+		var i GetStatusesRow
+		if err := rows.Scan(&i.ID, &i.Status, &i.Color); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const hasPostsForBoard = `-- name: HasPostsForBoard :one
+SELECT COUNT(*) FROM roadmap_posts WHERE board_id = $1
+`
+
+func (q *Queries) HasPostsForBoard(ctx context.Context, boardID int32) (int64, error) {
+	row := q.db.QueryRowContext(ctx, hasPostsForBoard, boardID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const hasPostsForStatus = `-- name: HasPostsForStatus :one
+SELECT COUNT(*) FROM roadmap_posts WHERE status_id = $1
+`
+
+func (q *Queries) HasPostsForStatus(ctx context.Context, statusID int32) (int64, error) {
+	row := q.db.QueryRowContext(ctx, hasPostsForStatus, statusID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const insertAuthor = `-- name: InsertAuthor :one
 INSERT INTO authors (first_name, last_name, picture_url, user_id, project_id) VALUES ($1, $2, $3, $4, $5) RETURNING id, first_name, last_name, picture_url, user_id, project_id, created_on, updated_on
 `
@@ -509,6 +631,36 @@ func (q *Queries) InsertAuthor(ctx context.Context, arg InsertAuthorParams) (Aut
 		&i.ProjectID,
 		&i.CreatedOn,
 		&i.UpdatedOn,
+	)
+	return i, err
+}
+
+const insertBoard = `-- name: InsertBoard :one
+INSERT INTO roadmap_boards (name, is_private, description, project_id, created_on) VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP) RETURNING id, name, is_private, description, created_on, project_id
+`
+
+type InsertBoardParams struct {
+	Name        string
+	IsPrivate   bool
+	Description string
+	ProjectID   int32
+}
+
+func (q *Queries) InsertBoard(ctx context.Context, arg InsertBoardParams) (RoadmapBoard, error) {
+	row := q.db.QueryRowContext(ctx, insertBoard,
+		arg.Name,
+		arg.IsPrivate,
+		arg.Description,
+		arg.ProjectID,
+	)
+	var i RoadmapBoard
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.IsPrivate,
+		&i.Description,
+		&i.CreatedOn,
+		&i.ProjectID,
 	)
 	return i, err
 }
@@ -670,6 +822,36 @@ func (q *Queries) InsertReaction(ctx context.Context, arg InsertReactionParams) 
 	return i, err
 }
 
+const insertStatus = `-- name: InsertStatus :one
+INSERT INTO roadmap_statuses (status, description, color, project_id, created_on) VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP) RETURNING id, status, color, description, created_on, project_id
+`
+
+type InsertStatusParams struct {
+	Status      string
+	Description string
+	Color       string
+	ProjectID   int32
+}
+
+func (q *Queries) InsertStatus(ctx context.Context, arg InsertStatusParams) (RoadmapStatus, error) {
+	row := q.db.QueryRowContext(ctx, insertStatus,
+		arg.Status,
+		arg.Description,
+		arg.Color,
+		arg.ProjectID,
+	)
+	var i RoadmapStatus
+	err := row.Scan(
+		&i.ID,
+		&i.Status,
+		&i.Color,
+		&i.Description,
+		&i.CreatedOn,
+		&i.ProjectID,
+	)
+	return i, err
+}
+
 const unsetLabels = `-- name: UnsetLabels :many
 UPDATE posts SET label_id = NULL WHERE id = $1 AND project_id = $2 RETURNING id
 `
@@ -700,6 +882,38 @@ func (q *Queries) UnsetLabels(ctx context.Context, arg UnsetLabelsParams) ([]int
 		return nil, err
 	}
 	return items, nil
+}
+
+const updateBoard = `-- name: UpdateBoard :one
+UPDATE roadmap_boards SET name = $1, is_private = $2, description = $3 WHERE id = $4 AND project_id = $5 RETURNING id, name, is_private, description, created_on, project_id
+`
+
+type UpdateBoardParams struct {
+	Name        string
+	IsPrivate   bool
+	Description string
+	ID          int32
+	ProjectID   int32
+}
+
+func (q *Queries) UpdateBoard(ctx context.Context, arg UpdateBoardParams) (RoadmapBoard, error) {
+	row := q.db.QueryRowContext(ctx, updateBoard,
+		arg.Name,
+		arg.IsPrivate,
+		arg.Description,
+		arg.ID,
+		arg.ProjectID,
+	)
+	var i RoadmapBoard
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.IsPrivate,
+		&i.Description,
+		&i.CreatedOn,
+		&i.ProjectID,
+	)
+	return i, err
 }
 
 const updateLabel = `-- name: UpdateLabel :one
@@ -828,6 +1042,38 @@ func (q *Queries) UpdateReaction(ctx context.Context, arg UpdateReactionParams) 
 		&i.Reaction,
 		&i.PostID,
 		&i.CreatedOn,
+	)
+	return i, err
+}
+
+const updateStatus = `-- name: UpdateStatus :one
+UPDATE roadmap_statuses SET status = $1, description = $2, color = $3 WHERE id = $4 AND project_id = $5 RETURNING id, status, color, description, created_on, project_id
+`
+
+type UpdateStatusParams struct {
+	Status      string
+	Description string
+	Color       string
+	ID          int32
+	ProjectID   int32
+}
+
+func (q *Queries) UpdateStatus(ctx context.Context, arg UpdateStatusParams) (RoadmapStatus, error) {
+	row := q.db.QueryRowContext(ctx, updateStatus,
+		arg.Status,
+		arg.Description,
+		arg.Color,
+		arg.ID,
+		arg.ProjectID,
+	)
+	var i RoadmapStatus
+	err := row.Scan(
+		&i.ID,
+		&i.Status,
+		&i.Color,
+		&i.Description,
+		&i.CreatedOn,
+		&i.ProjectID,
 	)
 	return i, err
 }

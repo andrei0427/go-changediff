@@ -21,6 +21,7 @@ type App struct {
 	PostService    *services.PostService
 	LabelService   *services.LabelService
 	CacheService   *services.CacheService
+	RoadmapService *services.RoadmapService
 }
 
 func NewApp() *App {
@@ -44,6 +45,7 @@ func NewApp() *App {
 	projectService := services.NewProjectService(dbConn)
 	postService := services.NewPostService(dbConn)
 	labelService := services.NewLabelService(dbConn)
+	roadmapService := services.NewRoadmapSercice(dbConn)
 	cdnService := services.NewCDNService()
 	cacheService := services.NewCacheService()
 
@@ -56,6 +58,7 @@ func NewApp() *App {
 		CDNService:     cdnService,
 		LabelService:   labelService,
 		CacheService:   cacheService,
+		RoadmapService: roadmapService,
 	}
 }
 

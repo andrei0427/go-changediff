@@ -3,13 +3,27 @@
 {% endblock %} {% block content %}
 <div class="lg:px-8">
   <div class="mx-auto flex flex-col lg:max-w-4xl">
-    <div class="sticky top-0 z-10 flex h-16 flex-shrink-0 border-b border-gray-200 bg-white lg:hidden">
-      <button type="button"
-        class="border-r border-gray-200 px-4 text-gray-500 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-orange">
+    <div
+      class="sticky top-0 z-10 flex h-16 flex-shrink-0 border-b border-gray-200 bg-white lg:hidden"
+    >
+      <button
+        type="button"
+        class="border-r border-gray-200 px-4 text-gray-500 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-orange"
+      >
         <span class="sr-only">Open sidebar</span>
-        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"
-          aria-hidden="true">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25H12" />
+        <svg
+          class="h-6 w-6"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke-width="1.5"
+          stroke="currentColor"
+          aria-hidden="true"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25H12"
+          />
         </svg>
       </button>
     </div>
@@ -27,30 +41,69 @@
               <!-- Tabs -->
               <div class="lg:hidden">
                 <label for="selected-tab" class="sr-only">Select a tab</label>
-                <select id="selected-tab" name="selected-tab"
-                  class="mt-1 block w-full rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-orange sm:text-sm sm:leading-6">
+                <select
+                  id="selected-tab"
+                  name="selected-tab"
+                  class="mt-1 block w-full rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-orange sm:text-sm sm:leading-6"
+                >
                   <option selected>General</option>
-                  <option>Labels</option>
+                  <option>Organisation</option>
+                  <option>Changelog</option>
+                  <option>Roadmap</option>
+                  <option>Feedback</option>
+                  <option>Integrations</option>
                 </select>
               </div>
               <div class="hidden lg:block">
                 <div class="border-b border-gray-200">
                   <nav class="-mb-px flex space-x-8">
-                    <button onclick="updateNavTabs('general')"
-                      class="border-orange text-orange whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium">
+                    <button
+                      onclick="updateNavTabs('general')"
+                      class="border-orange text-orange whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium"
+                    >
                       General
                     </button>
-                    <button onclick="updateNavTabs('labels')"
-                      class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium">
-                      Labels
+                    <button
+                      onclick="updateNavTabs('organisation')"
+                      class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium"
+                    >
+                      Organisation
+                    </button>
+                    <button
+                      onclick="updateNavTabs('changelog')"
+                      class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium"
+                    >
+                      Changelog
+                    </button>
+                    <button
+                      onclick="updateNavTabs('roadmap')"
+                      class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium"
+                    >
+                      Roadmap
+                    </button>
+                    <button
+                      onclick="updateNavTabs('feedback')"
+                      class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium"
+                    >
+                      Feedback
+                    </button>
+                    <button
+                      onclick="updateNavTabs('integrations')"
+                      class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium"
+                    >
+                      Integrations
                     </button>
                   </nav>
                 </div>
               </div>
 
-              <div id="tab-content" hx-get="/admin/settings/tab" hx-swap="innerHtml"
-                hx-vals="js:{hash: window.location.hash.replace('#', '')}" hx-trigger="load, tabchange">
-              </div>
+              <div
+                id="tab-content"
+                hx-get="/admin/settings/tab"
+                hx-swap="innerHtml"
+                hx-vals="js:{hash: window.location.hash.replace('#', '')}"
+                hx-trigger="load, tabchange"
+              ></div>
             </div>
           </div>
         </div>
@@ -64,7 +117,8 @@
 
   function updateNavTabs(tabName) {
     const navElms = document.querySelectorAll("nav > button");
-    const fixedTabName = tabName.replace("#", "").toLowerCase().trim() || "general";
+    const fixedTabName =
+      tabName.replace("#", "").toLowerCase().trim() || "general";
 
     const defaultClasses = [
       "border-transparent",
@@ -84,12 +138,14 @@
       }
     });
 
-    location.hash = '#' + fixedTabName;
+    location.hash = "#" + fixedTabName;
   }
 
   window.onhashchange = function () {
-    document.getElementById('tab-content').dispatchEvent(new Event('tabchange'));
+    document
+      .getElementById("tab-content")
+      .dispatchEvent(new Event("tabchange"));
     updateNavTabs(window.location.hash);
-  }
+  };
 </script>
 {% endblock %}

@@ -92,3 +92,35 @@ SELECT reaction FROM post_reactions WHERE user_uuid = $1 AND post_id = $2 AND re
 
 -- name: UserViewed :one
 SELECT COUNT(id) FROM post_reactions WHERE user_uuid = $1 AND post_id = $2 AND reaction IS NULL;
+
+-- ROADMAP --
+
+-- name: GetBoards :many
+SELECT id, name, is_private FROM roadmap_boards WHERE project_id = $1;
+
+-- name: InsertBoard :one
+INSERT INTO roadmap_boards (name, is_private, description, project_id, created_on) VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP) RETURNING *;
+
+-- name: UpdateBoard :one
+UPDATE roadmap_boards SET name = $1, is_private = $2, description = $3 WHERE id = $4 AND project_id = $5 RETURNING *;
+
+-- name: DeleteBoard :one
+DELETE FROM roadmap_boards WHERE id = $1 and project_id = $2 RETURNING id;
+
+-- name: GetStatuses :many
+SELECT id, status, color FROM roadmap_statuses WHERE project_id = $1;
+
+-- name: InsertStatus :one
+INSERT INTO roadmap_statuses (status, description, color, project_id, created_on) VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP) RETURNING *;
+
+-- name: UpdateStatus :one
+UPDATE roadmap_statuses SET status = $1, description = $2, color = $3 WHERE id = $4 AND project_id = $5 RETURNING *;
+
+-- name: DeleteStatus :one
+DELETE FROM roadmap_statuses WHERE id = $1 and project_id = $2 RETURNING id;
+
+-- name: HasPostsForBoard :one
+SELECT COUNT(*) FROM roadmap_posts WHERE board_id = $1;
+
+-- name: HasPostsForStatus :one
+SELECT COUNT(*) FROM roadmap_posts WHERE status_id = $1;

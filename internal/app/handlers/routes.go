@@ -25,6 +25,7 @@ type AppHandler struct {
 	CDNService     *services.CDNService
 	LabelService   *services.LabelService
 	CacheService   *services.CacheService
+	RoadmapService *services.RoadmapService
 }
 
 func NewAppHandler(
@@ -34,6 +35,7 @@ func NewAppHandler(
 	cdnService *services.CDNService,
 	labelService *services.LabelService,
 	cacheService *services.CacheService,
+	roadmapService *services.RoadmapService,
 ) *AppHandler {
 	return &AppHandler{
 		AuthorService:  authorService,
@@ -42,11 +44,18 @@ func NewAppHandler(
 		CDNService:     cdnService,
 		LabelService:   labelService,
 		CacheService:   cacheService,
+		RoadmapService: roadmapService,
 	}
 }
 
 func InitRoutes(app *app.App) {
-	appHandler := NewAppHandler(app.AuthorService, app.ProjectService, app.PostService, app.CDNService, app.LabelService, app.CacheService)
+	appHandler := NewAppHandler(app.AuthorService,
+		app.ProjectService,
+		app.PostService,
+		app.CDNService,
+		app.LabelService,
+		app.CacheService,
+		app.RoadmapService)
 	app.Fiber.Get("/", appHandler.Home)
 
 	widget := app.Fiber.Group("/widget", middleware.UseLocale, middleware.UseUserId)
@@ -88,10 +97,10 @@ func InitRoutes(app *app.App) {
 	settings.Get("/", appHandler.Settings)
 	settings.Get("/tab", appHandler.SettingsTab)
 	settings.Post("/general/save", appHandler.SaveSettingsGeneralTab)
-	settings.Post("/labels/save", appHandler.SaveSettingsLabelsTab)
-	settings.Delete("/labels/delete/:id", appHandler.DeleteSettingsLabel)
-	settings.Get("/labels/confirm-delete/:id", appHandler.ConfirmDeleteLabel)
-	settings.Get("/labels/new", appHandler.NewSettingsLabel)
+	settings.Post("/changelog/labels/save", appHandler.SaveSettingsLabelsTab)
+	settings.Delete("/changelog/labels/delete/:id", appHandler.DeleteSettingsLabel)
+	settings.Get("/changelog/labels/confirm-delete/:id", appHandler.ConfirmDeleteLabel)
+	settings.Get("/changelog/labels/new", appHandler.NewSettingsLabel)
 }
 
 // Public Routes
@@ -290,7 +299,7 @@ func (a *AppHandler) SettingsTab(c *fiber.Ctx) error {
 	case "general":
 		return c.Render("partials/components/settings/general_tab", fiber.Map{"Form": curUser.Project})
 
-	case "labels":
+	case "changelog":
 		labels, err := a.LabelService.GetLabels(c.Context(), curUser.Project.ID)
 
 		var message string
@@ -298,7 +307,17 @@ func (a *AppHandler) SettingsTab(c *fiber.Ctx) error {
 			message = err.Error()
 		}
 
-		return c.Render("partials/components/settings/labels_tab", fiber.Map{"Labels": labels, "Message": message})
+		return c.Render("partials/components/settings/changelog_tab", fiber.Map{"Labels": labels, "Message": message})
+
+	case "roadmap":
+		labels, err := a.LabelService.GetLabels(c.Context(), curUser.Project.ID)
+
+		var message string
+		if err != nil {
+			message = err.Error()
+		}
+
+		return c.Render("partials/components/settings/roadmap_tab", fiber.Map{"Labels": labels, "Message": message})
 
 	default:
 		return c.Render("partials/components/settings/general_tab", fiber.Map{"Form": curUser.Project})
@@ -325,7 +344,7 @@ func (a *AppHandler) ConfirmDeleteLabel(c *fiber.Ctx) error {
 }
 
 func (a *AppHandler) DeleteSettingsLabel(c *fiber.Ctx) error {
-	viewPath := "partials/components/settings/labels_tab"
+	viewPath := "partials/components/settings/changelog_tab"
 	curUser := c.Locals("user").(*models.SessionUser)
 	currentLabels, err := a.LabelService.GetLabels(c.Context(), curUser.Project.ID)
 	if err != nil {
@@ -354,7 +373,7 @@ func (a *AppHandler) DeleteSettingsLabel(c *fiber.Ctx) error {
 }
 
 func (a *AppHandler) SaveSettingsLabelsTab(c *fiber.Ctx) error {
-	viewPath := "partials/components/settings/labels_tab"
+	viewPath := "partials/components/settings/changelog_tab"
 	curUser := c.Locals("user").(*models.SessionUser)
 	currentLabels, err := a.LabelService.GetLabels(c.Context(), curUser.Project.ID)
 	if err != nil {
@@ -456,11 +475,11 @@ func (a *AppHandler) ComposePost(c *fiber.Ctx) error {
 			return fiber.NewError(404, "Post not found")
 		}
 
-		postId := int64(post.ID)
+		postId := post.ID
 		publishedOn := post.PublishedOn.Format(time.DateTime)
 
 		form.Content = template.HTMLEscapeString(post.Body)
-		form.Id = &postId
+		form.ID = &postId
 		form.Title = post.Title
 		form.PublishedOn = publishedOn
 
@@ -653,7 +672,7 @@ func (a *AppHandler) SavePost(c *fiber.Ctx) error {
 		return c.Render("partials/components/post_form", fiber.Map{"error": "Could not locate user timezone", "form": form, "firstPost": form.First, "Labels": labels})
 	}
 
-	if form.Id != nil && *form.Id > 0 {
+	if form.ID != nil && *form.ID > 0 {
 		_, err := a.PostService.UpdatePost(c.Context(), *form, curUser.Project.ID, loc)
 		if err != nil {
 			return c.Render("partials/components/post_form", fiber.Map{"error": err.Error(), "form": form, "firstForm": form.First})

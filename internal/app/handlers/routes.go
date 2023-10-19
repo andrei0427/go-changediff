@@ -101,6 +101,7 @@ func InitRoutes(app *app.App) {
 	settings.Delete("/changelog/labels/delete/:id", appHandler.DeleteSettingsLabel)
 	settings.Get("/changelog/labels/confirm-delete/:id", appHandler.ConfirmDeleteLabel)
 	settings.Get("/changelog/labels/new", appHandler.NewSettingsLabel)
+	settings.Get("/roadmap/boards/open/:id?", appHandler.RoadmapBoardOpen)
 }
 
 // Public Routes
@@ -327,6 +328,12 @@ func (a *AppHandler) SettingsTab(c *fiber.Ctx) error {
 	default:
 		return c.Render("partials/components/settings/general_tab", fiber.Map{"Form": curUser.Project})
 	}
+}
+
+func (a *AppHandler) RoadmapBoardOpen(c *fiber.Ctx) error {
+
+	return c.Render("partials/components/settings/roadmap_board_slideover", fiber.Map{})
+
 }
 
 func (a *AppHandler) NewSettingsLabel(c *fiber.Ctx) error {

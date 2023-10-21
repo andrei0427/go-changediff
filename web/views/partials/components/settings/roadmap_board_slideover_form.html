@@ -1,0 +1,95 @@
+<form hx-post="/admin/settings/roadmap/boards/save" hx-trigger="submit" hx-swap="outerHTML"
+	hx-encoding="multipart/form-data" id="board-form">
+	{%if Board.ID%}
+	<input type="hidden" name="id" value="{{Board.ID}}" />
+	{%endif%}
+	<div class="px-4 sm:px-6">
+		<div class="flex items-start justify-between">
+			<h2 class="text-base font-semibold leading-6 text-gray-900" id="slide-over-title">
+				{%if Board.ID%}Edit{%else%}Create{%endif%} Board
+			</h2>
+			<div class="ml-3 flex h-7 items-center">
+				<button type="button" onclick="closeSlideOver()"
+					class="relative rounded-md bg-white text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-orange focus:ring-offset-2">
+					<span class="absolute -inset-2.5"></span>
+					<span class="sr-only">Close panel</span>
+					<svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"
+						aria-hidden="true">
+						<path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+					</svg>
+				</button>
+			</div>
+		</div>
+	</div>
+
+	<div class="relative mt-6 flex-1 px-4 sm:px-6">
+		<div class="flex flex-1 flex-col justify-between">
+			<div class="divide-y divide-gray-200 px-4 sm:px-6">
+				<div class="space-y-6 pb-5 pt-6">
+					<div>
+						<label for="board-name" class="block text-sm font-medium leading-6 text-gray-900">Board
+							name</label>
+						<div class="mt-2">
+							<input type="text" name="name" id="board-name" value="{{Board.Name}}"
+								class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-orange sm:text-sm sm:leading-6" />
+						</div>
+
+						{% if Errors['Name']%}
+						<p class="mt-2 text-sm text-red-600" id="title-error">
+							{{Errors['Name']}}</p>
+						{% endif %}
+					</div>
+					<div>
+						<label for="description"
+							class="block text-sm font-medium leading-6 text-gray-900">Description</label>
+						<div class="mt-2">
+							<textarea id="description" name="description" rows="4"
+								class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-orange sm:text-sm sm:leading-6">
+{{Board.Description}}</textarea>
+						</div>
+					</div>
+
+					<div class="relative flex items-start">
+						<div class="flex h-6 items-center">
+							<input id="is_private" aria-describedby="is_private-description" name="is_private"
+								type="checkbox" class="h-4 w-4 rounded border-gray-300 text-orange focus:ring-orange" />
+						</div>
+						<div class="ml-3 text-sm leading-6">
+							<label for="is_private" class="font-medium text-gray-900">Make private</label>
+							<p id="is_private-description" class="text-gray-500">
+								Ticking will make the board visible to members within the
+								project only.
+							</p>
+						</div>
+					</div>
+				</div>
+
+				{% if Board.ID and not Close %}
+				<div class="pb-6 pt-4">
+					<div class="flex text-sm">
+						<a href="#" class="group inline-flex items-center font-medium text-orange hover:text-orange">
+							<svg class="h-5 w-5 text-orange group-hover:text-orange" viewBox="0 0 20 20"
+								fill="currentColor" aria-hidden="true">
+								<path
+									d="M12.232 4.232a2.5 2.5 0 013.536 3.536l-1.225 1.224a.75.75 0 001.061 1.06l1.224-1.224a4 4 0 00-5.656-5.656l-3 3a4 4 0 00.225 5.865.75.75 0 00.977-1.138 2.5 2.5 0 01-.142-3.667l3-3z" />
+								<path
+									d="M11.603 7.963a.75.75 0 00-.977 1.138 2.5 2.5 0 01.142 3.667l-3 3a2.5 2.5 0 01-3.536-3.536l1.225-1.224a.75.75 0 00-1.061-1.06l-1.224 1.224a4 4 0 105.656 5.656l3-3a4 4 0 00-.225-5.865z" />
+							</svg>
+							<span class="ml-2">Copy link</span>
+						</a>
+					</div>
+				</div>
+				{%endif%}
+			</div>
+		</div>
+	</div>
+
+
+
+
+	<script>
+		if (String('{{ Close }}')) {
+			closeSlideOver()
+		}
+	</script>
+</form>

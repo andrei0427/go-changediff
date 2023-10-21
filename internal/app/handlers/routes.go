@@ -102,6 +102,7 @@ func InitRoutes(app *app.App) {
 	settings.Get("/changelog/labels/confirm-delete/:id", appHandler.ConfirmDeleteLabel)
 	settings.Get("/changelog/labels/new", appHandler.NewSettingsLabel)
 	settings.Get("/roadmap/boards/open/:id?", appHandler.RoadmapBoardOpen)
+	settings.Post("/roadmap/boards/save", appHandler.RoadmapBoardSave)
 }
 
 // Public Routes
@@ -323,11 +324,37 @@ func (a *AppHandler) SettingsTab(c *fiber.Ctx) error {
 			message = message + "\n" + statusesErr.Error()
 		}
 
-		return c.Render("partials/components/settings/roadmap_tab", fiber.Map{"Boards": boards, "Statuses": statuses, "Message": message})
+		return c.Render("partials/components/settings/roadmap_tab", fiber.Map{"Boards": boards, "BoardsEmpty": len(boards) == 0, "Statuses": statuses, "StatusesEmpty": len(statuses) == 0, "Message": message})
 
 	default:
 		return c.Render("partials/components/settings/general_tab", fiber.Map{"Form": curUser.Project})
 	}
+}
+
+func (a *AppHandler) RoadmapBoardSave(c *fiber.Ctx) error {
+	viewPath := "partials/components/settings/roadmap_board_slideover_form"
+	curUser := c.Locals("user").(*models.SessionUser)
+
+	form := new(models.RoadmapBoardModel)
+	if err := c.BodyParser(form); err != nil {
+		return c.Render(viewPath, fiber.Map{"Error": err.Error()})
+	}
+
+	errs := make(map[string]string)
+	if len(strings.TrimSpace(form.Name)) == 0 {
+		errs["Name"] = "Name is required"
+	}
+
+	if len(errs) > 0 {
+		return c.Render(viewPath, fiber.Map{"Board": form, "Errors": errs})
+	}
+
+	savedBoard, err := a.RoadmapService.SaveBoard(c.Context(), *form, curUser.Project.ID)
+	if err != nil {
+		return c.Render(viewPath, fiber.Map{"Board": form, "Error": err.Error()})
+	}
+
+	return c.Render(viewPath, fiber.Map{"Board": savedBoard, "Close": true})
 }
 
 func (a *AppHandler) RoadmapBoardOpen(c *fiber.Ctx) error {

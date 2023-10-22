@@ -97,12 +97,21 @@ func InitRoutes(app *app.App) {
 	settings.Get("/", appHandler.Settings)
 	settings.Get("/tab", appHandler.SettingsTab)
 	settings.Post("/general/save", appHandler.SaveSettingsGeneralTab)
+
 	settings.Post("/changelog/labels/save", appHandler.SaveSettingsLabelsTab)
 	settings.Delete("/changelog/labels/delete/:id", appHandler.DeleteSettingsLabel)
 	settings.Get("/changelog/labels/confirm-delete/:id", appHandler.ConfirmDeleteLabel)
 	settings.Get("/changelog/labels/new", appHandler.NewSettingsLabel)
+
 	settings.Get("/roadmap/boards/open/:id?", appHandler.RoadmapBoardOpen)
 	settings.Post("/roadmap/boards/save", appHandler.RoadmapBoardSave)
+	settings.Get("/roadmap/boards/confirm-delete/:id", appHandler.ConfirmDeleteBoard)
+	settings.Delete("/roadmap/boards/delete/:id", appHandler.DeleteSettingsBoard)
+
+	settings.Get("/roadmap/status/open/:id?", appHandler.RoadmapStatusOpen)
+	settings.Post("/roadmap/status/save", appHandler.RoadmapStatusSave)
+	settings.Get("/roadmap/status/confirm-delete/:id", appHandler.ConfirmDeleteStatus)
+	settings.Delete("/roadmap/status/delete/:id", appHandler.DeleteSettingsStatus)
 }
 
 // Public Routes
@@ -331,6 +340,99 @@ func (a *AppHandler) SettingsTab(c *fiber.Ctx) error {
 	}
 }
 
+func (a *AppHandler) RoadmapStatusSave(c *fiber.Ctx) error {
+	viewPath := "partials/components/settings/roadmap_status_slideover_form"
+	curUser := c.Locals("user").(*models.SessionUser)
+
+	form := new(models.RoadmapStatusModel)
+	if err := c.BodyParser(form); err != nil {
+		return c.Render(viewPath, fiber.Map{"Error": err.Error()})
+	}
+
+	errs := make(map[string]string)
+	if len(strings.TrimSpace(form.Status)) == 0 {
+		errs["Status"] = "Status is required"
+	}
+
+	if len(strings.TrimSpace(form.Color)) == 0 {
+		errs["Name"] = "Color is required"
+	}
+
+	if len(errs) > 0 {
+		return c.Render(viewPath, fiber.Map{"Status": form, "Errors": errs})
+	}
+
+	savedStatus, err := a.RoadmapService.SaveStatus(c.Context(), *form, curUser.Project.ID)
+	if err != nil {
+		return c.Render(viewPath, fiber.Map{"Status": form, "Error": err.Error()})
+	}
+
+	return c.Render(viewPath, fiber.Map{"Status": savedStatus, "Success": true, "Message": "Status saved successfully.", "Close": true})
+}
+
+func (a *AppHandler) ConfirmDeleteStatus(c *fiber.Ctx) error {
+	id, err := c.ParamsInt("id")
+	if err != nil {
+		return fiber.NewError(400, "Invalid id parameter supplied")
+	}
+
+	return c.Render("partials/components/delete_confirm_modal", fiber.Map{"Title": "Confirm deletion",
+		"Body":           "Are you sure you want to delete this status? All posts within must also be deleted for this action to happen.",
+		"EndpointUri":    "/admin/settings/roadmap/status/delete/" + fmt.Sprint(id),
+		"TargetSelector": "#status-content",
+		"Swap":           "innerHtml",
+	})
+}
+
+func (a *AppHandler) DeleteSettingsStatus(c *fiber.Ctx) error {
+	viewPath := "partials/components/settings/roadmap_tab_status"
+	curUser := c.Locals("user").(*models.SessionUser)
+
+	currentStatuses, err := a.RoadmapService.GetStatuses(c.Context(), curUser.Project.ID)
+	if err != nil {
+		return c.Render(viewPath, fiber.Map{"Error": err.Error()})
+	}
+
+	statusIdToDelete, err := c.ParamsInt("id")
+	if err != nil {
+		return c.Render(viewPath, fiber.Map{"Statuses": currentStatuses, "Error": err.Error()})
+	}
+
+	err = a.RoadmapService.DeleteStatus(c.Context(), int32(statusIdToDelete), curUser.Project.ID)
+	if err != nil {
+		return c.Render(viewPath, fiber.Map{"Statuses": currentStatuses, "Error": err.Error()})
+	}
+
+	statusIdxToDelete := slices.IndexFunc(currentStatuses, func(l data.GetStatusesRow) bool {
+		return l.ID == int32(statusIdToDelete)
+	})
+
+	updatedStatuses := make([]data.GetStatusesRow, 0)
+	updatedStatuses = append(updatedStatuses, currentStatuses[:statusIdxToDelete]...)
+	updatedStatuses = append(updatedStatuses, currentStatuses[statusIdxToDelete+1:]...)
+
+	return c.Render(viewPath, fiber.Map{"Statuses": updatedStatuses, "Success": true, "Message": "Status successfully deleted"})
+}
+
+func (a *AppHandler) RoadmapStatusOpen(c *fiber.Ctx) error {
+	curUser := c.Locals("user").(*models.SessionUser)
+	id, err := c.ParamsInt("id", -1)
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "Invalid id parameter supplied")
+	}
+
+	var status data.GetStatusRow
+
+	if id > 0 {
+		status, err = a.RoadmapService.GetStatus(c.Context(), int32(id), curUser.Project.ID)
+		if err != nil {
+			return fiber.NewError(fiber.StatusInternalServerError, "Error fetching board")
+		}
+	}
+
+	return c.Render("partials/components/settings/roadmap_status_slideover", fiber.Map{"Status": status})
+}
+
 func (a *AppHandler) RoadmapBoardSave(c *fiber.Ctx) error {
 	viewPath := "partials/components/settings/roadmap_board_slideover_form"
 	curUser := c.Locals("user").(*models.SessionUser)
@@ -354,12 +456,69 @@ func (a *AppHandler) RoadmapBoardSave(c *fiber.Ctx) error {
 		return c.Render(viewPath, fiber.Map{"Board": form, "Error": err.Error()})
 	}
 
-	return c.Render(viewPath, fiber.Map{"Board": savedBoard, "Close": true})
+	return c.Render(viewPath, fiber.Map{"Board": savedBoard, "Success": true, "Message": "Board saved successfully.", "Close": true})
+}
+
+func (a *AppHandler) ConfirmDeleteBoard(c *fiber.Ctx) error {
+	id, err := c.ParamsInt("id")
+	if err != nil {
+		return fiber.NewError(400, "Invalid id parameter supplied")
+	}
+
+	return c.Render("partials/components/delete_confirm_modal", fiber.Map{"Title": "Confirm deletion",
+		"Body":           "Are you sure you want to delete this board? All posts within must also be deleted for this action to happen.",
+		"EndpointUri":    "/admin/settings/roadmap/boards/delete/" + fmt.Sprint(id),
+		"TargetSelector": "#board-content",
+		"Swap":           "innerHtml",
+	})
+}
+
+func (a *AppHandler) DeleteSettingsBoard(c *fiber.Ctx) error {
+	viewPath := "partials/components/settings/roadmap_tab_boards"
+	curUser := c.Locals("user").(*models.SessionUser)
+
+	currentBoards, err := a.RoadmapService.GetBoards(c.Context(), curUser.Project.ID)
+	if err != nil {
+		return c.Render(viewPath, fiber.Map{"Error": err.Error()})
+	}
+
+	boardIdToDelete, err := c.ParamsInt("id")
+	if err != nil {
+		return c.Render(viewPath, fiber.Map{"Boards": currentBoards, "Error": err.Error()})
+	}
+
+	err = a.RoadmapService.DeleteBoard(c.Context(), int32(boardIdToDelete), curUser.Project.ID)
+	if err != nil {
+		return c.Render(viewPath, fiber.Map{"Boards": currentBoards, "Error": err.Error()})
+	}
+
+	boardIdxToDelete := slices.IndexFunc(currentBoards, func(l data.GetBoardsRow) bool {
+		return l.ID == int32(boardIdToDelete)
+	})
+
+	updatedBoards := make([]data.GetBoardsRow, 0)
+	updatedBoards = append(updatedBoards, currentBoards[:boardIdxToDelete]...)
+	updatedBoards = append(updatedBoards, currentBoards[boardIdxToDelete+1:]...)
+
+	return c.Render(viewPath, fiber.Map{"Boards": updatedBoards, "Success": true, "Message": "Board successfully deleted"})
 }
 
 func (a *AppHandler) RoadmapBoardOpen(c *fiber.Ctx) error {
+	curUser := c.Locals("user").(*models.SessionUser)
+	id, err := c.ParamsInt("id", -1)
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "Invalid id parameter supplied")
+	}
 
-	return c.Render("partials/components/settings/roadmap_board_slideover", fiber.Map{})
+	var board data.GetBoardRow
+	if id > 0 {
+		board, err = a.RoadmapService.GetBoard(c.Context(), int32(id), curUser.Project.ID)
+		if err != nil {
+			return fiber.NewError(fiber.StatusInternalServerError, "Error fetching board")
+		}
+	}
+
+	return c.Render("partials/components/settings/roadmap_board_slideover", fiber.Map{"Board": board})
 
 }
 

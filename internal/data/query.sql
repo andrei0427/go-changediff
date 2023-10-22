@@ -96,7 +96,10 @@ SELECT COUNT(id) FROM post_reactions WHERE user_uuid = $1 AND post_id = $2 AND r
 -- ROADMAP --
 
 -- name: GetBoards :many
-SELECT id, name, is_private FROM roadmap_boards WHERE project_id = $1;
+SELECT id, name, is_private FROM roadmap_boards WHERE project_id = $1 order by created_on;
+
+-- name: GetBoard :one
+SELECT id, name, description, is_private FROM roadmap_boards WHERE id = $1 AND project_id = $2;
 
 -- name: InsertBoard :one
 INSERT INTO roadmap_boards (name, is_private, description, project_id, created_on) VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP) RETURNING *;
@@ -109,6 +112,9 @@ DELETE FROM roadmap_boards WHERE id = $1 and project_id = $2 RETURNING id;
 
 -- name: GetStatuses :many
 SELECT id, status, color FROM roadmap_statuses WHERE project_id = $1;
+
+-- name: GetStatus :one
+SELECT id, status, description, color FROM roadmap_statuses WHERE id = $1 AND project_id = $2;
 
 -- name: InsertStatus :one
 INSERT INTO roadmap_statuses (status, description, color, project_id, created_on) VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP) RETURNING *;

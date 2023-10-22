@@ -114,9 +114,37 @@ func (q *Queries) GetAuthorByUser(ctx context.Context, userID uuid.UUID) ([]Auth
 	return items, nil
 }
 
+const getBoard = `-- name: GetBoard :one
+SELECT id, name, description, is_private FROM roadmap_boards WHERE id = $1 AND project_id = $2
+`
+
+type GetBoardParams struct {
+	ID        int32
+	ProjectID int32
+}
+
+type GetBoardRow struct {
+	ID          int32
+	Name        string
+	Description string
+	IsPrivate   bool
+}
+
+func (q *Queries) GetBoard(ctx context.Context, arg GetBoardParams) (GetBoardRow, error) {
+	row := q.db.QueryRowContext(ctx, getBoard, arg.ID, arg.ProjectID)
+	var i GetBoardRow
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Description,
+		&i.IsPrivate,
+	)
+	return i, err
+}
+
 const getBoards = `-- name: GetBoards :many
 
-SELECT id, name, is_private FROM roadmap_boards WHERE project_id = $1
+SELECT id, name, is_private FROM roadmap_boards WHERE project_id = $1 order by created_on
 `
 
 type GetBoardsRow struct {
@@ -544,6 +572,34 @@ func (q *Queries) GetReaction(ctx context.Context, arg GetReactionParams) ([]sql
 		return nil, err
 	}
 	return items, nil
+}
+
+const getStatus = `-- name: GetStatus :one
+SELECT id, status, description, color FROM roadmap_statuses WHERE id = $1 AND project_id = $2
+`
+
+type GetStatusParams struct {
+	ID        int32
+	ProjectID int32
+}
+
+type GetStatusRow struct {
+	ID          int32
+	Status      string
+	Description string
+	Color       string
+}
+
+func (q *Queries) GetStatus(ctx context.Context, arg GetStatusParams) (GetStatusRow, error) {
+	row := q.db.QueryRowContext(ctx, getStatus, arg.ID, arg.ProjectID)
+	var i GetStatusRow
+	err := row.Scan(
+		&i.ID,
+		&i.Status,
+		&i.Description,
+		&i.Color,
+	)
+	return i, err
 }
 
 const getStatuses = `-- name: GetStatuses :many

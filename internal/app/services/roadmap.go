@@ -20,6 +20,10 @@ func (s *RoadmapService) GetBoards(ctx context.Context, projectId int32) ([]data
 	return s.db.GetBoards(ctx, projectId)
 }
 
+func (s *RoadmapService) GetBoard(ctx context.Context, id int32, projectId int32) (data.GetBoardRow, error) {
+	return s.db.GetBoard(ctx, data.GetBoardParams{ID: id, ProjectID: projectId})
+}
+
 func (s *RoadmapService) SaveBoard(ctx context.Context, model models.RoadmapBoardModel, project_id int32) (data.RoadmapBoard, error) {
 	if model.ID != nil {
 		toUpdate := data.UpdateBoardParams{
@@ -60,6 +64,10 @@ func (s *RoadmapService) DeleteBoard(ctx context.Context, boardId int32, project
 
 func (s *RoadmapService) GetStatuses(ctx context.Context, projectId int32) ([]data.GetStatusesRow, error) {
 	return s.db.GetStatuses(ctx, projectId)
+}
+
+func (s *RoadmapService) GetStatus(ctx context.Context, id int32, projectId int32) (data.GetStatusRow, error) {
+	return s.db.GetStatus(ctx, data.GetStatusParams{ID: id, ProjectID: projectId})
 }
 
 func (s *RoadmapService) SaveStatus(ctx context.Context, model models.RoadmapStatusModel, project_id int32) (data.RoadmapStatus, error) {

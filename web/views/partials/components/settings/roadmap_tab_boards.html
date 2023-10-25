@@ -46,7 +46,7 @@
       </thead>
       <tbody class="divide-y divide-gray-200" id="table-labels">
         {% for board in Boards %}
-        <tr>
+        <tr class="hover:bg-slate-100">
           <td
             class="w-1/4 whitespace-wrap py-4 pr-3 text-sm font-medium text-gray-900 sm:pl-0"
           >
@@ -62,7 +62,7 @@
               hx-get="/admin/settings/roadmap/boards/open/{{board.ID}}"
               hx-target="body"
               hx-swap="beforeend"
-              class="text-orange hover:text-orange"
+              class="text-green hover:text-green"
             >
               Edit<span class="sr-only">, {{board.Name}}</span>
             </button>
@@ -74,7 +74,7 @@
               hx-get="/admin/settings/roadmap/boards/confirm-delete/{{board.ID}}"
               hx-target="body"
               hx-swap="beforeend"
-              class="text-orange hover:text-orange"
+              class="text-green hover:text-green"
             >
               Delete<span class="sr-only">, {{board.Name}}</span>
             </button>

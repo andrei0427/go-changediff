@@ -45,15 +45,32 @@ SELECT p.id, p.title, p.published_on, l.label, l.color, CASE WHEN p.published_on
 SELECT p.*, l.label as Label FROM posts p LEFT JOIN labels l on p.label_id = l.id or p.label_id is null WHERE p.id = $1 AND p.project_id = $2;
 
 -- name: GetPostReactions :many
-SELECT CASE WHEN r.reaction IS NULL THEN '' ELSE r.reaction END as Reaction, COUNT(r.*) FROM posts p JOIN post_reactions r ON r.post_id = p.id WHERE p.id = $1 AND p.project_id = $2 GROUP BY r.reaction ORDER BY r.reaction NULLS FIRST;
+SELECT 
+  CASE WHEN r.reaction IS NULL THEN '' ELSE r.reaction END as Reaction, 
+  COUNT(r.*) 
+FROM posts p 
+  JOIN post_reactions r ON r.post_id = p.id 
+WHERE p.id = $1 AND p.project_id = $2 
+	  and (
+          (($3 = '' AND $4 = '') OR ($3 IS NULL AND $4 IS NULL))
+          OR (LENGTH($3) > 0 AND $3 = r.user_id) 
+          OR (LENGTH($4) > 0 AND $4::UUID = r.user_uuid)
+        ) 
+GROUP BY r.reaction 
+ORDER BY r.reaction NULLS FIRST;
 
 -- name: GetPostComments :many
-SELECT c.comment, c.created_on, r.locale, ur.reaction 
+SELECT c.comment, c.created_on, r.locale, ur.reaction, REPLACE(r.user_name, '"', '') as UserName, REPLACE(r.user_role, '"', '') as UserRole
 	FROM posts p 
 		JOIN post_comments c ON c.post_id = p.id 
 		JOIN post_reactions r ON r.user_uuid = c.user_uuid AND r.post_id = p.id AND r.reaction IS NULL 
 		LEFT JOIN post_reactions ur ON ur.user_uuid = c.user_uuid AND ur.post_id = p.id AND ur.reaction IS NOT NULL 
 WHERE p.id = $1 AND p.project_id = $2
+	  and (
+          (($3 = '' AND $4 = '') OR ($3 IS NULL AND $4 IS NULL))
+          OR (LENGTH($3) > 0 AND $3 = r.user_id) 
+          OR (LENGTH($4) > 0 AND $4::UUID = r.user_uuid)
+        ) 
 ORDER BY c.created_on DESC;
 
 -- name: GetPublishedPagedPosts :many
@@ -82,7 +99,7 @@ DELETE FROM posts WHERE id = $1 AND project_id = $2 RETURNING id;
 INSERT INTO post_comments (user_uuid, comment, post_id) VALUES ($1, $2, $3) RETURNING *;
 
 -- name: InsertReaction :one
-INSERT INTO post_reactions (user_uuid, ip_addr, user_agent, locale, reaction, post_id) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *;
+INSERT INTO post_reactions (user_uuid, ip_addr, user_agent, locale, reaction, user_id, user_name, user_email, user_role, user_data, post_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *;
 
 -- name: UpdateReaction :one
 UPDATE post_reactions SET reaction = $1 WHERE user_uuid = $2 AND post_id = $3 AND reaction IS NOT NULL RETURNING *;
@@ -92,6 +109,29 @@ SELECT reaction FROM post_reactions WHERE user_uuid = $1 AND post_id = $2 AND re
 
 -- name: UserViewed :one
 SELECT COUNT(id) FROM post_reactions WHERE user_uuid = $1 AND post_id = $2 AND reaction IS NULL;
+
+-- name: AnalyticsUsers :many
+SELECT DISTINCT 
+   r.user_id, 
+   COALESCE(REPLACE(r.user_name, '"', ''), 'User') as UserName, 
+   COALESCE(REPLACE(r.user_email, '"', ''), 'N/A') as UserEmail, 
+   COALESCE(REPLACE(r.user_role, '"', ''), 'N/A') as UserRole, 
+   r.locale,
+   COUNT(DISTINCT r.id) as ViewCount, 
+   COUNT(DISTINCT ri.id) as ImpressionCount, 
+   COUNT(DISTINCT rc.id) as CommentCount 
+FROM post_reactions r 
+  JOIN posts p on p.id = r.post_id 
+  left join post_comments rc ON r.user_uuid = rc.user_uuid 
+  left join post_reactions ri on r.user_uuid = ri.user_uuid and r.post_id = ri.post_id and ri.reaction is not null 
+  WHERE p.project_id = $1 
+	  and (
+          (($2 = '' AND $3 = '') OR ($2 IS NULL AND $3 IS NULL))
+          OR (LENGTH($2) > 0 AND $2 = r.user_id) 
+          OR (LENGTH($3) > 0 AND $3::UUID = r.user_uuid)
+        ) 
+    and r.reaction is null 
+GROUP BY 1,2,3,4,5;
 
 -- ROADMAP --
 

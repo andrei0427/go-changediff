@@ -20,7 +20,7 @@
         <button
           type="button"
           onclick="closeSlideOver()"
-          class="relative rounded-md bg-white text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-orange focus:ring-offset-2"
+          class="relative rounded-md bg-white text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-green focus:ring-offset-2"
         >
           <span class="absolute -inset-2.5"></span>
           <span class="sr-only">Close panel</span>
@@ -59,7 +59,7 @@
                 name="name"
                 id="board-name"
                 value="{{Board.Name}}"
-                class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-orange sm:text-sm sm:leading-6"
+                class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-green sm:text-sm sm:leading-6"
               />
             </div>
 
@@ -80,7 +80,7 @@
                 id="description"
                 name="description"
                 rows="4"
-                class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-orange sm:text-sm sm:leading-6"
+                class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-green sm:text-sm sm:leading-6"
               >
 {{Board.Description}}</textarea
               >
@@ -94,7 +94,7 @@
                 aria-describedby="is_private-description"
                 name="is_private"
                 type="checkbox"
-                class="h-4 w-4 rounded border-gray-300 text-orange focus:ring-orange"
+                class="h-4 w-4 rounded border-gray-300 text-green focus:ring-green"
                 {%if Board.IsPrivate%}checked{%endif%}
               />
             </div>
@@ -115,10 +115,10 @@
           <div class="flex text-sm">
             <a
               href="#"
-              class="group inline-flex items-center font-medium text-orange hover:text-orange"
+              class="group inline-flex items-center font-medium text-green hover:text-green"
             >
               <svg
-                class="h-5 w-5 text-orange group-hover:text-orange"
+                class="h-5 w-5 text-green group-hover:text-green"
                 viewBox="0 0 20 20"
                 fill="currentColor"
                 aria-hidden="true"

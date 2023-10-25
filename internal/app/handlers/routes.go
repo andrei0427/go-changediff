@@ -58,7 +58,7 @@ func InitRoutes(app *app.App) {
 		app.RoadmapService)
 	app.Fiber.Get("/", appHandler.Home)
 
-	widget := app.Fiber.Group("/widget", middleware.UseLocale, middleware.UseUserId)
+	widget := app.Fiber.Group("/widget", middleware.UseLocale, middleware.UseUserId, middleware.UseUserInfo)
 	widget.Get("/:key", appHandler.WidgetHome)
 
 	widget.Use(middleware.UseWithUserId)
@@ -79,6 +79,7 @@ func InitRoutes(app *app.App) {
 	})
 	admin.Get("/project", appHandler.GetProject)
 	admin.Post("/onboarding", appHandler.PostOnboarding)
+	admin.Get("/analytics", appHandler.GetUserAnalytics)
 
 	admin.Use(func(c *fiber.Ctx) error {
 		return middleware.UseAuthor(c, appHandler.CacheService, appHandler.AuthorService)
@@ -182,6 +183,7 @@ func (a *AppHandler) WidgetChangelogPosts(c *fiber.Ctx) error {
 func (a *AppHandler) WidgetChangelogReaction(c *fiber.Ctx) error {
 	userUuid := c.Locals("userUuid").(*uuid.UUID)
 	userLocale := c.Locals("timezone").(string)
+	userInfo := c.Locals("userInfo").(*models.UserInfo)
 
 	projectKey := c.Params("key")
 	reaction := c.Params("reaction")
@@ -221,7 +223,7 @@ func (a *AppHandler) WidgetChangelogReaction(c *fiber.Ctx) error {
 		UserAgent: c.Get("User-Agent"),
 		Locale:    userLocale,
 		Reaction:  Reaction,
-	})
+	}, userInfo)
 
 	if err != nil {
 		fmt.Println(err.Error())
@@ -714,7 +716,7 @@ func (a *AppHandler) LoadPostReactions(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusInternalServerError, "something went wrong")
 	}
 
-	return c.Render("partials/components/simple_slideover", fiber.Map{"Title": "Post Reactions", "Reactions": reactions, "Comments": comments, "CommentCount": len(comments)})
+	return c.Render("partials/components/post_reactions_slideover", fiber.Map{"Title": "Post Reactions", "Reactions": reactions, "Comments": comments, "CommentCount": len(comments)})
 }
 
 func (a *AppHandler) LoadPosts(c *fiber.Ctx) error {
@@ -884,4 +886,33 @@ func (a *AppHandler) SavePost(c *fiber.Ctx) error {
 
 	c.Response().Header.Add("HX-Redirect", "/admin/posts")
 	return c.Render("partials/components/dashboard_widget", fiber.Map{})
+}
+
+func (a *AppHandler) GetUserAnalytics(c *fiber.Ctx) error {
+	curUser := c.Locals("user").(*models.SessionUser)
+
+	data, err := a.PostService.GetAnalytics(c.Context(), curUser.Project.ID, nil, nil)
+	if err != nil {
+		fmt.Println(err)
+		return fiber.NewError(fiber.StatusInternalServerError, "error when fetching analytics")
+	}
+
+	return c.Render("analytics", fiber.Map{"data": data})
+}
+
+func (a *AppHandler) GetAnalyticsByUser(c *fiber.Ctx) error {
+	curUser := c.Locals("user").(*models.SessionUser)
+	qUserUuid := c.Query("uuid")
+	qUserId := c.Query("userId")
+
+	userUuid := string(qUserUuid)
+	userId := string(qUserId)
+
+	data, err := a.PostService.GetAnalytics(c.Context(), curUser.Project.ID, &userUuid, &userId)
+	if err != nil {
+		fmt.Println(err)
+		return fiber.NewError(fiber.StatusInternalServerError, "error when fetching analytics")
+	}
+
+	return c.Render("analytics", fiber.Map{"data": data})
 }

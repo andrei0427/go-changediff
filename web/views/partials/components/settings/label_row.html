@@ -1,4 +1,7 @@
-<tr id="form-{%if label.ID%}{{label.ID}}{%else%}new{%endif%}">
+<tr
+  class="hover:bg-slate-100"
+  id="form-{%if label.ID%}{{label.ID}}{%else%}new{%endif%}"
+>
   {%if label.ID %}
   <input type="hidden" name="id" value="{{label.ID}}" />
   {%endif%}
@@ -10,7 +13,7 @@
       name="label"
       value="{{label.Label}}"
       placeholder="Label"
-      class="w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-orange"
+      class="w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-green"
     />
   </td>
   <td class="w-1/2 whitespace-nowrap px-3 py-4 text-sm text-gray-500">
@@ -19,7 +22,7 @@
       name="color"
       required
       value="{{label.Color}}"
-      class="w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-orange"
+      class="w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-green"
     />
   </td>
   <td
@@ -31,7 +34,7 @@
       hx-target="#tab-content"
       hx-swap="innerHtml"
       hx-include="#form-{%if label.ID%}{{label.ID}}{%else%}new{%endif%}"
-      class="save-btn text-orange hover:text-orange"
+      class="save-btn text-green hover:text-green"
     >
       Save<span class="sr-only">, {{label.Label}}</span>
     </button>
@@ -44,14 +47,14 @@
       hx-get="/admin/settings/changelog/labels/confirm-delete/{{label.ID}}"
       hx-target="body"
       hx-swap="beforeend"
-      class="text-orange hover:text-orange"
+      class="text-green hover:text-green"
     >
       Delete<span class="sr-only">, {{label.Label}}</span>
     </button>
     {% else %}
     <button
       onclick="this.parentElement.parentElement.remove(); return false;"
-      class="text-orange hover:text-orange"
+      class="text-green hover:text-green"
     >
       Clear<span class="sr-only">, {{label.Label}}</span>
     </button>

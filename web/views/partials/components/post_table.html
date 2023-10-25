@@ -10,7 +10,7 @@
     <div class="mt-4 sm:ml-16 sm:mt-0 sm:flex-none">
       <a
         href="/admin/posts/compose"
-        class="inline-flex items-center rounded-md bg-orange px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-orange focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange"
+        class="inline-flex items-center rounded-md bg-green px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-green focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green"
       >
         <svg
           class="-ml-0.5 mr-1.5 h-5 w-5"
@@ -50,7 +50,7 @@
       <div class="mt-6">
         <a
           href="/admin/posts/compose"
-          class="inline-flex items-center rounded-md bg-orange px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-orange focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange"
+          class="inline-flex items-center rounded-md bg-green px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-green focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green"
         >
           <svg
             class="-ml-0.5 mr-1.5 h-5 w-5"
@@ -163,7 +163,7 @@
           </td>
           <td class="py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-0">
             <button
-              class="text-orange hover:text-orange"
+              class="text-green hover:text-green"
               hx-get="/admin/posts/load-reactions/{{post.ID}}"
               hx-target="body"
               hx-swap="afterend"
@@ -174,7 +174,7 @@
           </td>
           <td class="py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-0">
             <a
-              class="text-orange hover:text-orange"
+              class="text-green hover:text-green"
               type="button"
               href="/admin/posts/compose/{{post.ID}}"
             >
@@ -186,7 +186,7 @@
               hx-delete="/admin/posts/confirm-delete/{{post.ID}}"
               hx-target="body"
               hx-swap="beforeend"
-              class="text-orange hover:text-orange"
+              class="text-green hover:text-green"
             >
               Delete<span class="sr-only">, post</span>
             </button>

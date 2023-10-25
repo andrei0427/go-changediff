@@ -1,0 +1,177 @@
+<div
+  id="simple-slideover-container"
+  class="relative z-10"
+  aria-labelledby="slide-over-title"
+  role="dialog"
+  aria-modal="true"
+>
+  <div
+    id="simple-slideover-backdrop"
+    class="fixed hidden inset-0"
+    onclick="closeSimpleSlideOver()"
+  ></div>
+
+  <div
+    class="pointer-events-none fixed inset-y-0 right-0 flex max-w-full pl-10 sm:pl-16"
+  >
+    <div
+      id="simple-slideover"
+      class="transform transition translate-x-full ease-in-out duration-500 sm:duration-700 pointer-events-auto w-screen max-w-4xl"
+    >
+      <div
+        class="flex h-full flex-col overflow-y-scroll bg-white py-6 shadow-xl"
+      >
+        <div class="px-4 sm:px-6">
+          <div class="flex items-start justify-between">
+            <h2
+              class="text-base font-semibold leading-6 text-gray-900"
+              id="slide-over-title"
+            >
+              {{user.Username}}'s reactions
+            </h2>
+            <div class="ml-3 flex h-7 items-center">
+              <button
+                type="button"
+                onclick="closeSimpleSlideOver()"
+                class="relative rounded-md bg-white text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-green focus:ring-offset-2"
+              >
+                <span class="absolute -inset-2.5"></span>
+                <span class="sr-only">Close panel</span>
+                <svg
+                  class="h-6 w-6"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke-width="1.5"
+                  stroke="currentColor"
+                  aria-hidden="true"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+        <div class="relative mt-6 flex-1 px-4 sm:px-6">
+          <dl
+            class="mx-auto grid grid-cols-1 gap-px bg-gray-900/5 sm:grid-cols-2 lg:grid-cols-4"
+          >
+            {% for reaction in Reactions%}
+            <div
+              class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2 bg-white px-4 py-10 sm:px-6 xl:px-8"
+            >
+              <dt class="text-sm font-medium leading-6 text-gray-500">
+                {%if reaction.Reaction%} Reacted with
+                <span class="text-xl">{{reaction.Reaction}}</span>
+                {%else%} Views {%endif%}
+              </dt>
+              <dd
+                class="w-full flex-none text-3xl font-medium leading-10 tracking-tight text-gray-900"
+              >
+                {{reaction.Count}}
+              </dd>
+            </div>
+            {% endfor %}
+          </dl>
+
+          <div class="bg-white">
+            <div
+              class="mx-auto max-w-2xl px-4 py-16 sm:px-6 sm:py-24 lg:max-w-7xl lg:px-8"
+            >
+              <h2 class="text-lg font-medium text-gray-900">
+                Comments ({{CommentCount}})
+              </h2>
+              <div
+                class="mt-6 space-y-10 divide-y divide-gray-200 border-b border-t border-gray-200 pb-10"
+              >
+                {%for c in Comments %}
+                <div class="pt-10 lg:grid lg:grid-cols-12 lg:gap-x-8">
+                  <div
+                    class="lg:col-span-8 lg:col-start-5 xl:col-span-9 xl:col-start-4 xl:grid xl:grid-cols-3 xl:items-start xl:gap-x-8"
+                  >
+                    <div class="flex items-center xl:col-span-1">
+                      <p class="ml-3 text-sm text-gray-700">
+                        Reaction: {%if c.Reaction.String%} {{c.Reaction.String}}
+                        {%else%} None {%endif%}
+                      </p>
+                    </div>
+
+                    <div class="xl:col-span-2 xl:mt-0">
+                      <div class="space-y-6 text-sm text-gray-500">
+                        {{c.Comment}}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div
+                    class="mt-6 flex items-center text-sm lg:col-span-4 lg:col-start-1 lg:row-start-1 lg:mt-0 lg:flex-col lg:items-start xl:col-span-3"
+                  >
+                    <p class="font-medium text-gray-900">
+                      {{c.Username}} in {{c.Locale}}
+                    </p>
+                    <time
+                      datetime="{{formatDateShort(c.CreatedOn)}}"
+                      class="ml-4 border-l border-gray-200 pl-4 text-gray-500 lg:ml-0 lg:mt-2 lg:border-0 lg:pl-0"
+                    >
+                      {{formatDate(convertDate(c.CreatedOn,user.Timezone))}}
+                    </time>
+                  </div>
+                </div>
+                {%endfor%}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function openSimpleSlideOver() {
+      const containerElm = document.getElementById(
+        "simple-slideover-container"
+      );
+      const backdropElm = document.getElementById("simple-slideover-backdrop");
+      const slideOverElm = document.getElementById("simple-slideover");
+
+      if (!containerElm || !slideOverElm || !backdropElm) {
+        return;
+      }
+
+      backdropElm.classList.remove("hidden");
+
+      slideOverElm.classList.add("translate-x-0");
+      slideOverElm.classList.remove("translate-x-full");
+
+      return false;
+    }
+
+    function closeSimpleSlideOver() {
+      const containerElm = document.getElementById(
+        "simple-slideover-container"
+      );
+      const backdropElm = document.getElementById("simple-slideover-backdrop");
+      const slideOverElm = document.getElementById("simple-slideover");
+
+      if (!containerElm || !slideOverElm) {
+        return;
+      }
+
+      backdropElm.classList.add("hidden");
+
+      slideOverElm.classList.remove("translate-x-0");
+      slideOverElm.classList.add("translate-x-full");
+
+      setTimeout(() => {
+        containerElm.remove();
+      }, 500);
+
+      return false;
+    }
+
+    openSimpleSlideOver();
+  </script>
+</div>

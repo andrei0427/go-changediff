@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"strings"
 	"time"
@@ -10,6 +11,7 @@ import (
 	"github.com/andrei0427/go-changediff/internal/app/models"
 	"github.com/andrei0427/go-changediff/internal/data"
 	"github.com/google/uuid"
+	"github.com/sqlc-dev/pqtype"
 )
 
 type PostService struct {
@@ -43,6 +45,22 @@ func (s *PostService) GetPostReactions(ctx context.Context, postId int32, projec
 func (s *PostService) GetPostComments(ctx context.Context, postId int32, projectId int32) ([]data.GetPostCommentsRow, error) {
 	comments, err := s.db.GetPostComments(ctx, data.GetPostCommentsParams{ID: postId, ProjectID: projectId})
 	return comments, err
+}
+
+func (s *PostService) GetAnalytics(ctx context.Context, projectId int32, userUuid *string, userId *string) ([]data.AnalyticsUsersRow, error) {
+	params := data.AnalyticsUsersParams{
+		ProjectID: projectId,
+	}
+
+	if userUuid != nil && len(*userUuid) > 0 {
+		params.Column2 = *userUuid
+	}
+
+	if userId != nil && len(*userId) > 0 {
+		params.Column3 = *userId
+	}
+
+	return s.db.AnalyticsUsers(ctx, params)
 }
 
 func (s *PostService) GetPublishedPagedPosts(ctx context.Context, projectKey string, pageNo int32, search string, userId uuid.UUID) ([]data.GetPublishedPagedPostsRow, error) {
@@ -134,8 +152,30 @@ func (s *PostService) GetReaction(ctx context.Context, userId uuid.UUID, postId 
 	return &result[0].String, nil
 }
 
-func (s *PostService) SaveReaction(ctx context.Context, params data.InsertReactionParams) (*data.PostReaction, error) {
+func (s *PostService) SaveReaction(ctx context.Context, params data.InsertReactionParams, userInfo *models.UserInfo) (*data.PostReaction, error) {
 	// Saving a 'view' reaction - only insert if one doesnt yet exist
+	if userInfo.ID != nil {
+		params.UserID = sql.NullString{String: string(*userInfo.ID), Valid: true}
+	}
+
+	if userInfo.Email != nil {
+		params.UserEmail = sql.NullString{String: string(*userInfo.Email), Valid: true}
+	}
+
+	if userInfo.Info != nil {
+		if marshalled, err := json.Marshal(userInfo.Info); err == nil {
+			params.UserData = pqtype.NullRawMessage{RawMessage: marshalled, Valid: true}
+		}
+	}
+
+	if userInfo.Name != nil {
+		params.UserName = sql.NullString{String: string(*userInfo.Name), Valid: true}
+	}
+
+	if userInfo.Role != nil {
+		params.UserRole = sql.NullString{String: string(*userInfo.Role), Valid: true}
+	}
+
 	if !params.Reaction.Valid {
 		alreadyViewed, err := s.db.UserViewed(ctx, data.UserViewedParams{UserUuid: params.UserUuid, PostID: params.PostID})
 		if err != nil {

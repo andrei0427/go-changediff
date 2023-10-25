@@ -24,10 +24,10 @@
     <table class="min-w-full divide-y divide-gray-300">
       <thead>
         <tr>
+          <th scole="col"></th>
           <th
             scope="col"
-            colspan="2"
-            class="pr-3 py-3.5 text-left text-sm font-semibold text-gray-900"
+            class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900"
           >
             Name
           </th>
@@ -41,9 +41,9 @@
       </thead>
       <tbody class="divide-y divide-gray-200" id="table-labels">
         {% for status in Statuses %}
-        <tr>
+        <tr class="hover:bg-slate-100">
           <td
-            class="w-1/12 whitespace-wrap py-4 pr-3 text-sm font-medium text-gray-900 sm:pl-0"
+            class="w-1/12 whitespace-wrap text-center py-4 pl-8 pr-4 text-sm font-medium text-gray-900 xs:pl-0"
           >
             <div
               class="w-5 h-5 rounded-md"
@@ -51,7 +51,9 @@
               style="background-color: {{status.Color}};"
             ></div>
           </td>
-          <td class="w-8/12 whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+          <td
+            class="w-8/12 whitespace-nowrap px-3 py-4 text-sm font-medium text-gray-900"
+          >
             {{status.Status}}
           </td>
           <td
@@ -61,7 +63,7 @@
               hx-get="/admin/settings/roadmap/status/open/{{status.ID}}"
               hx-target="body"
               hx-swap="beforeend"
-              class="text-orange hover:text-orange"
+              class="text-green hover:text-green"
             >
               Edit<span class="sr-only">, {{status.Name}}</span>
             </button>
@@ -73,7 +75,7 @@
               hx-get="/admin/settings/roadmap/status/confirm-delete/{{status.ID}}"
               hx-target="body"
               hx-swap="beforeend"
-              class="text-orange hover:text-orange"
+              class="text-green hover:text-green"
             >
               Delete<span class="sr-only">, {{status.Name}}</span>
             </button>

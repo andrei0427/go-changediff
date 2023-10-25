@@ -1,7 +1,7 @@
 (function () {
   window.changediff = function () {};
 
-  window.changediff.init = function (options) {
+  window.changediff.init = function (options = {}) {
     this.options = options;
     const iframe = (this.iframe = document.createElement("iframe"));
     const backdrop = (this.backdrop = document.createElement("div"));
@@ -55,6 +55,26 @@
         switch (event.data) {
           case "close": {
             this.changediff.close();
+            break;
+          }
+          case "loaded": {
+            const { id, name, email, role, info } = options?.userInfo;
+            iframe.contentWindow.postMessage(
+              {
+                type: "userInfo",
+                data: JSON.stringify({
+                  id,
+                  name,
+                  email,
+                  role,
+                  info,
+                }),
+              },
+              // FIXME
+              "http://localhost:8000"
+            );
+
+            break;
           }
         }
       },

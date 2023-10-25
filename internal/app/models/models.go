@@ -1,6 +1,8 @@
 package models
 
 import (
+	"encoding/json"
+
 	"github.com/andrei0427/go-changediff/internal/data"
 	"github.com/golang-jwt/jwt"
 	"github.com/google/uuid"
@@ -26,6 +28,15 @@ type SessionUser struct {
 	Project  *data.Project
 	Author   *data.Author
 }
+
+type UserInfo struct {
+	ID    *json.RawMessage       `json:"id"`
+	Name  *json.RawMessage       `json:"name"`
+	Email *json.RawMessage       `json:"email"`
+	Role  *json.RawMessage       `json:"role"`
+	Info  map[string]interface{} `json:"info"`
+}
+
 type ProjectModel struct {
 	ID          *int32  `form:"id"`
 	Name        string  `form:"name"`

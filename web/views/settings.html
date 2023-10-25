@@ -1,5 +1,5 @@
 {% extends 'partials/base/auth_base.html' %} {% block head %}
-<title>ChangeDiff.io - Settings</title>
+<title>ReleaseRover.io - Settings</title>
 {% endblock %} {% block content %}
 <div class="lg:px-8">
   <div class="mx-auto flex flex-col lg:max-w-4xl">
@@ -8,7 +8,7 @@
     >
       <button
         type="button"
-        class="border-r border-gray-200 px-4 text-gray-500 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-orange"
+        class="border-r border-gray-200 px-4 text-gray-500 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-green"
       >
         <span class="sr-only">Open sidebar</span>
         <svg
@@ -44,7 +44,7 @@
                 <select
                   id="selected-tab"
                   name="selected-tab"
-                  class="mt-1 block w-full rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-orange sm:text-sm sm:leading-6"
+                  class="mt-1 block w-full rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-green sm:text-sm sm:leading-6"
                 >
                   <option selected>General</option>
                   <option>Organisation</option>
@@ -59,7 +59,7 @@
                   <nav class="-mb-px flex space-x-8">
                     <button
                       onclick="updateNavTabs('general')"
-                      class="border-orange text-orange whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium"
+                      class="border-green text-green whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium"
                     >
                       General
                     </button>
@@ -128,7 +128,7 @@
       "hover:border-gray-300",
       "hover:text-gray-700",
     ];
-    const currentClasses = ["border-orange", "text-orange"];
+    const currentClasses = ["border-green", "text-green"];
 
     navElms.forEach((e) => {
       if (e.innerHTML.toLowerCase().trim() === fixedTabName) {

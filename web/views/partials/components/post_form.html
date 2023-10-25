@@ -3,7 +3,7 @@
 	{%if firstPost %}
 	<div class="bg-white px-6 py-12 sm:py-16 lg:px-8">
 		<div class="mx-auto max-w-2xl text-center">
-			<p class="text-base font-semibold leading-7 text-orange">Write your first post</p>
+			<p class="text-base font-semibold leading-7 text-green">Write your first post</p>
 			<h2 class="mt-2 text-4xl font-bold tracking-tight text-gray-900 sm:text-6xl">Almost there!</h2>
 			<p class="mt-6 text-lg leading-8 text-gray-600">Now it's time to write and publish your first post.</p>
 		</div>
@@ -36,7 +36,7 @@
 							<div class="mt-2">
 								<input type="text" name="title" id="title" value="{{form.Title}}"
 									aria-describedby="title-error" placeholder="Announcement: HUGE Update Incoming!"
-									class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-orange">
+									class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-green">
 
 								{% if errors['Title']%}
 								<p class="mt-2 text-sm text-red-600" id="title-error">
@@ -105,7 +105,7 @@
 								<input type="datetime-local" name="published_on" id="published_on"
 									value="{%if form.PublishedOn %}{{formatHTMLInputDateTime(convertDate(parseDateTime(form.PublishedOn), user.Timezone))}}{%endif%}"
 									aria-describedby="published-on-error" required
-									class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-orange">
+									class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-green">
 
 								{% if errors['PublishedOn']%}
 								<p class="mt-2 text-sm text-red-600" id="published-on-error">
@@ -129,7 +129,7 @@
 					<p class="mt-2 text-sm text-red-600">{{error}}</p>
 
 					<button type="submit" id="btn-submit"
-						class="rounded-md bg-orange px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-orange focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange">Save</button>
+						class="rounded-md bg-green px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-green focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green">Save</button>
 				</div>
 			</div>
 		</div>

@@ -16,6 +16,7 @@ require (
 	github.com/joho/godotenv v1.5.1
 	github.com/lib/pq v1.10.2
 	github.com/patrickmn/go-cache v2.1.0+incompatible
+	github.com/sqlc-dev/pqtype v0.3.0
 	golang.org/x/exp v0.0.0-20230315142452-642cacee5cc0
 )
 

@@ -1,18 +1,19 @@
 {% for post in Posts %}
 <article
   id="post-{{post.ID}}"
-  class="flex w-full flex-col items-start justify-between p-4"
+  class="flex w-full flex-col items-start justify-between px-4 pt-4 pb-6"
 >
-  <div class="flex items-center gap-x-4 text-xs">
-    <time datetime="2020-03-16" class="text-gray-500"
-      >{{formatDate(convertDate(post.PublishedOn, timezone))}}</time
-    >
+  <div class="flex justify-between w-full align-middle text-sm">
     <div
-      class="relative z-10 rounded-full px-3 py-1.5 font-medium"
-      style="color: {{contrastColor(post.Color.String)}}; background-color: {{post.Color.String}}"
+      class="relative z-10 rounded-full px-3 py-1.5 font-medium text-white"
+      style="background-color: {{post.Color.String}}"
     >
       {{post.Label.String}}
     </div>
+
+    <time datetime="2020-03-16" class="text-gray-500"
+      >{{formatDate(convertDate(post.PublishedOn, timezone))}}</time
+    >
   </div>
   <div class="group relative">
     <h3
@@ -109,7 +110,7 @@
             type="text"
             name="comment"
             class="block md:w-80 flex-1 border-0 bg-transparent py-1.5 pl-1 text-gray-900 placeholder:text-gray-400 focus:ring-0 sm:text-sm sm:leading-6"
-            placeholder="Write a comment"
+            placeholder="Send us your feedback"
             autocomplete="off"
             required
           />

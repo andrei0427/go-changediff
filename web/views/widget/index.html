@@ -5,11 +5,11 @@
     <link
       rel="icon"
       type="image/png"
-      href="{%if LogoUrl %}{{CDNUrl(LogoUrl)}}{%else%}/static/logo.png{%endif%}"
+      href="{%if LogoUrl %}{{CDNUrl(LogoUrl)}}{%else%}/static/favicon.png{%endif%}"
     />
 
     {% block head %}
-    <title>ChangeDiff.io - {{Project.Name}}</title>
+    <title>ReleaseRover.io - {{Project.Name}}</title>
     {% endblock %}
   </head>
 
@@ -146,6 +146,16 @@
       updateNav("tabChangelog");
 
       window.isEmbedded = "{{isEmbedded}}" === "True" ? 1 : 0;
+
+      window.parent.postMessage("loaded", "*");
+
+      window.addEventListener("message", function (event) {
+        if (event.data.type === "userInfo") {
+          document.cookie = `user_info=${
+            event.data.data
+          };expires=${laterToday.toUTCString()};`;
+        }
+      });
     </script>
   </body>
 </html>

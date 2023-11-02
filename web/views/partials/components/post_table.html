@@ -10,7 +10,7 @@
     <div class="mt-4 sm:ml-16 sm:mt-0 sm:flex-none">
       <a
         href="/admin/posts/compose"
-        class="inline-flex items-center rounded-md bg-green px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-green focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green"
+        class="inline-flex items-center rounded-md bg-emerald px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald"
       >
         <svg
           class="-ml-0.5 mr-1.5 h-5 w-5"
@@ -50,7 +50,7 @@
       <div class="mt-6">
         <a
           href="/admin/posts/compose"
-          class="inline-flex items-center rounded-md bg-green px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-green focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green"
+          class="inline-flex items-center rounded-md bg-emerald px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald"
         >
           <svg
             class="-ml-0.5 mr-1.5 h-5 w-5"
@@ -72,7 +72,7 @@
         <tr>
           <th
             scope="col"
-            class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-0"
+            class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900"
           >
             Label
           </th>
@@ -100,22 +100,22 @@
           >
             Status
           </th>
-          <th scope="col" class="relative py-3.5 pl-3 pr-4 sm:pr-0">
+          <th scope="col" class="relative py-3.5 pl-3 pr-4">
             <span class="sr-only">Comments &amp; Reactions</span>
           </th>
-          <th scope="col" class="relative py-3.5 pl-3 pr-4 sm:pr-0">
+          <th scope="col" class="relative py-3.5 pl-3 pr-4">
             <span class="sr-only">Edit</span>
           </th>
-          <th scope="col" class="relative py-3.5 pl-3 pr-4 sm:pr-0">
+          <th scope="col" class="relative py-3.5 pl-3 pr-4">
             <span class="sr-only">Delete</span>
           </th>
         </tr>
       </thead>
       <tbody class="divide-y divide-gray-200 bg-white">
         {% for post in Posts %}
-        <tr id="post-{{post.ID}}">
+        <tr id="post-{{post.ID}}" class="hover:bg-slate-100">
           <td
-            class="flex align-middle gap-x-1 w-full max-w-0 py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:w-auto sm:max-w-none sm:pl-0"
+            class="flex align-middle gap-x-1 w-full max-w-0 py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:w-auto sm:max-w-none"
           >
             <div
               class="w-5 h-5 rounded-md"
@@ -147,7 +147,7 @@
             {{post.Viewcount}}
           </td>
           <td class="px-3 py-4 text-center">
-            {% if post.Status %}
+            {% if post.IsPublished.Bool %} {%if post.Status == 1 %}
             <div
               class="rounded-full px-2.5 py-0.5 text-sm font-medium bg-green-100 text-green-800"
             >
@@ -159,11 +159,17 @@
             >
               Pending
             </div>
+            {%endif%} {%else%}
+            <div
+              class="rounded-full px-2.5 py-0.5 text-sm font-medium bg-blue-100 text-blue-800"
+            >
+              Draft
+            </div>
             {% endif %}
           </td>
-          <td class="py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-0">
+          <td class="py-4 pl-3 pr-4 text-right text-sm font-medium">
             <button
-              class="text-green hover:text-green"
+              class="text-emerald hover:text-emerald"
               hx-get="/admin/posts/load-reactions/{{post.ID}}"
               hx-target="body"
               hx-swap="afterend"
@@ -172,21 +178,21 @@
               Reactions
             </button>
           </td>
-          <td class="py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-0">
+          <td class="py-4 pl-3 pr-4 text-right text-sm font-medium">
             <a
-              class="text-green hover:text-green"
+              class="text-emerald hover:text-emerald"
               type="button"
               href="/admin/posts/compose/{{post.ID}}"
             >
               Edit<span class="sr-only">, post</span></a
             >
           </td>
-          <td class="py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-0">
+          <td class="py-4 pl-3 pr-4 text-right text-sm font-medium">
             <button
               hx-delete="/admin/posts/confirm-delete/{{post.ID}}"
               hx-target="body"
               hx-swap="beforeend"
-              class="text-green hover:text-green"
+              class="text-emerald hover:text-emerald"
             >
               Delete<span class="sr-only">, post</span>
             </button>

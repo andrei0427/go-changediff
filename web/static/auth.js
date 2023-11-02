@@ -49,7 +49,7 @@ function handleUserAuthenticated(access_token) {
     document.cookie = `user_tz=${
       Intl.DateTimeFormat().resolvedOptions().timeZone
     };expires=${tenYearsTime.toUTCString()}`;
-    window.location = "/admin/dashboard";
+    // window.location = "/admin/dashboard";
   }
 
   document.getElementById("signInCTA")?.style.setProperty("display", "none");

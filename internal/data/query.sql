@@ -11,6 +11,13 @@ INSERT INTO projects (name, description, accent_color, logo_url, app_key, user_i
 -- name: UpdateProject :one
 UPDATE projects SET name = $1, description = $2, accent_color = $3, logo_url = $4, updated_on = CURRENT_TIMESTAMP WHERE id = $5 AND user_id = $6 RETURNING *;
 
+-- name: DashboardQuery :one
+SELECT COUNT(p.id), COUNT(rv.id), COUNT(rc.id) 
+  FROM posts p 
+    left join post_reactions rv on p.id = rv.id and rv.reaction is null 
+    left join post_reactions rc on p.id = rc.id and (rc.id is null or rc.reaction is not null) 
+  WHERE p.project_id = $1;
+
 -- LABELS --
 -- name: GetLabels :many
 SELECT * from labels WHERE project_id = $1 ORDER BY created_on;
@@ -39,7 +46,7 @@ INSERT INTO authors (first_name, last_name, picture_url, user_id, project_id) VA
 SELECT COUNT(id) total_posts FROM posts WHERE project_id = $1;
 
 -- name: GetPosts :many
-SELECT p.id, p.title, p.published_on, l.label, l.color, CASE WHEN p.published_on <= current_timestamp THEN 1 ELSE 0 END AS status, COUNT(r.id) as ViewCount FROM posts p left join labels l on p.label_id = l.id or p.label_id is null left join post_reactions r on (p.id = r.post_id and r.reaction is null) OR r.id is null WHERE p.project_id = $1 GROUP BY 1,2,3,4,5,6;
+SELECT p.id, p.title, p.published_on, p.is_published, l.label, l.color, CASE WHEN p.published_on <= current_timestamp THEN 1 ELSE 0 END AS status, COUNT(r.id) as ViewCount FROM posts p left join labels l on p.label_id = l.id or p.label_id is null left join post_reactions r on (p.id = r.post_id and r.reaction is null) OR r.id is null WHERE p.project_id = $1 GROUP BY 1,2,3,4,5,6;
 
 -- name: GetPost :one
 SELECT p.*, l.label as Label FROM posts p LEFT JOIN labels l on p.label_id = l.id or p.label_id is null WHERE p.id = $1 AND p.project_id = $2;
@@ -50,27 +57,23 @@ SELECT
   COUNT(r.*) 
 FROM posts p 
   JOIN post_reactions r ON r.post_id = p.id 
-WHERE p.id = $1 AND p.project_id = $2 
-	  and (
-          (($3 = '' AND $4 = '') OR ($3 IS NULL AND $4 IS NULL))
-          OR (LENGTH($3) > 0 AND $3 = r.user_id) 
-          OR (LENGTH($4) > 0 AND $4::UUID = r.user_uuid)
-        ) 
+WHERE p.project_id = $1 
+    and ($2 = r.user_id or $2 = '' or $2 is null)
+    and ($3::varchar = r.user_uuid::varchar or $3 = '' or $3 is null)
+    and (p.id = $4 OR $4 = 0)
 GROUP BY r.reaction 
 ORDER BY r.reaction NULLS FIRST;
 
 -- name: GetPostComments :many
-SELECT c.comment, c.created_on, r.locale, ur.reaction, REPLACE(r.user_name, '"', '') as UserName, REPLACE(r.user_role, '"', '') as UserRole
+SELECT p.id, p.title, c.comment, c.created_on, r.locale, ur.reaction, REPLACE(r.user_name, '"', '') as UserName, REPLACE(r.user_role, '"', '') as UserRole
 	FROM posts p 
 		JOIN post_comments c ON c.post_id = p.id 
 		JOIN post_reactions r ON r.user_uuid = c.user_uuid AND r.post_id = p.id AND r.reaction IS NULL 
 		LEFT JOIN post_reactions ur ON ur.user_uuid = c.user_uuid AND ur.post_id = p.id AND ur.reaction IS NOT NULL 
-WHERE p.id = $1 AND p.project_id = $2
-	  and (
-          (($3 = '' AND $4 = '') OR ($3 IS NULL AND $4 IS NULL))
-          OR (LENGTH($3) > 0 AND $3 = r.user_id) 
-          OR (LENGTH($4) > 0 AND $4::UUID = r.user_uuid)
-        ) 
+WHERE p.project_id = $1
+    and ($2 = r.user_id or $2 = '' or $2 is null)
+    and ($3::varchar = r.user_uuid::varchar or $3 = '' or $3 is null)
+    and (p.id = $4 OR $4 = 0)
 ORDER BY c.created_on DESC;
 
 -- name: GetPublishedPagedPosts :many
@@ -81,16 +84,19 @@ SELECT post.*, l.label, l.color, a.first_name, a.last_name, a.picture_url, r.rea
 	left join labels l on post.label_id = l.id or post.label_id is null 
 	left join post_reactions r on (r.post_id = post.id and r.user_uuid = $4 and r.reaction is not null) or r.id is null 
 	left join post_reactions v on (v.post_id = post.id and v.user_uuid = $4 and v.reaction is null) or v.id is null 
-WHERE proj.app_key = $1 AND post.published_on <= CURRENT_TIMESTAMP AND ($5 = '' OR LOWER(post.title) LIKE $5)
+WHERE proj.app_key = $1 
+   AND post.published_on <= CURRENT_TIMESTAMP 
+   AND post.is_published = true
+   AND ($5 = '' OR LOWER(post.title) LIKE $5)
 ORDER BY post.published_on DESC 
 LIMIT $2 
 OFFSET $3;
 
 -- name: InsertPost :one
-INSERT INTO posts (title, body, published_on, label_id, author_id, project_id) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *;
+INSERT INTO posts (title, body, published_on, is_published, label_id, author_id, project_id) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *;
 
 -- name: UpdatePost :one
-UPDATE posts SET title = $1, body = $2, published_on = $3, label_id = $4, updated_on = CURRENT_TIMESTAMP WHERE id = $5 AND project_id = $6 RETURNING *;
+UPDATE posts SET title = $1, body = $2, published_on = $3, is_published = $4, label_id = $5, updated_on = CURRENT_TIMESTAMP WHERE id = $6 AND project_id = $7 RETURNING *;
 
 -- name: DeletePost :one
 DELETE FROM posts WHERE id = $1 AND project_id = $2 RETURNING id;
@@ -112,11 +118,15 @@ SELECT COUNT(id) FROM post_reactions WHERE user_uuid = $1 AND post_id = $2 AND r
 
 -- name: AnalyticsUsers :many
 SELECT DISTINCT 
-   r.user_id, 
+   COALESCE(REPLACE(r.user_id, '"', ''), 'N/A') as UserID,
+   r.user_uuid,
    COALESCE(REPLACE(r.user_name, '"', ''), 'User') as UserName, 
    COALESCE(REPLACE(r.user_email, '"', ''), 'N/A') as UserEmail, 
    COALESCE(REPLACE(r.user_role, '"', ''), 'N/A') as UserRole, 
    r.locale,
+   CAST(STRING_AGG(distinct r.ip_addr, ',') as text) as IPAddress,
+   CAST(STRING_AGG(distinct r.user_agent, ',') as text) as UserAgent,
+   CASE WHEN r.user_data IS NOT NULL THEN CAST(r.user_data as text) ELSE NULL END as UserData,
    COUNT(DISTINCT r.id) as ViewCount, 
    COUNT(DISTINCT ri.id) as ImpressionCount, 
    COUNT(DISTINCT rc.id) as CommentCount 
@@ -125,13 +135,10 @@ FROM post_reactions r
   left join post_comments rc ON r.user_uuid = rc.user_uuid 
   left join post_reactions ri on r.user_uuid = ri.user_uuid and r.post_id = ri.post_id and ri.reaction is not null 
   WHERE p.project_id = $1 
-	  and (
-          (($2 = '' AND $3 = '') OR ($2 IS NULL AND $3 IS NULL))
-          OR (LENGTH($2) > 0 AND $2 = r.user_id) 
-          OR (LENGTH($3) > 0 AND $3::UUID = r.user_uuid)
-        ) 
+    and ($2 = r.user_id or $2 = '' or $2 is null)
+    and ($3::varchar = r.user_uuid::varchar or $3 = '' or $3 is null)
     and r.reaction is null 
-GROUP BY 1,2,3,4,5;
+GROUP BY r.user_id, r.user_uuid, UserName, UserEmail, UserRole, r.locale, UserData;
 
 -- ROADMAP --
 

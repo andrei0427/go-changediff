@@ -37,13 +37,43 @@ func (s *PostService) GetPost(ctx context.Context, postId int32, projectId int32
 	return post, err
 }
 
-func (s *PostService) GetPostReactions(ctx context.Context, postId int32, projectId int32) ([]data.GetPostReactionsRow, error) {
-	reactions, err := s.db.GetPostReactions(ctx, data.GetPostReactionsParams{ID: postId, ProjectID: projectId})
+func (s *PostService) GetPostReactions(ctx context.Context, postId *int32, projectId int32, userUuid *string, userId *string) ([]data.GetPostReactionsRow, error) {
+	params := data.GetPostReactionsParams{
+		ProjectID: projectId,
+	}
+
+	if postId != nil {
+		params.ID = *postId
+	}
+
+	if userId != nil && len(*userId) > 0 {
+		params.UserID = sql.NullString{String: *userId, Valid: true}
+	}
+
+	if userUuid != nil && len(*userUuid) > 0 {
+		params.Column3 = *userUuid
+	}
+
+	reactions, err := s.db.GetPostReactions(ctx, params)
 	return reactions, err
 }
 
-func (s *PostService) GetPostComments(ctx context.Context, postId int32, projectId int32) ([]data.GetPostCommentsRow, error) {
-	comments, err := s.db.GetPostComments(ctx, data.GetPostCommentsParams{ID: postId, ProjectID: projectId})
+func (s *PostService) GetPostComments(ctx context.Context, postId *int32, projectId int32, userUuid *string, userId *string) ([]data.GetPostCommentsRow, error) {
+	params := data.GetPostCommentsParams{ProjectID: projectId}
+
+	if postId != nil {
+		params.ID = *postId
+	}
+
+	if userId != nil && len(*userId) > 0 {
+		params.UserID = sql.NullString{String: *userId, Valid: true}
+	}
+
+	if userUuid != nil && len(*userUuid) > 0 {
+		params.Column3 = *userUuid
+	}
+
+	comments, err := s.db.GetPostComments(ctx, params)
 	return comments, err
 }
 
@@ -53,11 +83,11 @@ func (s *PostService) GetAnalytics(ctx context.Context, projectId int32, userUui
 	}
 
 	if userUuid != nil && len(*userUuid) > 0 {
-		params.Column2 = *userUuid
+		params.Column3 = *userUuid
 	}
 
 	if userId != nil && len(*userId) > 0 {
-		params.Column3 = *userId
+		params.UserID = sql.NullString{String: *userId, Valid: true}
 	}
 
 	return s.db.AnalyticsUsers(ctx, params)
@@ -85,10 +115,11 @@ func (s *PostService) InsertPostComment(ctx context.Context, userId uuid.UUID, c
 
 func (s *PostService) InsertPost(ctx context.Context, post models.PostModel, authorId int32, projectId int32, userLocation *time.Location) (data.Post, error) {
 	toInsert := data.InsertPostParams{
-		Title:     post.Title,
-		Body:      post.Content,
-		AuthorID:  authorId,
-		ProjectID: projectId,
+		Title:       post.Title,
+		Body:        post.Content,
+		AuthorID:    authorId,
+		ProjectID:   projectId,
+		IsPublished: sql.NullBool{Bool: post.IsPublished, Valid: true},
 	}
 
 	parsedDate, err := time.ParseInLocation("2006-01-02T15:04", post.PublishedOn, userLocation)
@@ -111,9 +142,10 @@ func (s *PostService) DeletePost(ctx context.Context, postId int32, projectId in
 
 func (s *PostService) UpdatePost(ctx context.Context, post models.PostModel, projectId int32, userLocation *time.Location) (data.Post, error) {
 	toUpdate := data.UpdatePostParams{
-		Title:     post.Title,
-		Body:      post.Content,
-		ProjectID: projectId,
+		Title:       post.Title,
+		Body:        post.Content,
+		ProjectID:   projectId,
+		IsPublished: sql.NullBool{Bool: post.IsPublished, Valid: true},
 	}
 
 	if post.ID != nil {
@@ -200,7 +232,10 @@ func (s *PostService) SaveReaction(ctx context.Context, params data.InsertReacti
 
 			return &savedReaction, err
 		} else {
-			updatedReaction, err := s.db.UpdateReaction(ctx, data.UpdateReactionParams{UserUuid: params.UserUuid, PostID: params.PostID, Reaction: params.Reaction})
+			updatedReaction, err := s.db.UpdateReaction(ctx, data.UpdateReactionParams{UserUuid: params.UserUuid,
+				PostID:   params.PostID,
+				Reaction: params.Reaction,
+			})
 			if err != nil {
 				return nil, err
 			}

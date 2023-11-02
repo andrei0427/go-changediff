@@ -1,9 +1,13 @@
 module.exports = {
-  content: ["./web/views/**/*.html", "!./web/views/widget/**/*.html"],
+  content: [
+    "./web/views/**/*.html",
+    "!./web/views/index.html",
+    "!./web/views/widget/**/*.html",
+  ],
   theme: {
     extend: {
       colors: {
-        green: "#42C671",
+        emerald: "#42C671",
       },
     },
   },

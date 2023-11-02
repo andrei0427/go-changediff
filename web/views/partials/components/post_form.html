@@ -3,7 +3,7 @@
 	{%if firstPost %}
 	<div class="bg-white px-6 py-12 sm:py-16 lg:px-8">
 		<div class="mx-auto max-w-2xl text-center">
-			<p class="text-base font-semibold leading-7 text-green">Write your first post</p>
+			<p class="text-base font-semibold leading-7 text-emerald">Write your first post</p>
 			<h2 class="mt-2 text-4xl font-bold tracking-tight text-gray-900 sm:text-6xl">Almost there!</h2>
 			<p class="mt-6 text-lg leading-8 text-gray-600">Now it's time to write and publish your first post.</p>
 		</div>
@@ -36,7 +36,7 @@
 							<div class="mt-2">
 								<input type="text" name="title" id="title" value="{{form.Title}}"
 									aria-describedby="title-error" placeholder="Announcement: HUGE Update Incoming!"
-									class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-green">
+									class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-emerald">
 
 								{% if errors['Title']%}
 								<p class="mt-2 text-sm text-red-600" id="title-error">
@@ -105,7 +105,7 @@
 								<input type="datetime-local" name="published_on" id="published_on"
 									value="{%if form.PublishedOn %}{{formatHTMLInputDateTime(convertDate(parseDateTime(form.PublishedOn), user.Timezone))}}{%endif%}"
 									aria-describedby="published-on-error" required
-									class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-green">
+									class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-emerald">
 
 								{% if errors['PublishedOn']%}
 								<p class="mt-2 text-sm text-red-600" id="published-on-error">
@@ -114,10 +114,28 @@
 							</div>
 						</div>
 
+						<div class="col-span-2">
+							<div class="flex items-start">
+								<div class="flex h-6 items-center">
+									<input id="is_published" aria-describedby="is_published-description"
+										name="is_published" type="checkbox"
+										class="h-4 w-4 rounded border-gray-300 text-emerald focus:ring-emerald" 
+										style="position: unset;"
+										{%if form.IsPublished%}checked{%endif%} />
+								</div>
+								<div class="ml-3 text-sm leading-6">
+									<label for="is_published" class="font-medium text-gray-900">Published</label>
+									<p id="is_published-description" class="text-gray-500">
+										Unticking this will hide the post publically and put it in a draft state.
+									</p>
+								</div>
+							</div>
+						</div>
+
 						<div class="col-span-full">
 							<label class="block text-sm font-medium leading-6 text-gray-900">Body</label>
 							<div class="mt-2">
-								<div id="root"></div>
+								<div id="root" class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-emeral"></div>
 								<input type="hidden" name="content" value="{{form.Content}}" id="editor-content" />
 							</div>
 						</div>
@@ -129,14 +147,14 @@
 					<p class="mt-2 text-sm text-red-600">{{error}}</p>
 
 					<button type="submit" id="btn-submit"
-						class="rounded-md bg-green px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-green focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green">Save</button>
+						class="rounded-md bg-emerald px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald">Save</button>
 				</div>
 			</div>
 		</div>
 </form>
 
 <link rel="stylesheet" href="/static/lexical/main.0f27e148.css">
-<script type="module" src="/static/lexical/main.7b829983.js"></script>
+<script type="module" src="/static/lexical/main.2a655075.js"></script>
 
 <script>
 	function toggleLabelDDL() {

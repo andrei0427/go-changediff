@@ -56,7 +56,7 @@ func InitRoutes(app *app.App) {
 		app.LabelService,
 		app.CacheService,
 		app.RoadmapService)
-	app.Fiber.Get("/", appHandler.Home)
+	// app.Fiber.Get("/", appHandler.Home)
 
 	widget := app.Fiber.Group("/widget", middleware.UseLocale, middleware.UseUserId, middleware.UseUserInfo)
 	widget.Get("/:key", appHandler.WidgetHome)
@@ -70,7 +70,7 @@ func InitRoutes(app *app.App) {
 	changelog.Put("/posts/comment/:key/:postId", appHandler.WidgetChangelogComment)
 
 	widget.Get("/roadmap/:key", appHandler.WidgetRoadmap)
-	widget.Get("/feedback/:key", appHandler.WidgetFeedback)
+	widget.Get("/ideas/:key", appHandler.WidgetFeedback)
 
 	admin := app.Fiber.Group("/admin", middleware.UseAuth)
 	admin.Get("/dashboard", appHandler.Dashboard)
@@ -79,11 +79,14 @@ func InitRoutes(app *app.App) {
 	})
 	admin.Get("/project", appHandler.GetProject)
 	admin.Post("/onboarding", appHandler.PostOnboarding)
-	admin.Get("/analytics", appHandler.GetUserAnalytics)
 
 	admin.Use(func(c *fiber.Ctx) error {
 		return middleware.UseAuthor(c, appHandler.CacheService, appHandler.AuthorService)
 	})
+
+	analytics := admin.Group("/analytics")
+	analytics.Get("/", appHandler.GetUserAnalytics)
+	analytics.Get("/user", appHandler.GetAnalyticsByUser)
 
 	posts := admin.Group("/posts")
 	posts.Get("/", appHandler.Posts)
@@ -117,9 +120,9 @@ func InitRoutes(app *app.App) {
 
 // Public Routes
 
-func (a *AppHandler) Home(c *fiber.Ctx) error {
-	return c.Render("index", fiber.Map{})
-}
+// func (a *AppHandler) Home(c *fiber.Ctx) error {
+// 	return c.Render("index", fiber.Map{})
+// }
 
 func (a *AppHandler) WidgetHome(c *fiber.Ctx) error {
 	key := c.Params("key")
@@ -226,7 +229,6 @@ func (a *AppHandler) WidgetChangelogReaction(c *fiber.Ctx) error {
 	}, userInfo)
 
 	if err != nil {
-		fmt.Println(err.Error())
 		return fiber.NewError(fiber.StatusInternalServerError, "Something went wrong")
 	}
 
@@ -263,7 +265,6 @@ func (a *AppHandler) WidgetChangelogComment(c *fiber.Ctx) error {
 
 	_, err = a.PostService.InsertPostComment(c.Context(), *userUuid, body.Comment, int32(postId))
 	if err != nil {
-		fmt.Println(err.Error())
 		return fiber.NewError(fiber.StatusInternalServerError, "Something went wrong")
 	}
 
@@ -287,7 +288,7 @@ func (a *AppHandler) WidgetFeedback(c *fiber.Ctx) error {
 		return fiber.NewError(404, "Project not found")
 	}
 
-	return c.Render("widget/tabs/feedback", fiber.Map{"Project": project})
+	return c.Render("widget/tabs/ideas", fiber.Map{"Project": project})
 }
 
 // Protected Routes
@@ -682,6 +683,7 @@ func (a *AppHandler) ComposePost(c *fiber.Ctx) error {
 		form.ID = &postId
 		form.Title = post.Title
 		form.PublishedOn = publishedOn
+		form.IsPublished = post.IsPublished.Bool
 
 		if post.LabelID.Valid {
 			labelId := int(post.LabelID.Int32)
@@ -701,17 +703,19 @@ func (a *AppHandler) ComposePost(c *fiber.Ctx) error {
 
 func (a *AppHandler) LoadPostReactions(c *fiber.Ctx) error {
 	curUser := c.Locals("user").(*models.SessionUser)
-	postId, err := c.ParamsInt("postId")
+	iPostId, err := c.ParamsInt("postId")
 	if err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, "post id is required")
 	}
 
-	reactions, err := a.PostService.GetPostReactions(c.Context(), int32(postId), curUser.Project.ID)
+	postId := int32(iPostId)
+
+	reactions, err := a.PostService.GetPostReactions(c.Context(), &postId, curUser.Project.ID, nil, nil)
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, "something went wrong")
 	}
 
-	comments, err := a.PostService.GetPostComments(c.Context(), int32(postId), curUser.Project.ID)
+	comments, err := a.PostService.GetPostComments(c.Context(), &postId, curUser.Project.ID, nil, nil)
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, "something went wrong")
 	}
@@ -781,7 +785,7 @@ func (a *AppHandler) GetProject(c *fiber.Ctx) error {
 		return c.Render("partials/components/post_form", fiber.Map{"project": curUser.Project, "firstPost": true, "Labels": labels})
 	}
 
-	return c.Render("partials/components/dashboard_widget", fiber.Map{"Project": curUser.Project})
+	return c.Render("partials/components/dashboard_widget", fiber.Map{"Project": curUser.Project, "PostCount": posts})
 }
 
 func (a *AppHandler) PostOnboarding(c *fiber.Ctx) error {
@@ -897,7 +901,7 @@ func (a *AppHandler) GetUserAnalytics(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusInternalServerError, "error when fetching analytics")
 	}
 
-	return c.Render("analytics", fiber.Map{"data": data})
+	return c.Render("analytics", fiber.Map{"data": data, "AnalyticsEmpty": len(data) == 0})
 }
 
 func (a *AppHandler) GetAnalyticsByUser(c *fiber.Ctx) error {
@@ -909,10 +913,19 @@ func (a *AppHandler) GetAnalyticsByUser(c *fiber.Ctx) error {
 	userId := string(qUserId)
 
 	data, err := a.PostService.GetAnalytics(c.Context(), curUser.Project.ID, &userUuid, &userId)
-	if err != nil {
-		fmt.Println(err)
+	if err != nil || len(data) == 0 {
 		return fiber.NewError(fiber.StatusInternalServerError, "error when fetching analytics")
 	}
 
-	return c.Render("analytics", fiber.Map{"data": data})
+	comments, err := a.PostService.GetPostComments(c.Context(), nil, curUser.Project.ID, &userUuid, &userId)
+	if err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, "error when fetching analytics comments")
+	}
+
+	reactions, err := a.PostService.GetPostReactions(c.Context(), nil, curUser.Project.ID, &userUuid, &userId)
+	if err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, "error when fetching analytics reactons")
+	}
+
+	return c.Render("partials/components/analytics/user_reactions_slideover", fiber.Map{"Data": data[0], "Comments": comments, "CommentCount": len(comments), "Reactions": reactions})
 }

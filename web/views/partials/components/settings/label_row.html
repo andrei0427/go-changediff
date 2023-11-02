@@ -13,7 +13,7 @@
       name="label"
       value="{{label.Label}}"
       placeholder="Label"
-      class="w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-green"
+      class="w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-emerald"
     />
   </td>
   <td class="w-1/2 whitespace-nowrap px-3 py-4 text-sm text-gray-500">
@@ -22,7 +22,7 @@
       name="color"
       required
       value="{{label.Color}}"
-      class="w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-green"
+      class="w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-emerald"
     />
   </td>
   <td
@@ -34,7 +34,7 @@
       hx-target="#tab-content"
       hx-swap="innerHtml"
       hx-include="#form-{%if label.ID%}{{label.ID}}{%else%}new{%endif%}"
-      class="save-btn text-green hover:text-green"
+      class="save-btn text-emerald hover:text-emerald"
     >
       Save<span class="sr-only">, {{label.Label}}</span>
     </button>
@@ -47,14 +47,14 @@
       hx-get="/admin/settings/changelog/labels/confirm-delete/{{label.ID}}"
       hx-target="body"
       hx-swap="beforeend"
-      class="text-green hover:text-green"
+      class="text-emerald hover:text-emerald"
     >
       Delete<span class="sr-only">, {{label.Label}}</span>
     </button>
     {% else %}
     <button
       onclick="this.parentElement.parentElement.remove(); return false;"
-      class="text-green hover:text-green"
+      class="text-emerald hover:text-emerald"
     >
       Clear<span class="sr-only">, {{label.Label}}</span>
     </button>

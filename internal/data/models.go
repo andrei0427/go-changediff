@@ -42,6 +42,7 @@ type Post struct {
 	CreatedOn   time.Time
 	UpdatedOn   sql.NullTime
 	LabelID     sql.NullInt32
+	IsPublished sql.NullBool
 }
 
 type PostComment struct {
@@ -89,6 +90,16 @@ type RoadmapBoard struct {
 	ProjectID   int32
 }
 
+type RoadmapCategory struct {
+	ID        int32
+	Name      string
+	Emoji     string
+	IsPrivate bool
+	ProjectID int32
+	CreatorID int32
+	CreatedOn time.Time
+}
+
 type RoadmapPost struct {
 	ID        int32
 	Body      string
@@ -97,6 +108,18 @@ type RoadmapPost struct {
 	StatusID  int32
 	CreatedOn time.Time
 	CreatedBy uuid.UUID
+	IsPrivate bool
+	AuthorID  sql.NullInt32
+	UserUuid  uuid.NullUUID
+	IsIdea    bool
+}
+
+type RoadmapPostCategory struct {
+	ID                int32
+	RoadmapPostID     int32
+	RoadmapCategoryID int32
+	ProjectID         int32
+	CreatedOn         time.Time
 }
 
 type RoadmapStatus struct {
@@ -106,4 +129,5 @@ type RoadmapStatus struct {
 	Description string
 	CreatedOn   time.Time
 	ProjectID   int32
+	IsPrivate   bool
 }

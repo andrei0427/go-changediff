@@ -1,7 +1,7 @@
 <div id="onboarding-form">
 	<div class="bg-white px-6 py-12 sm:py-16 lg:px-8">
 		<div class="mx-auto max-w-2xl text-center">
-			<p class="text-base font-semibold leading-7 text-green">Get started with ReleaseRover.io</p>
+			<p class="text-base font-semibold leading-7 text-emerald">Get started with ReleaseRover</p>
 			<h2 class="mt-2 text-4xl font-bold tracking-tight text-gray-900 sm:text-6xl">Welcome!</h2>
 			<p class="mt-6 text-lg leading-8 text-gray-600">We'll need some information about your project before you
 				can
@@ -21,7 +21,7 @@
 								<div class="mt-2">
 									<input type="text" name="name" id="name" value="{{form.Name}}"
 										placeholder="My Todo List App" required aria-describedby="name-error"
-										class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-green">
+										class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-emerald">
 
 									{% if errors['Name']%}
 									<p class="mt-2 text-sm text-red-600" id="name-error">
@@ -36,7 +36,7 @@
 								<div class="mt-2">
 									<textarea id="description" name="description" rows="3" required
 										placeholder="Saves AND does your todos for you..." aria-describedby="desc-error"
-										class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-green">{{form.Description}}</textarea>
+										class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-emerald">{{form.Description}}</textarea>
 
 									{% if errors['Description']%}
 									<p class="mt-2 text-sm text-red-600" id="desc-error">
@@ -69,7 +69,7 @@
 										<div class="mt-4">
 											<input type="color" name="accent_color" id="accent_color" required
 												aria-describedby="color-error" value="{{form.AccentColor}}"
-												class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-green">
+												class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-emerald">
 
 											{% if errors['AccentColor']%}
 											<p class="mt-2 text-sm text-red-600" id="color-error">
@@ -86,7 +86,7 @@
 						<p class="mt-2 text-sm text-red-600">{{error}}</p>
 
 						<button type="submit"
-							class="rounded-md bg-green px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-green focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green">Proceed</button>
+							class="rounded-md bg-emerald px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald">Proceed</button>
 					</div>
 			</form>
 		</div>

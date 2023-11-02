@@ -27,13 +27,13 @@
               class="text-base font-semibold leading-6 text-gray-900"
               id="slide-over-title"
             >
-              {{user.Username}}'s reactions
+              {{Data.Username}}'s reactions
             </h2>
             <div class="ml-3 flex h-7 items-center">
               <button
                 type="button"
                 onclick="closeSimpleSlideOver()"
-                class="relative rounded-md bg-white text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-green focus:ring-offset-2"
+                class="relative rounded-md bg-white text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald focus:ring-offset-2"
               >
                 <span class="absolute -inset-2.5"></span>
                 <span class="sr-only">Close panel</span>
@@ -54,7 +54,11 @@
               </button>
             </div>
           </div>
+          <p class="text-sm text-gray-500 leading-2">{{Data.Userrole}}</p>
+          <p class="text-sm text-gray-500 leading-2">{{Data.Locale}}</p>
+          <p class="text-sm text-gray-500 leading-2">{{Data.Useragent}}</p>
         </div>
+
         <div class="relative mt-6 flex-1 px-4 sm:px-6">
           <dl
             class="mx-auto grid grid-cols-1 gap-px bg-gray-900/5 sm:grid-cols-2 lg:grid-cols-4"
@@ -75,6 +79,62 @@
               </dd>
             </div>
             {% endfor %}
+          </dl>
+
+          <dl
+            class="mx-auto grid grid-cols-1 gap-px bg-gray-900/5 sm:grid-cols-2 lg:grid-cols-4"
+          >
+            <div
+              class="flex flex-wrap break-words items-baseline justify-between gap-x-4 gap-y-2 bg-white px-4 py-10 sm:px-6 xl:px-8"
+            >
+              <dt class="text-sm font-medium leading-6 text-gray-500">
+                Your Ref.
+              </dt>
+              <dd
+                class="w-full flex-none text-md font-medium leading-10 tracking-tight text-gray-900"
+              >
+                {{Data.Userid}}
+              </dd>
+            </div>
+
+            <div
+              class="flex flex-wrap break-words items-baseline justify-between gap-x-4 gap-y-2 bg-white px-4 py-10 sm:px-6 xl:px-8"
+            >
+              <dt class="text-sm font-medium leading-6 text-gray-500">
+                Our Ref.
+              </dt>
+              <dd
+                class="w-full flex-none text-md font-medium leading-6 tracking-tight text-gray-900"
+              >
+                {{Data.UserUuid}}
+              </dd>
+            </div>
+
+            <div
+              class="flex flex-wrap break-words items-baseline justify-between gap-x-4 gap-y-2 bg-white px-4 py-10 sm:px-6 xl:px-8"
+            >
+              <dt class="text-sm font-medium leading-6 text-gray-500">
+                IP Address
+              </dt>
+              <dd
+                class="w-full flex-none text-md font-medium leading-6 tracking-tight text-gray-900"
+              >
+                {{Data.Ipaddress}}
+              </dd>
+            </div>
+
+            <div
+              class="flex flex-wrap break-words items-baseline justify-between gap-x-4 gap-y-2 bg-white px-4 py-10 sm:px-6 xl:px-8"
+            >
+              <dt class="text-sm font-medium leading-6 text-gray-500">
+                User Info
+              </dt>
+              <dd
+                class="w-full flex-none text-md font-medium leading-6 tracking-tight text-gray-900"
+              >
+                {{Data.Userdata}}
+              </dd>
+            </div>
           </dl>
 
           <div class="bg-white">
@@ -109,9 +169,12 @@
                   <div
                     class="mt-6 flex items-center text-sm lg:col-span-4 lg:col-start-1 lg:row-start-1 lg:mt-0 lg:flex-col lg:items-start xl:col-span-3"
                   >
-                    <p class="font-medium text-gray-900">
-                      {{c.Username}} in {{c.Locale}}
-                    </p>
+                    <a
+                      class="font-medium text-emerald"
+                      href="/admin/posts/compose/{{c.ID}}"
+                      target="_blank"
+                      >{{c.Title}}</a
+                    >
                     <time
                       datetime="{{formatDateShort(c.CreatedOn)}}"
                       class="ml-4 border-l border-gray-200 pl-4 text-gray-500 lg:ml-0 lg:mt-2 lg:border-0 lg:pl-0"

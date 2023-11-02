@@ -9,7 +9,7 @@
     />
 
     {% block head %}
-    <title>ReleaseRover.io - {{Project.Name}}</title>
+    <title>ReleaseRover - {{Project.Name}}</title>
     {% endblock %}
   </head>
 
@@ -45,13 +45,13 @@
                 Roadmap
               </button>
               <button
-                hx-get="/widget/feedback/{{Project.AppKey}}"
+                hx-get="/widget/ideas/{{Project.AppKey}}"
                 hx-target="#content"
                 hx-on::before-request="updateNav('tabFeedback')"
                 id="tabFeedback"
                 class="nav-item inline-flex items-center border-b-2 px-1 pt-1 text-xs font-medium"
               >
-                Feedback
+                Ideas
               </button>
             </div>
           </div>

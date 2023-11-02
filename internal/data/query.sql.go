@@ -16,11 +16,15 @@ import (
 
 const analyticsUsers = `-- name: AnalyticsUsers :many
 SELECT DISTINCT 
-   r.user_id, 
+   COALESCE(REPLACE(r.user_id, '"', ''), 'N/A') as UserID,
+   r.user_uuid,
    COALESCE(REPLACE(r.user_name, '"', ''), 'User') as UserName, 
    COALESCE(REPLACE(r.user_email, '"', ''), 'N/A') as UserEmail, 
    COALESCE(REPLACE(r.user_role, '"', ''), 'N/A') as UserRole, 
    r.locale,
+   CAST(STRING_AGG(distinct r.ip_addr, ',') as text) as IPAddress,
+   CAST(STRING_AGG(distinct r.user_agent, ',') as text) as UserAgent,
+   CASE WHEN r.user_data IS NOT NULL THEN CAST(r.user_data as text) ELSE NULL END as UserData,
    COUNT(DISTINCT r.id) as ViewCount, 
    COUNT(DISTINCT ri.id) as ImpressionCount, 
    COUNT(DISTINCT rc.id) as CommentCount 
@@ -29,34 +33,35 @@ FROM post_reactions r
   left join post_comments rc ON r.user_uuid = rc.user_uuid 
   left join post_reactions ri on r.user_uuid = ri.user_uuid and r.post_id = ri.post_id and ri.reaction is not null 
   WHERE p.project_id = $1 
-	  and (
-          (($2 = '' AND $3 = '') OR ($2 IS NULL AND $3 IS NULL))
-          OR (LENGTH($2) > 0 AND $2 = r.user_id) 
-          OR (LENGTH($3) > 0 AND $3::UUID = r.user_uuid)
-        ) 
+    and ($2 = r.user_id or $2 = '' or $2 is null)
+    and ($3::varchar = r.user_uuid::varchar or $3 = '' or $3 is null)
     and r.reaction is null 
-GROUP BY 1,2,3,4,5
+GROUP BY r.user_id, r.user_uuid, UserName, UserEmail, UserRole, r.locale, UserData
 `
 
 type AnalyticsUsersParams struct {
 	ProjectID int32
-	Column2   interface{}
-	Column3   interface{}
+	UserID    sql.NullString
+	Column3   string
 }
 
 type AnalyticsUsersRow struct {
-	UserID          sql.NullString
+	Userid          interface{}
+	UserUuid        uuid.UUID
 	Username        interface{}
 	Useremail       interface{}
 	Userrole        interface{}
 	Locale          string
+	Ipaddress       string
+	Useragent       string
+	Userdata        interface{}
 	Viewcount       int64
 	Impressioncount int64
 	Commentcount    int64
 }
 
 func (q *Queries) AnalyticsUsers(ctx context.Context, arg AnalyticsUsersParams) ([]AnalyticsUsersRow, error) {
-	rows, err := q.db.QueryContext(ctx, analyticsUsers, arg.ProjectID, arg.Column2, arg.Column3)
+	rows, err := q.db.QueryContext(ctx, analyticsUsers, arg.ProjectID, arg.UserID, arg.Column3)
 	if err != nil {
 		return nil, err
 	}
@@ -65,11 +70,15 @@ func (q *Queries) AnalyticsUsers(ctx context.Context, arg AnalyticsUsersParams) 
 	for rows.Next() {
 		var i AnalyticsUsersRow
 		if err := rows.Scan(
-			&i.UserID,
+			&i.Userid,
+			&i.UserUuid,
 			&i.Username,
 			&i.Useremail,
 			&i.Userrole,
 			&i.Locale,
+			&i.Ipaddress,
+			&i.Useragent,
+			&i.Userdata,
 			&i.Viewcount,
 			&i.Impressioncount,
 			&i.Commentcount,
@@ -85,6 +94,27 @@ func (q *Queries) AnalyticsUsers(ctx context.Context, arg AnalyticsUsersParams) 
 		return nil, err
 	}
 	return items, nil
+}
+
+const dashboardQuery = `-- name: DashboardQuery :one
+SELECT COUNT(p.id), COUNT(rv.id), COUNT(rc.id) 
+  FROM posts p 
+    left join post_reactions rv on p.id = rv.id and rv.reaction is null 
+    left join post_reactions rc on p.id = rc.id and (rc.id is null or rc.reaction is not null) 
+  WHERE p.project_id = $1
+`
+
+type DashboardQueryRow struct {
+	Count   int64
+	Count_2 int64
+	Count_3 int64
+}
+
+func (q *Queries) DashboardQuery(ctx context.Context, projectID int32) (DashboardQueryRow, error) {
+	row := q.db.QueryRowContext(ctx, dashboardQuery, projectID)
+	var i DashboardQueryRow
+	err := row.Scan(&i.Count, &i.Count_2, &i.Count_3)
+	return i, err
 }
 
 const deleteBoard = `-- name: DeleteBoard :one
@@ -287,7 +317,7 @@ func (q *Queries) GetLabels(ctx context.Context, projectID int32) ([]Label, erro
 }
 
 const getPost = `-- name: GetPost :one
-SELECT p.id, p.title, p.body, p.published_on, p.author_id, p.project_id, p.created_on, p.updated_on, p.label_id, l.label as Label FROM posts p LEFT JOIN labels l on p.label_id = l.id or p.label_id is null WHERE p.id = $1 AND p.project_id = $2
+SELECT p.id, p.title, p.body, p.published_on, p.author_id, p.project_id, p.created_on, p.updated_on, p.label_id, p.is_published, l.label as Label FROM posts p LEFT JOIN labels l on p.label_id = l.id or p.label_id is null WHERE p.id = $1 AND p.project_id = $2
 `
 
 type GetPostParams struct {
@@ -305,6 +335,7 @@ type GetPostRow struct {
 	CreatedOn   time.Time
 	UpdatedOn   sql.NullTime
 	LabelID     sql.NullInt32
+	IsPublished sql.NullBool
 	Label       sql.NullString
 }
 
@@ -321,34 +352,35 @@ func (q *Queries) GetPost(ctx context.Context, arg GetPostParams) (GetPostRow, e
 		&i.CreatedOn,
 		&i.UpdatedOn,
 		&i.LabelID,
+		&i.IsPublished,
 		&i.Label,
 	)
 	return i, err
 }
 
 const getPostComments = `-- name: GetPostComments :many
-SELECT c.comment, c.created_on, r.locale, ur.reaction, REPLACE(r.user_name, '"', '') as UserName, REPLACE(r.user_role, '"', '') as UserRole
+SELECT p.id, p.title, c.comment, c.created_on, r.locale, ur.reaction, REPLACE(r.user_name, '"', '') as UserName, REPLACE(r.user_role, '"', '') as UserRole
 	FROM posts p 
 		JOIN post_comments c ON c.post_id = p.id 
 		JOIN post_reactions r ON r.user_uuid = c.user_uuid AND r.post_id = p.id AND r.reaction IS NULL 
 		LEFT JOIN post_reactions ur ON ur.user_uuid = c.user_uuid AND ur.post_id = p.id AND ur.reaction IS NOT NULL 
-WHERE p.id = $1 AND p.project_id = $2
-	  and (
-          (($3 = '' AND $4 = '') OR ($3 IS NULL AND $4 IS NULL))
-          OR (LENGTH($3) > 0 AND $3 = r.user_id) 
-          OR (LENGTH($4) > 0 AND $4::UUID = r.user_uuid)
-        ) 
+WHERE p.project_id = $1
+    and ($2 = r.user_id or $2 = '' or $2 is null)
+    and ($3::varchar = r.user_uuid::varchar or $3 = '' or $3 is null)
+    and (p.id = $4 OR $4 = 0)
 ORDER BY c.created_on DESC
 `
 
 type GetPostCommentsParams struct {
-	ID        int32
 	ProjectID int32
-	Column3   interface{}
-	Column4   interface{}
+	UserID    sql.NullString
+	Column3   string
+	ID        int32
 }
 
 type GetPostCommentsRow struct {
+	ID        int32
+	Title     string
 	Comment   string
 	CreatedOn time.Time
 	Locale    string
@@ -359,10 +391,10 @@ type GetPostCommentsRow struct {
 
 func (q *Queries) GetPostComments(ctx context.Context, arg GetPostCommentsParams) ([]GetPostCommentsRow, error) {
 	rows, err := q.db.QueryContext(ctx, getPostComments,
-		arg.ID,
 		arg.ProjectID,
+		arg.UserID,
 		arg.Column3,
-		arg.Column4,
+		arg.ID,
 	)
 	if err != nil {
 		return nil, err
@@ -372,6 +404,8 @@ func (q *Queries) GetPostComments(ctx context.Context, arg GetPostCommentsParams
 	for rows.Next() {
 		var i GetPostCommentsRow
 		if err := rows.Scan(
+			&i.ID,
+			&i.Title,
 			&i.Comment,
 			&i.CreatedOn,
 			&i.Locale,
@@ -410,21 +444,19 @@ SELECT
   COUNT(r.*) 
 FROM posts p 
   JOIN post_reactions r ON r.post_id = p.id 
-WHERE p.id = $1 AND p.project_id = $2 
-	  and (
-          (($3 = '' AND $4 = '') OR ($3 IS NULL AND $4 IS NULL))
-          OR (LENGTH($3) > 0 AND $3 = r.user_id) 
-          OR (LENGTH($4) > 0 AND $4::UUID = r.user_uuid)
-        ) 
+WHERE p.project_id = $1 
+    and ($2 = r.user_id or $2 = '' or $2 is null)
+    and ($3::varchar = r.user_uuid::varchar or $3 = '' or $3 is null)
+    and (p.id = $4 OR $4 = 0)
 GROUP BY r.reaction 
 ORDER BY r.reaction NULLS FIRST
 `
 
 type GetPostReactionsParams struct {
-	ID        int32
 	ProjectID int32
-	Column3   interface{}
-	Column4   interface{}
+	UserID    sql.NullString
+	Column3   string
+	ID        int32
 }
 
 type GetPostReactionsRow struct {
@@ -434,10 +466,10 @@ type GetPostReactionsRow struct {
 
 func (q *Queries) GetPostReactions(ctx context.Context, arg GetPostReactionsParams) ([]GetPostReactionsRow, error) {
 	rows, err := q.db.QueryContext(ctx, getPostReactions,
-		arg.ID,
 		arg.ProjectID,
+		arg.UserID,
 		arg.Column3,
-		arg.Column4,
+		arg.ID,
 	)
 	if err != nil {
 		return nil, err
@@ -461,13 +493,14 @@ func (q *Queries) GetPostReactions(ctx context.Context, arg GetPostReactionsPara
 }
 
 const getPosts = `-- name: GetPosts :many
-SELECT p.id, p.title, p.published_on, l.label, l.color, CASE WHEN p.published_on <= current_timestamp THEN 1 ELSE 0 END AS status, COUNT(r.id) as ViewCount FROM posts p left join labels l on p.label_id = l.id or p.label_id is null left join post_reactions r on (p.id = r.post_id and r.reaction is null) OR r.id is null WHERE p.project_id = $1 GROUP BY 1,2,3,4,5,6
+SELECT p.id, p.title, p.published_on, p.is_published, l.label, l.color, CASE WHEN p.published_on <= current_timestamp THEN 1 ELSE 0 END AS status, COUNT(r.id) as ViewCount FROM posts p left join labels l on p.label_id = l.id or p.label_id is null left join post_reactions r on (p.id = r.post_id and r.reaction is null) OR r.id is null WHERE p.project_id = $1 GROUP BY 1,2,3,4,5,6
 `
 
 type GetPostsRow struct {
 	ID          int32
 	Title       string
 	PublishedOn time.Time
+	IsPublished sql.NullBool
 	Label       sql.NullString
 	Color       sql.NullString
 	Status      int32
@@ -487,6 +520,7 @@ func (q *Queries) GetPosts(ctx context.Context, projectID int32) ([]GetPostsRow,
 			&i.ID,
 			&i.Title,
 			&i.PublishedOn,
+			&i.IsPublished,
 			&i.Label,
 			&i.Color,
 			&i.Status,
@@ -565,14 +599,17 @@ func (q *Queries) GetProjectByKey(ctx context.Context, appKey string) (Project, 
 }
 
 const getPublishedPagedPosts = `-- name: GetPublishedPagedPosts :many
-SELECT post.id, post.title, post.body, post.published_on, post.author_id, post.project_id, post.created_on, post.updated_on, post.label_id, l.label, l.color, a.first_name, a.last_name, a.picture_url, r.reaction, CASE WHEN v.id IS NULL THEN 0 ELSE 1 END as Viewed
+SELECT post.id, post.title, post.body, post.published_on, post.author_id, post.project_id, post.created_on, post.updated_on, post.label_id, post.is_published, l.label, l.color, a.first_name, a.last_name, a.picture_url, r.reaction, CASE WHEN v.id IS NULL THEN 0 ELSE 1 END as Viewed
   FROM posts post 
     join projects proj on post.project_id = proj.id 
 	join authors a on a.id = post.author_id 
 	left join labels l on post.label_id = l.id or post.label_id is null 
 	left join post_reactions r on (r.post_id = post.id and r.user_uuid = $4 and r.reaction is not null) or r.id is null 
 	left join post_reactions v on (v.post_id = post.id and v.user_uuid = $4 and v.reaction is null) or v.id is null 
-WHERE proj.app_key = $1 AND post.published_on <= CURRENT_TIMESTAMP AND ($5 = '' OR LOWER(post.title) LIKE $5)
+WHERE proj.app_key = $1 
+   AND post.published_on <= CURRENT_TIMESTAMP 
+   AND post.is_published = true
+   AND ($5 = '' OR LOWER(post.title) LIKE $5)
 ORDER BY post.published_on DESC 
 LIMIT $2 
 OFFSET $3
@@ -596,6 +633,7 @@ type GetPublishedPagedPostsRow struct {
 	CreatedOn   time.Time
 	UpdatedOn   sql.NullTime
 	LabelID     sql.NullInt32
+	IsPublished sql.NullBool
 	Label       sql.NullString
 	Color       sql.NullString
 	FirstName   string
@@ -630,6 +668,7 @@ func (q *Queries) GetPublishedPagedPosts(ctx context.Context, arg GetPublishedPa
 			&i.CreatedOn,
 			&i.UpdatedOn,
 			&i.LabelID,
+			&i.IsPublished,
 			&i.Label,
 			&i.Color,
 			&i.FirstName,
@@ -878,13 +917,14 @@ func (q *Queries) InsertLabel(ctx context.Context, arg InsertLabelParams) (Label
 }
 
 const insertPost = `-- name: InsertPost :one
-INSERT INTO posts (title, body, published_on, label_id, author_id, project_id) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, title, body, published_on, author_id, project_id, created_on, updated_on, label_id
+INSERT INTO posts (title, body, published_on, is_published, label_id, author_id, project_id) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id, title, body, published_on, author_id, project_id, created_on, updated_on, label_id, is_published
 `
 
 type InsertPostParams struct {
 	Title       string
 	Body        string
 	PublishedOn time.Time
+	IsPublished sql.NullBool
 	LabelID     sql.NullInt32
 	AuthorID    int32
 	ProjectID   int32
@@ -895,6 +935,7 @@ func (q *Queries) InsertPost(ctx context.Context, arg InsertPostParams) (Post, e
 		arg.Title,
 		arg.Body,
 		arg.PublishedOn,
+		arg.IsPublished,
 		arg.LabelID,
 		arg.AuthorID,
 		arg.ProjectID,
@@ -910,6 +951,7 @@ func (q *Queries) InsertPost(ctx context.Context, arg InsertPostParams) (Post, e
 		&i.CreatedOn,
 		&i.UpdatedOn,
 		&i.LabelID,
+		&i.IsPublished,
 	)
 	return i, err
 }
@@ -1003,7 +1045,7 @@ func (q *Queries) InsertReaction(ctx context.Context, arg InsertReactionParams) 
 }
 
 const insertStatus = `-- name: InsertStatus :one
-INSERT INTO roadmap_statuses (status, description, color, project_id, created_on) VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP) RETURNING id, status, color, description, created_on, project_id
+INSERT INTO roadmap_statuses (status, description, color, project_id, created_on) VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP) RETURNING id, status, color, description, created_on, project_id, is_private
 `
 
 type InsertStatusParams struct {
@@ -1028,6 +1070,7 @@ func (q *Queries) InsertStatus(ctx context.Context, arg InsertStatusParams) (Roa
 		&i.Description,
 		&i.CreatedOn,
 		&i.ProjectID,
+		&i.IsPrivate,
 	)
 	return i, err
 }
@@ -1127,13 +1170,14 @@ func (q *Queries) UpdateLabel(ctx context.Context, arg UpdateLabelParams) (Label
 }
 
 const updatePost = `-- name: UpdatePost :one
-UPDATE posts SET title = $1, body = $2, published_on = $3, label_id = $4, updated_on = CURRENT_TIMESTAMP WHERE id = $5 AND project_id = $6 RETURNING id, title, body, published_on, author_id, project_id, created_on, updated_on, label_id
+UPDATE posts SET title = $1, body = $2, published_on = $3, is_published = $4, label_id = $5, updated_on = CURRENT_TIMESTAMP WHERE id = $6 AND project_id = $7 RETURNING id, title, body, published_on, author_id, project_id, created_on, updated_on, label_id, is_published
 `
 
 type UpdatePostParams struct {
 	Title       string
 	Body        string
 	PublishedOn time.Time
+	IsPublished sql.NullBool
 	LabelID     sql.NullInt32
 	ID          int32
 	ProjectID   int32
@@ -1144,6 +1188,7 @@ func (q *Queries) UpdatePost(ctx context.Context, arg UpdatePostParams) (Post, e
 		arg.Title,
 		arg.Body,
 		arg.PublishedOn,
+		arg.IsPublished,
 		arg.LabelID,
 		arg.ID,
 		arg.ProjectID,
@@ -1159,6 +1204,7 @@ func (q *Queries) UpdatePost(ctx context.Context, arg UpdatePostParams) (Post, e
 		&i.CreatedOn,
 		&i.UpdatedOn,
 		&i.LabelID,
+		&i.IsPublished,
 	)
 	return i, err
 }
@@ -1232,7 +1278,7 @@ func (q *Queries) UpdateReaction(ctx context.Context, arg UpdateReactionParams) 
 }
 
 const updateStatus = `-- name: UpdateStatus :one
-UPDATE roadmap_statuses SET status = $1, description = $2, color = $3 WHERE id = $4 AND project_id = $5 RETURNING id, status, color, description, created_on, project_id
+UPDATE roadmap_statuses SET status = $1, description = $2, color = $3 WHERE id = $4 AND project_id = $5 RETURNING id, status, color, description, created_on, project_id, is_private
 `
 
 type UpdateStatusParams struct {
@@ -1259,6 +1305,7 @@ func (q *Queries) UpdateStatus(ctx context.Context, arg UpdateStatusParams) (Roa
 		&i.Description,
 		&i.CreatedOn,
 		&i.ProjectID,
+		&i.IsPrivate,
 	)
 	return i, err
 }

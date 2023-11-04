@@ -115,13 +115,15 @@
         {% for post in Posts %}
         <tr id="post-{{post.ID}}" class="hover:bg-slate-100">
           <td
-            class="flex align-middle gap-x-1 w-full max-w-0 py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:w-auto sm:max-w-none"
+            class="hidden lg:table-cell w-full max-w-0 py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:w-auto sm:max-w-none"
           >
-            <div
-              class="w-5 h-5 rounded-md"
-              style="background-color: {{post.Color.String}}"
-            ></div>
-            {{post.Label.String}}
+            <div class="flex gap-x-1">
+              <span
+                class="w-5 h-5 rounded-md"
+                style="background-color: {{post.Color.String}}"
+              ></span>
+              {{post.Label.String}}
+            </div>
           </td>
           <td
             class="w-full max-w-0 py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:w-auto sm:max-w-none sm:pl-0"

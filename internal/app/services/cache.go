@@ -11,7 +11,7 @@ type CacheService struct {
 }
 
 func NewCacheService() *CacheService {
-	return &CacheService{cache: cache.New(1*time.Hour, 2*time.Hour)}
+	return &CacheService{cache: cache.New(1*time.Minute, 1*time.Minute)}
 }
 
 func (s *CacheService) Set(key string, value any, duration *time.Duration) {

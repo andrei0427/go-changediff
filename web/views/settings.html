@@ -1,157 +1,131 @@
 {% extends 'partials/base/auth_base.html' %} {% block head %}
 <title>ReleaseRover - Settings</title>
 {% endblock %} {% block content %}
-<div class="lg:px-8">
-  <div class="mx-auto flex flex-col lg:max-w-4xl">
-    <div
-      class="sticky top-0 z-10 flex h-16 flex-shrink-0 border-b border-gray-200 bg-white lg:hidden"
-    >
-      <button
-        type="button"
-        class="border-r border-gray-200 px-4 text-gray-500 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-emerald"
-      >
-        <span class="sr-only">Open sidebar</span>
-        <svg
-          class="h-6 w-6"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke-width="1.5"
-          stroke="currentColor"
-          aria-hidden="true"
+<div class="relative mx-auto max-w-4xl">
+  <div class="px-4 sm:px-6 lg:px-0">
+    <h1 class="text-3xl font-bold tracking-tight text-gray-900">Settings</h1>
+  </div>
+  <div class="px-4 sm:px-6 lg:px-0">
+    <div class="py-6">
+      <!-- Tabs -->
+      <div class="lg:hidden">
+        <label for="selected-tab" class="sr-only">Select a tab</label>
+        <select
+          id="selected-tab"
+          name="selected-tab"
+          class="mt-1 block w-full rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-emerald sm:text-sm sm:leading-6"
+          onchange="navTabsChanged(event)"
         >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25H12"
-          />
-        </svg>
-      </button>
-    </div>
+          <option selected value="general">General</option>
+          <option value="organiation" disabled>
+            Organisation (coming soon)
+          </option>
+          <option value="changelog">Changelog</option>
+          <option value="roadmap" disabled>Roadmap (coming soon)</option>
+          <option value="ideas" disabled>Ideas (coming soon)</option>
+          <option value="integrations" disabled>
+            Integrations (coming soon)
+          </option>
+        </select>
+      </div>
+      <div class="hidden lg:block">
+        <div class="border-b border-gray-200">
+          <nav class="-mb-px flex space-x-8">
+            <button
+              onclick="updateNavTabs('general')"
+              class="border-emerald text-emerald whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium"
+            >
+              General
+            </button>
+            <button
+              onclick="updateNavTabs('organisation')"
+              disabled
+              class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium"
+            >
+              Organisation
 
-    <main class="flex-1">
-      <div class="relative mx-auto max-w-4xl">
-        <div class="pb-16 pt-10">
-          <div class="px-4 sm:px-6 lg:px-0">
-            <h1 class="text-3xl font-bold tracking-tight text-gray-900">
-              Settings
-            </h1>
-          </div>
-          <div class="px-4 sm:px-6 lg:px-0">
-            <div class="py-6">
-              <!-- Tabs -->
-              <div class="lg:hidden">
-                <label for="selected-tab" class="sr-only">Select a tab</label>
-                <select
-                  id="selected-tab"
-                  name="selected-tab"
-                  class="mt-1 block w-full rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-emerald sm:text-sm sm:leading-6"
-                >
-                  <option selected>General</option>
-                  <option>Organisation</option>
-                  <option>Changelog</option>
-                  <option>Roadmap</option>
-                  <option>Ideas</option>
-                  <option>Integrations</option>
-                </select>
-              </div>
-              <div class="hidden lg:block">
-                <div class="border-b border-gray-200">
-                  <nav class="-mb-px flex space-x-8">
-                    <button
-                      onclick="updateNavTabs('general')"
-                      class="border-emerald text-emerald whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium"
-                    >
-                      General
-                    </button>
-                    <button
-                      onclick="updateNavTabs('organisation')"
-                      disabled
-                      class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium"
-                    >
-                      Organisation
+              <br />
+              <span class="text-gray-400 text-sm"> Coming soon </span>
+            </button>
+            <button
+              onclick="updateNavTabs('changelog')"
+              class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium"
+            >
+              Changelog
+            </button>
+            <button
+              onclick="updateNavTabs('roadmap')"
+              class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium"
+              disabled
+            >
+              Roadmap
 
-                      <br />
-                      <span class="text-gray-400 text-sm"> Coming soon </span>
-                    </button>
-                    <button
-                      onclick="updateNavTabs('changelog')"
-                      class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium"
-                    >
-                      Changelog
-                    </button>
-                    <button
-                      onclick="updateNavTabs('roadmap')"
-                      class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium"
-                      disabled
-                    >
-                      Roadmap
+              <br />
+              <span class="text-gray-400 text-sm"> Coming soon </span>
+            </button>
+            <button
+              onclick="updateNavTabs('ideas')"
+              class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium"
+              disabled
+            >
+              Ideas
 
-                      <br />
-                      <span class="text-gray-400 text-sm"> Coming soon </span>
-                    </button>
-                    <button
-                      onclick="updateNavTabs('ideas')"
-                      class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium"
-                      disabled
-                    >
-                      Ideas
+              <br />
+              <span class="text-gray-400 text-sm"> Coming soon </span>
+            </button>
+            <button
+              onclick="updateNavTabs('nps')"
+              class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium"
+              disabled
+            >
+              NPS
 
-                      <br />
-                      <span class="text-gray-400 text-sm"> Coming soon </span>
-                    </button>
-                    <button
-                      onclick="updateNavTabs('nps')"
-                      class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium"
-                      disabled
-                    >
-                      NPS
+              <br />
+              <span class="text-gray-400 text-sm"> Coming soon </span>
+            </button>
+            <button
+              onclick="updateNavTabs('csat')"
+              class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium"
+              disabled
+            >
+              CSAT
 
-                      <br />
-                      <span class="text-gray-400 text-sm"> Coming soon </span>
-                    </button>
-                    <button
-                      onclick="updateNavTabs('csat')"
-                      class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium"
-                      disabled
-                    >
-                      CSAT
+              <br />
+              <span class="text-gray-400 text-sm"> Coming soon </span>
+            </button>
+            <button
+              onclick="updateNavTabs('integrations')"
+              disabled
+              class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium"
+            >
+              Integrations
 
-                      <br />
-                      <span class="text-gray-400 text-sm"> Coming soon </span>
-                    </button>
-                    <button
-                      onclick="updateNavTabs('integrations')"
-                      disabled
-                      class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium"
-                    >
-                      Integrations
-
-                      <br />
-                      <span class="text-gray-400 text-sm"> Coming soon </span>
-                    </button>
-                  </nav>
-                </div>
-              </div>
-
-              <div id="banner-placeholder"></div>
-
-              <div
-                id="tab-content"
-                hx-get="/admin/settings/tab"
-                hx-swap="innerHtml"
-                hx-vals="js:{hash: window.location.hash.replace('#', '')}"
-                hx-trigger="load, tabchange"
-              ></div>
-            </div>
-          </div>
+              <br />
+              <span class="text-gray-400 text-sm"> Coming soon </span>
+            </button>
+          </nav>
         </div>
       </div>
-    </main>
+
+      <div id="banner-placeholder"></div>
+
+      <div
+        id="tab-content"
+        hx-get="/admin/settings/tab"
+        hx-swap="innerHtml"
+        hx-vals="js:{hash: window.location.hash.replace('#', '')}"
+        hx-trigger="load, tabchange"
+      ></div>
+    </div>
   </div>
 </div>
 
 <script>
   updateNavTabs(window.location.hash);
+
+  function navTabsChanged(e) {
+    updateNavTabs(e.target.value);
+  }
 
   function updateNavTabs(tabName) {
     const navElms = document.querySelectorAll("nav > button");
@@ -177,6 +151,7 @@
     });
 
     location.hash = "#" + fixedTabName;
+    document.getElementById("selected-tab").value = fixedTabName;
   }
 
   window.onhashchange = function () {

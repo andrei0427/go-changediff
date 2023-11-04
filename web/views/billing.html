@@ -1,0 +1,522 @@
+{% extends 'partials/base/auth_base.html' %} {% block head %}
+<title>ReleaseRover - Billing</title>
+{% endblock %} {% block content %}
+
+<div class="bg-white py-24 sm:py-32">
+  <div class="mx-auto max-w-7xl px-6 lg:px-8">
+    <div class="mx-auto max-w-4xl text-center">
+      <p
+        class="my-2 text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl"
+      >
+        Billing
+      </p>
+      <h2 class="text-base font-semibold leading-7 text-emerald">
+        {%if user.Author.Tier.Int32==1 %}Thank you for your support! We're
+        actively working to add more features and improve the
+        product.{%else%}Ready to go Pro?{%endif%}
+      </h2>
+    </div>
+    <p
+      class="mx-auto mt-6 max-w-2xl text-center text-lg leading-8 text-gray-600"
+    >
+      You are currently on the
+      <span class="text-emerald font-bold">
+        {% if user.Author.Tier.Int32==1 %}Pro{%elif user.Author.Tier.Int32 ==2%}
+        Max {%else%}Free{%endif%}</span
+      >
+      plan. {{ExpirationDate}}
+      <br />
+      {% comment %}Get
+      <span class="text-emerald font-bold">2 free months</span> when subscribing
+      annually! {% endcomment %}
+      <span class="text-emerald font-bold">Annual</span> plans coming soon!
+    </p>
+    {% comment %}
+    <div class="mt-16 flex justify-center">
+      <fieldset
+        class="grid grid-cols-2 gap-x-1 rounded-full p-1 text-center text-xs font-semibold leading-5 ring-1 ring-inset ring-gray-200"
+      >
+        <legend class="sr-only">Payment frequency</legend>
+        <!-- Checked: "bg-indigo-600 text-white", Not Checked: "text-gray-500" -->
+        <label
+          id="lblMonthly"
+          class="cursor-pointer rounded-full px-2.5 py-1 {%if user.Author.IsAnnual.Bool%}text-gray-500{%else%}bg-emerald text-white{%endif%}"
+        >
+          <input
+            type="radio"
+            name="frequency"
+            value="monthly"
+            class="sr-only"
+            onclick="toggleFrequency()"
+          />
+          <span>Monthly</span>
+        </label>
+        <label
+          id="lblAnnual"
+          class="cursor-pointer rounded-full px-2.5 py-1 {%if user.Author.IsAnnual.Bool%}bg-emerald text-white{%else%}text-gray-500{%endif%}"
+        >
+          <input
+            type="radio"
+            name="frequency"
+            value="annually"
+            class="sr-only"
+            onclick="toggleFrequency()"
+          />
+          <span>Annually</span>
+        </label>
+      </fieldset>
+    </div>
+    {% endcomment %}
+    <div
+      class="isolate mx-auto mt-10 grid max-w-md grid-cols-1 gap-8 lg:mx-0 lg:max-w-none lg:grid-cols-3"
+    >
+      <div class="rounded-3xl p-8 xl:p-10 ring-1 ring-gray-200">
+        <div class="flex items-center justify-between gap-x-4">
+          <h3
+            id="tier-free"
+            class="text-lg font-semibold leading-8 text-gray-900"
+          >
+            Free
+          </h3>
+        </div>
+        <p class="mt-4 text-sm leading-6 text-gray-600">
+          Ideal for small startups to get off the ground.
+        </p>
+        <p class="mt-6 flex items-baseline gap-x-1">
+          <!-- Price, update based on frequency toggle state -->
+          <span class="text-4xl font-bold tracking-tight text-gray-900"
+            >$0</span
+          >
+        </p>
+        <a
+          href="#"
+          aria-describedby="tier-free"
+          class="mt-6 block rounded-md py-2 px-3 text-center text-sm font-semibold leading-6 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald text-emerald ring-1 ring-inset ring-emerald hover:ring-emerald"
+          >{%if user.Author.Tier.Int32%}Downgrade subscription{%else%}Active
+          plan{%endif%}</a
+        >
+        <ul
+          role="list"
+          class="mt-8 space-y-3 text-sm leading-6 text-gray-600 xl:mt-10"
+        >
+          <li class="flex gap-x-3">
+            <svg
+              class="h-6 w-5 flex-none text-emerald"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+              aria-hidden="true"
+            >
+              <path
+                fill-rule="evenodd"
+                d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z"
+                clip-rule="evenodd"
+              />
+            </svg>
+            Changelog /w unlimited posts
+          </li>
+          <li class="flex gap-x-3">
+            <svg
+              class="h-6 w-5 flex-none text-emerald"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+              aria-hidden="true"
+            >
+              <path
+                fill-rule="evenodd"
+                d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z"
+                clip-rule="evenodd"
+              />
+            </svg>
+            Roadmap board
+          </li>
+          <li class="flex gap-x-3">
+            <svg
+              class="h-6 w-5 flex-none text-emerald"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+              aria-hidden="true"
+            >
+              <path
+                fill-rule="evenodd"
+                d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z"
+                clip-rule="evenodd"
+              />
+            </svg>
+            Basic analytics
+          </li>
+          <li class="flex gap-x-3">
+            <svg
+              class="h-6 w-5 flex-none text-emerald"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+              aria-hidden="true"
+            >
+              <path
+                fill-rule="evenodd"
+                d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z"
+                clip-rule="evenodd"
+              />
+            </svg>
+            In-app widget
+          </li>
+          <li class="flex gap-x-3">
+            <svg
+              class="h-6 w-5 flex-none text-emerald"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+              aria-hidden="true"
+            >
+              <path
+                fill-rule="evenodd"
+                d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z"
+                clip-rule="evenodd"
+              />
+            </svg>
+            Client portal
+          </li>
+        </ul>
+      </div>
+      <div class="rounded-3xl p-8 xl:p-10 ring-2 ring-emerald">
+        <div class="flex items-center justify-between gap-x-4">
+          <h3
+            id="tier-pro"
+            class="text-lg font-semibold leading-8 text-emerald"
+          >
+            Pro
+          </h3>
+          <p
+            class="rounded-full bg-emerald/10 px-2.5 py-1 text-xs font-semibold leading-5 text-emerald"
+          >
+            Most popular
+          </p>
+        </div>
+        <p class="mt-4 text-sm leading-6 text-gray-600">
+          Customizable and engaging.
+        </p>
+        <p class="mt-6 flex items-baseline gap-x-1">
+          <!-- Price, update based on frequency toggle state -->
+          <span
+            class="monthly {%if user.Author.IsAnnual.Bool%}hidden{%else%}{%endif%} text-4xl font-bold tracking-tight text-gray-900"
+            >${{ProPrice}}</span
+          >
+          <span
+            class="annual {%if user.Author.IsAnnual.Bool%}{%else%}hidden{%endif%} text-4xl font-bold tracking-tight text-gray-900"
+            >${{ProAnnualPrice}}</span
+          >
+          <!-- Payment frequency, update based on frequency toggle state -->
+          <span class="text-sm font-semibold leading-6 text-gray-600"
+            >/month</span
+          >
+        </p>
+        <a
+          href="#"
+          aria-describedby="tier-pro"
+          class="mt-6 block rounded-md py-2 px-3 text-center text-sm font-semibold leading-6 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald bg-emerald text-white shadow-sm hover:bg-emerald"
+          >{%if user.Author.Tier.Int32==1%}Cancel subscription {%elif user.Author.Tier.Int32==2%}Downgrade to Pro{%else%}Go Pro{%endif%}</a
+        >
+        <ul
+          role="list"
+          class="mt-8 space-y-3 text-sm leading-6 text-gray-600 xl:mt-10"
+        >
+          <li class="flex gap-x-3">
+            <svg
+              class="h-6 w-5 flex-none text-emerald"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+              aria-hidden="true"
+            >
+              <path
+                fill-rule="evenodd"
+                d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z"
+                clip-rule="evenodd"
+              />
+            </svg>
+            Everything in Free
+          </li>
+          <li class="flex gap-x-3">
+            <svg
+              class="h-6 w-5 flex-none text-emerald"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+              aria-hidden="true"
+            >
+              <path
+                fill-rule="evenodd"
+                d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z"
+                clip-rule="evenodd"
+              />
+            </svg>
+            Removal of ReleaseRover branding
+          </li>
+          <li class="flex gap-x-3">
+            <svg
+              class="h-6 w-5 flex-none text-emerald"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+              aria-hidden="true"
+            >
+              <path
+                fill-rule="evenodd"
+                d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z"
+                clip-rule="evenodd"
+              />
+            </svg>
+            Improved user analytics
+          </li>
+          <li class="flex gap-x-3">
+            <svg
+              class="h-6 w-5 flex-none text-emerald"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+              aria-hidden="true"
+            >
+              <path
+                fill-rule="evenodd"
+                d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z"
+                clip-rule="evenodd"
+              />
+            </svg>
+            Reactions, comments &amp; voting
+          </li>
+          <li class="flex gap-x-3">
+            <svg
+              class="h-6 w-5 flex-none text-emerald"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+              aria-hidden="true"
+            >
+              <path
+                fill-rule="evenodd"
+                d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z"
+                clip-rule="evenodd"
+              />
+            </svg>
+            Custom labels and statuses
+          </li>
+          <li class="flex gap-x-3">
+            <svg
+              class="h-6 w-5 flex-none text-emerald"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+              aria-hidden="true"
+            >
+              <path
+                fill-rule="evenodd"
+                d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z"
+                clip-rule="evenodd"
+              />
+            </svg>
+            Multiple feedback boards
+            <span
+              class="text-xs flex-shrink self-center uppercase font-bold leading-tight bg-slate-400 text-white px-2 py-1 rounded-md"
+              >Soon</span
+            >
+          </li>
+          <li class="flex gap-x-3">
+            <svg
+              class="h-6 w-5 flex-none text-emerald"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+              aria-hidden="true"
+            >
+              <path
+                fill-rule="evenodd"
+                d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z"
+                clip-rule="evenodd"
+              />
+            </svg>
+            Changelog scheduling &amp; expirations
+          </li>
+        </ul>
+      </div>
+      <div class="rounded-3xl p-8 xl:p-10 ring-1 ring-gray-200">
+        <div class="flex items-center justify-between gap-x-4">
+          <h3
+            id="tier-max"
+            class="text-lg font-semibold leading-8 text-gray-900"
+          >
+            Max
+          </h3>
+          <p
+            class="rounded-full bg-emerald/10 px-2.5 py-1 text-xs font-semibold leading-5 text-emerald"
+          >
+            Coming Soon!
+          </p>
+        </div>
+        <p class="mt-4 text-sm leading-6 text-gray-600">
+          Everything you'll ever need.
+        </p>
+        <p class="mt-6 flex items-baseline gap-x-1">
+          <!-- Price, update based on frequency toggle state -->
+          <span
+            class="monthly {%if user.Author.IsAnnual.Bool%}hidden{%else%}{%endif%} text-4xl font-bold tracking-tight text-gray-900"
+            >${{MaxPrice}}</span
+          >
+          <span
+            class="annual {%if user.Author.IsAnnual.Bool%}{%else%}hidden{%endif%} text-4xl font-bold tracking-tight text-gray-900"
+            >${{MaxAnnualPrice}}</span
+          >
+          <!-- Payment frequency, update based on frequency toggle state -->
+          <span class="text-sm font-semibold leading-6 text-gray-600"
+            >/month</span
+          >
+        </p>
+        <a
+          href="#"
+          aria-describedby="tier-max"
+          class="mt-6 block rounded-md py-2 px-3 text-center text-sm font-semibold leading-6 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald text-emerald ring-1 ring-inset ring-emerald hover:ring-emerald"
+          >Notify me</a
+        >
+        <ul
+          role="list"
+          class="mt-8 space-y-3 text-sm leading-6 text-gray-600 xl:mt-10"
+        >
+          <li class="flex gap-x-3">
+            <svg
+              class="h-6 w-5 flex-none text-emerald"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+              aria-hidden="true"
+            >
+              <path
+                fill-rule="evenodd"
+                d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z"
+                clip-rule="evenodd"
+              />
+            </svg>
+            Everything in Pro
+          </li>
+          <li class="flex gap-x-3">
+            <svg
+              class="h-6 w-5 flex-none text-emerald"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+              aria-hidden="true"
+            >
+              <path
+                fill-rule="evenodd"
+                d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z"
+                clip-rule="evenodd"
+              />
+            </svg>
+            Custom Domains /w SSL
+          </li>
+          <li class="flex gap-x-3">
+            <svg
+              class="h-6 w-5 flex-none text-emerald"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+              aria-hidden="true"
+            >
+              <path
+                fill-rule="evenodd"
+                d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z"
+                clip-rule="evenodd"
+              />
+            </svg>
+            NPS &amp; CSAT Surveys
+          </li>
+          <li class="flex gap-x-3">
+            <svg
+              class="h-6 w-5 flex-none text-emerald"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+              aria-hidden="true"
+            >
+              <path
+                fill-rule="evenodd"
+                d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z"
+                clip-rule="evenodd"
+              />
+            </svg>
+            Multi-tenant up to 3 users
+          </li>
+          <li class="flex gap-x-3">
+            <svg
+              class="h-6 w-5 flex-none text-emerald"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+              aria-hidden="true"
+            >
+              <path
+                fill-rule="evenodd"
+                d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z"
+                clip-rule="evenodd"
+              />
+            </svg>
+            Moderate user-submitted Ideas
+          </li>
+          <li class="flex gap-x-3">
+            <svg
+              class="h-6 w-5 flex-none text-emerald"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+              aria-hidden="true"
+            >
+              <path
+                fill-rule="evenodd"
+                d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z"
+                clip-rule="evenodd"
+              />
+            </svg>
+            Private &amp; Multiple Roadmap Boards
+          </li>
+          <li class="flex gap-x-3">
+            <svg
+              class="h-6 w-5 flex-none text-emerald"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+              aria-hidden="true"
+            >
+              <path
+                fill-rule="evenodd"
+                d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z"
+                clip-rule="evenodd"
+              />
+            </svg>
+            Slack, JIRA, Discord Integrations
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  let isAnnual = "{{user.Author.IsAnnual.Bool}}" === "True";
+
+  function toggleFrequency() {
+    isAnnual = !isAnnual;
+
+    const lblMonthlyElm = document.getElementById("lblMonthly");
+    const lblAnnualElm = document.getElementById("lblAnnual");
+
+    if (!lblMonthly || !lblAnnualElm) {
+      return;
+    }
+
+    const activeItemClasses = ["bg-emerald", "text-white"];
+    const inactiveItemClass = "text-gray-500";
+
+    // Checked: "bg-indigo-600 text-white", Not Checked: "text-gray-500"
+    if (isAnnual) {
+      lblMonthlyElm.classList.remove(...activeItemClasses);
+      lblMonthlyElm.classList.add(inactiveItemClass);
+
+      lblAnnualElm.classList.add(...activeItemClasses);
+      lblAnnualElm.classList.remove(inactiveItemClass);
+    } else {
+      lblAnnualElm.classList.remove(...activeItemClasses);
+      lblAnnualElm.classList.add(inactiveItemClass);
+
+      lblMonthlyElm.classList.add(...activeItemClasses);
+      lblMonthlyElm.classList.remove(inactiveItemClass);
+    }
+
+    document.querySelectorAll(".monthly, .annual").forEach((elm) => {
+      elm.classList.toggle("hidden");
+    });
+  }
+</script>
+
+{% endblock %}

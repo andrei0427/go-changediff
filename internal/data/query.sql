@@ -35,8 +35,33 @@ UPDATE posts SET label_id = NULL WHERE id = $1 AND project_id = $2 RETURNING id;
 DELETE FROM labels WHERE id = $1 AND project_id = $2 RETURNING id;
 
 -- AUTHOR --
+
 -- name: GetAuthorByUser :many
-SELECT * FROM authors WHERE user_id = $1 LIMIT 1;
+SELECT a.*, 
+   s.id, s.subscription_start_date, s.is_annual, s.tier, 
+   CASE 
+    WHEN s.is_annual = false 
+      THEN (s.subscription_start_date + INTERVAL '1 month') >= CURRENT_TIMESTAMP
+    WHEN s.is_annual = true 
+      THEN (s.subscription_start_date + INTERVAL '1 year') >= CURRENT_TIMESTAMP 
+    ELSE false END as is_active,
+   CASE 
+    WHEN s.is_annual = false 
+      THEN s.subscription_start_date + INTERVAL '1 month'
+    WHEN s.is_annual = true 
+      THEN s.subscription_start_date + INTERVAL '1 year'
+    ELSE NULL END as expires_on
+FROM authors a
+  LEFT JOIN subscriptions s on 
+    (a.id = s.subscriber_id and 
+     s.subscription_start_date <= current_timestamp and
+     s.success = true and
+     s.stopped = false 
+    ) 
+    or s.id is null
+WHERE a.user_id = $1
+ORDER BY s.subscription_start_date DESC
+LIMIT 1;
 
 -- name: InsertAuthor :one
 INSERT INTO authors (first_name, last_name, picture_url, user_id, project_id) VALUES ($1, $2, $3, $4, $5) RETURNING *;
@@ -46,7 +71,16 @@ INSERT INTO authors (first_name, last_name, picture_url, user_id, project_id) VA
 SELECT COUNT(id) total_posts FROM posts WHERE project_id = $1;
 
 -- name: GetPosts :many
-SELECT p.id, p.title, p.published_on, p.is_published, l.label, l.color, CASE WHEN p.published_on <= current_timestamp THEN 1 ELSE 0 END AS status, COUNT(r.id) as ViewCount FROM posts p left join labels l on p.label_id = l.id or p.label_id is null left join post_reactions r on (p.id = r.post_id and r.reaction is null) OR r.id is null WHERE p.project_id = $1 GROUP BY 1,2,3,4,5,6;
+SELECT p.id, p.title, p.published_on, p.is_published, p.expires_on, l.label, l.color, 
+  CASE WHEN p.published_on <= current_timestamp THEN 
+    CASE WHEN p.expires_on is not null and p.expires_on <= current_timestamp THEN 2 
+       ELSE 1 END 
+      ELSE 0 END AS status, 
+  COUNT(r.id) as ViewCount FROM posts p left join labels l on p.label_id = l.id or p.label_id is null left join post_reactions r on (p.id = r.post_id and r.reaction is null) OR r.id is null 
+  WHERE p.project_id = $1
+  GROUP BY 1,2,3,4,5,6,7
+  ORDER BY p.published_on DESC;
+
 
 -- name: GetPost :one
 SELECT p.*, l.label as Label FROM posts p LEFT JOIN labels l on p.label_id = l.id or p.label_id is null WHERE p.id = $1 AND p.project_id = $2;
@@ -86,6 +120,7 @@ SELECT post.*, l.label, l.color, a.first_name, a.last_name, a.picture_url, r.rea
 	left join post_reactions v on (v.post_id = post.id and v.user_uuid = $4 and v.reaction is null) or v.id is null 
 WHERE proj.app_key = $1 
    AND post.published_on <= CURRENT_TIMESTAMP 
+   AND (post.expires_on IS NULL OR post.expires_on >= CURRENT_TIMESTAMP)
    AND post.is_published = true
    AND ($5 = '' OR LOWER(post.title) LIKE $5)
 ORDER BY post.published_on DESC 
@@ -96,7 +131,7 @@ OFFSET $3;
 INSERT INTO posts (title, body, published_on, is_published, label_id, author_id, project_id) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *;
 
 -- name: UpdatePost :one
-UPDATE posts SET title = $1, body = $2, published_on = $3, is_published = $4, label_id = $5, updated_on = CURRENT_TIMESTAMP WHERE id = $6 AND project_id = $7 RETURNING *;
+UPDATE posts SET title = $1, body = $2, published_on = $3, is_published = $4, label_id = $5, expires_on = $6, updated_on = CURRENT_TIMESTAMP WHERE id = $7 AND project_id = $8 RETURNING *;
 
 -- name: DeletePost :one
 DELETE FROM posts WHERE id = $1 AND project_id = $2 RETURNING id;

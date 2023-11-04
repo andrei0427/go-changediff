@@ -43,6 +43,7 @@ type Post struct {
 	UpdatedOn   sql.NullTime
 	LabelID     sql.NullInt32
 	IsPublished sql.NullBool
+	ExpiresOn   sql.NullTime
 }
 
 type PostComment struct {
@@ -130,4 +131,19 @@ type RoadmapStatus struct {
 	CreatedOn   time.Time
 	ProjectID   int32
 	IsPrivate   bool
+}
+
+type Subscription struct {
+	ID                    int32
+	SubscriptionStartDate time.Time
+	IsAnnual              bool
+	Price                 string
+	Tier                  int32
+	SessionID             sql.NullString
+	Success               bool
+	Stopped               bool
+	Message               sql.NullString
+	SubscriberID          int32
+	ProjectID             int32
+	CreatedOn             time.Time
 }

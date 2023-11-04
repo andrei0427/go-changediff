@@ -19,7 +19,7 @@ func NewAuthorService(db *data.Queries) *AuthorService {
 	return &AuthorService{db: db}
 }
 
-func (s *AuthorService) GetAuthorByUser(ctx context.Context, userId uuid.UUID) (*data.Author, error) {
+func (s *AuthorService) GetAuthorByUser(ctx context.Context, userId uuid.UUID) (*data.GetAuthorByUserRow, error) {
 	authors, err := s.db.GetAuthorByUser(ctx, userId)
 
 	if len(authors) == 0 {

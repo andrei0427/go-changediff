@@ -148,6 +148,15 @@ func (s *PostService) UpdatePost(ctx context.Context, post models.PostModel, pro
 		IsPublished: sql.NullBool{Bool: post.IsPublished, Valid: true},
 	}
 
+	if post.ExpiresOn != "" {
+		parsedExpiryDate, err := time.ParseInLocation("2006-01-02T15:04", post.ExpiresOn, userLocation)
+		if err != nil {
+			return data.Post{}, errors.New("error parsing expiry date")
+		}
+
+		toUpdate.ExpiresOn = sql.NullTime{Time: parsedExpiryDate.UTC(), Valid: true}
+	}
+
 	if post.ID != nil {
 		toUpdate.ID = int32(*post.ID)
 	} else {

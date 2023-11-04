@@ -29,7 +29,7 @@ func UseAuthor(c *fiber.Ctx, cacheService *services.CacheService, authorService 
 	}
 
 	if cachedAuthor != nil {
-		cachedAuthor := cachedAuthor.(*data.Author)
+		cachedAuthor := cachedAuthor.(*data.GetAuthorByUserRow)
 		curUser.Author = cachedAuthor
 	}
 

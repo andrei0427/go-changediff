@@ -26,7 +26,7 @@ type SessionUser struct {
 	Metadata UserMetadata
 	Timezone string
 	Project  *data.Project
-	Author   *data.Author
+	Author   *data.GetAuthorByUserRow
 }
 
 type UserInfo struct {
@@ -56,6 +56,7 @@ type PostModel struct {
 	Title       string `form:"title"`
 	Content     string `form:"content"`
 	PublishedOn string `form:"published_on"`
+	ExpiresOn   string `form:"expires_on"`
 	IsPublished bool   `form:"is_published"`
 	LabelId     *int   `form:"label_id"`
 	First       *bool  `form:"first"`

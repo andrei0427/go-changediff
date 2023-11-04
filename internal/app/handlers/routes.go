@@ -88,6 +88,9 @@ func InitRoutes(app *app.App) {
 	analytics.Get("/", appHandler.GetUserAnalytics)
 	analytics.Get("/user", appHandler.GetAnalyticsByUser)
 
+	billing := admin.Group("/billing")
+	billing.Get("/", appHandler.GetBilling)
+
 	posts := admin.Group("/posts")
 	posts.Get("/", appHandler.Posts)
 	posts.Get("/compose/:id?", appHandler.ComposePost)
@@ -685,6 +688,11 @@ func (a *AppHandler) ComposePost(c *fiber.Ctx) error {
 		form.PublishedOn = publishedOn
 		form.IsPublished = post.IsPublished.Bool
 
+		if post.ExpiresOn.Valid {
+			expiresOn := post.ExpiresOn.Time.Format(time.DateTime)
+			form.ExpiresOn = expiresOn
+		}
+
 		if post.LabelID.Valid {
 			labelId := int(post.LabelID.Int32)
 			form.LabelId = &labelId
@@ -729,6 +737,7 @@ func (a *AppHandler) LoadPosts(c *fiber.Ctx) error {
 	posts, err := a.PostService.GetPosts(c.Context(), curUser.Project.ID)
 
 	if err != nil {
+		fmt.Println(err.Error())
 		return fiber.NewError(503, "Could not get posts for user")
 	}
 
@@ -890,6 +899,25 @@ func (a *AppHandler) SavePost(c *fiber.Ctx) error {
 
 	c.Response().Header.Add("HX-Redirect", "/admin/posts")
 	return c.Render("partials/components/dashboard_widget", fiber.Map{})
+}
+
+func (a *AppHandler) GetBilling(c *fiber.Ctx) error {
+	curUser := c.Locals("user").(*models.SessionUser)
+
+	proPrice := 19
+	proAnnualPrice := ((proPrice * 10) / 12)
+
+	maxPrice := 39
+	maxAnnualPrice := ((maxPrice * 10) / 12)
+
+	expirationDate := ""
+	if curUser.Author.Tier.Valid && curUser.Author.Tier.Int32 >= 1 && curUser.Author.ExpiresOn != nil {
+		if t, ok := curUser.Author.ExpiresOn.(time.Time); ok {
+			expirationDate = fmt.Sprintf("Expires on %s, %d %s %d.", t.Weekday(), t.Day(), t.Month(), t.Year())
+		}
+	}
+
+	return c.Render("billing", fiber.Map{"user": curUser, "ProPrice": proPrice, "ProAnnualPrice": proAnnualPrice, "MaxPrice": maxPrice, "MaxAnnualPrice": maxAnnualPrice, "ExpirationDate": expirationDate})
 }
 
 func (a *AppHandler) GetUserAnalytics(c *fiber.Ctx) error {

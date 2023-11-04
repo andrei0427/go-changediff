@@ -12,43 +12,31 @@
   <body class="h-full">
     <div>
       <!-- Off-canvas menu for mobile, show/hide based on off-canvas menu state. -->
-      <div class="relative z-50 lg:hidden" role="dialog" aria-modal="true">
-        <!--
-        Off-canvas menu backdrop, show/hide based on off-canvas menu state.
-  
-        Entering: "transition-opacity ease-linear duration-300"
-          From: "opacity-0"
-          To: "opacity-100"
-        Leaving: "transition-opacity ease-linear duration-300"
-          From: "opacity-100"
-          To: "opacity-0"
-      -->
-        <div class="fixed inset-0 bg-gray-900/80"></div>
+      <div
+        id="mobile-menu-canvas"
+        class="transition-opacity z-50 opacity-0 ease-linear duration-300 relative hidden"
+        role="dialog"
+        aria-modal="true"
+      >
+        <div
+          onclick="toggleSidebar(false)"
+          class="fixed inset-0 bg-gray-900/80"
+        ></div>
 
-        <div class="fixed inset-0 flex">
-          <!--
-          Off-canvas menu, show/hide based on off-canvas menu state.
-  
-          Entering: "transition ease-in-out duration-300 transform"
-            From: "-translate-x-full"
-            To: "translate-x-0"
-          Leaving: "transition ease-in-out duration-300 transform"
-            From: "translate-x-0"
-            To: "-translate-x-full"
-        -->
-          <div class="relative mr-16 flex w-full max-w-xs flex-1">
-            <!--
-            Close button, show/hide based on off-canvas menu state.
-  
-            Entering: "ease-in-out duration-300"
-              From: "opacity-0"
-              To: "opacity-100"
-            Leaving: "ease-in-out duration-300"
-              From: "opacity-100"
-              To: "opacity-0"
-          -->
+        <div
+          id="mobile-menu"
+          class="transition ease-in-out -translate-x-full duration-300 transform fixed inset-0 flex"
+        >
+          <div
+            id="mobile-menu-close-button"
+            class="ease-in-out opacity-0 duration-300 relative mr-16 flex w-full max-w-xs flex-1"
+          >
             <div class="absolute left-full top-0 flex w-16 justify-center pt-5">
-              <button type="button" class="-m-2.5 p-2.5">
+              <button
+                onclick="toggleSidebar(false)"
+                type="button"
+                class="-m-2.5 p-2.5"
+              >
                 <span class="sr-only">Close sidebar</span>
                 <svg
                   class="h-6 w-6 text-white"
@@ -77,17 +65,17 @@
                   src="/static/logo.png"
                   alt="Your Company"
                 />
-                <span class="text-sm font-bold">ReleaseRover</span>
+                <span class="m-4 text-sm font-bold">ReleaseRover</span>
               </div>
               <nav class="flex flex-1 flex-col">
                 <ul role="list" class="-mx-2 space-y-1">
                   <li>
                     <a
                       href="/admin/dashboard"
-                      class="group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold"
+                      class="hover:text-emerald hover:bg-gray-50 group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold"
                     >
                       <svg
-                        class="h-6 w-6 shrink-0 text-emerald"
+                        class="h-6 w-6 shrink-0"
                         fill="none"
                         viewBox="0 0 24 24"
                         stroke-width="1.5"
@@ -103,13 +91,14 @@
                       Dashboard
                     </a>
                   </li>
+
                   <li>
                     <a
                       href="/admin/posts"
                       class="hover:text-emerald hover:bg-gray-50 group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold"
                     >
                       <svg
-                        class="h-6 w-6 shrink-0 text-gray-400 group-hover:text-emerald"
+                        class="h-6 w-6 shrink-0"
                         fill="none"
                         viewBox="0 0 24 24"
                         stroke-width="1.5"
@@ -125,13 +114,153 @@
                       Posts
                     </a>
                   </li>
+
+                  <li>
+                    <a
+                      href="#"
+                      class="hover:text-emerald hover:bg-gray-50 group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold"
+                      ><svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke-width="1.5"
+                        stroke="currentColor"
+                        class="w-6 h-6"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          d="M9 6.75V15m6-6v8.25m.503 3.498l4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 3.252a1.125 1.125 0 00-1.006 0L3.622 5.689C3.24 5.88 3 6.27 3 6.695V19.18c0 .836.88 1.38 1.628 1.006l3.869-1.934c.317-.159.69-.159 1.006 0l4.994 2.497c.317.158.69.158 1.006 0z"
+                        />
+                      </svg>
+
+                      Roadmap
+                      <span
+                        class="text-xs uppercase leading-tight bg-slate-400 text-white px-2 py-1 rounded-md"
+                        >Coming soon</span
+                      >
+                    </a>
+                  </li>
+
+                  <li>
+                    <a
+                      href="#"
+                      class="hover:text-emerald hover:bg-gray-50 group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke-width="1.5"
+                        stroke="currentColor"
+                        class="w-6 h-6"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          d="M12 18v-5.25m0 0a6.01 6.01 0 001.5-.189m-1.5.189a6.01 6.01 0 01-1.5-.189m3.75 7.478a12.06 12.06 0 01-4.5 0m3.75 2.383a14.406 14.406 0 01-3 0M14.25 18v-.192c0-.983.658-1.823 1.508-2.316a7.5 7.5 0 10-7.517 0c.85.493 1.509 1.333 1.509 2.316V18"
+                        />
+                      </svg>
+
+                      Ideas
+                      <span
+                        class="text-xs uppercase leading-tight bg-slate-400 text-white px-2 py-1 rounded-md"
+                        >Coming soon</span
+                      >
+                    </a>
+                  </li>
+
+                  <li>
+                    <a
+                      href="#"
+                      class="hover:text-emerald hover:bg-gray-50 group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke-width="1.5"
+                        stroke="currentColor"
+                        class="w-6 h-6"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          d="M15.362 5.214A8.252 8.252 0 0112 21 8.25 8.25 0 016.038 7.048 8.287 8.287 0 009 9.6a8.983 8.983 0 013.361-6.867 8.21 8.21 0 003 2.48z"
+                        />
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          d="M12 18a3.75 3.75 0 00.495-7.467 5.99 5.99 0 00-1.925 3.546 5.974 5.974 0 01-2.133-1A3.75 3.75 0 0012 18z"
+                        />
+                      </svg>
+
+                      NPS
+                      <span
+                        class="text-xs uppercase leading-tight bg-slate-400 text-white px-2 py-1 rounded-md"
+                        >Coming soon</span
+                      >
+                    </a>
+                  </li>
+
+                  <li>
+                    <a
+                      href="#"
+                      class="hover:text-emerald hover:bg-gray-50 group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke-width="1.5"
+                        stroke="currentColor"
+                        class="w-6 h-6"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          d="M15.182 15.182a4.5 4.5 0 01-6.364 0M21 12a9 9 0 11-18 0 9 9 0 0118 0zM9.75 9.75c0 .414-.168.75-.375.75S9 10.164 9 9.75 9.168 9 9.375 9s.375.336.375.75zm-.375 0h.008v.015h-.008V9.75zm5.625 0c0 .414-.168.75-.375.75s-.375-.336-.375-.75.168-.75.375-.75.375.336.375.75zm-.375 0h.008v.015h-.008V9.75z"
+                        />
+                      </svg>
+
+                      CSAT
+                      <span
+                        class="text-xs uppercase leading-tight bg-slate-400 text-white px-2 py-1 rounded-md"
+                        >Coming soon</span
+                      >
+                    </a>
+                  </li>
+
+                  <li>
+                    <a
+                      href="/admin/analytics"
+                      class="hover:text-emerald hover:bg-gray-50 group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold"
+                      ><svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke-width="1.5"
+                        stroke="currentColor"
+                        class="w-6 h-6"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z"
+                        />
+                      </svg>
+
+                      Analytics
+                    </a>
+                  </li>
+
                   <li>
                     <a
                       href="/admin/billing"
                       class="hover:text-emerald hover:bg-gray-50 group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold"
                     >
                       <svg
-                        class="h-6 w-6 shrink-0 text-gray-400 group-hover:text-emerald"
+                        class="h-6 w-6 shrink-0"
                         fill="none"
                         viewBox="0 0 24 24"
                         stroke-width="1.5"
@@ -152,11 +281,41 @@
                       Billing
                     </a>
                   </li>
+
+                  <li>
+                    <a
+                      href="/admin/settings"
+                      class="hover:text-emerald hover:bg-gray-50 group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke-width="1.5"
+                        stroke="currentColor"
+                        class="w-6 h-6"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 010 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 010-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281z"
+                        />
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                        />
+                      </svg>
+
+                      Settings
+                    </a>
+                  </li>
                 </ul>
               </nav>
             </div>
           </div>
         </div>
+      </div>
       </div>
 
       <!-- Static sidebar for desktop -->
@@ -420,19 +579,32 @@
               </li>
 
               <li class="-mx-6 mt-auto">
-                <a
-                  href="#"
-                  class="flex items-center gap-x-4 px-6 py-3 text-sm font-semibold leading-6 text-gray-900 hover:bg-gray-50"
+                <div
+                  class="flex justify-between items-center gap-x-4 px-6 py-3 hover:bg-gray-50"
                 >
-                  <img
-                    class="h-8 w-8 rounded-full bg-gray-50"
-                    src="{{user.Metadata.AvatarUrl}}"
-                    referrerpolicy="no-referrer"
-                    alt="user avatar"
-                  />
-                  <span class="sr-only">Your profile</span>
-                  <span aria-hidden="true">{{user.Metadata.FullName}}</span>
-                </a>
+                  <a
+                    href="/admin/settings"
+                    class="text-sm flex items-center gap-x-4 flex-grow font-semibold leading-6 text-gray-900"
+                  >
+                    <img
+                      class="h-8 w-8 rounded-full bg-gray-50"
+                      src="{{user.Metadata.AvatarUrl}}"
+                      referrerpolicy="no-referrer"
+                      alt="user avatar"
+                    />
+                    <div>
+                      <span class="sr-only">Your profile</span>
+                      <span aria-hidden="true">{{user.Metadata.FullName}}</span>
+                    </div>
+                  </a>
+
+                  <a
+                    href="/admin/billing"
+                    class="text-sm font-semibold leading-6 text-emerald"
+                  >
+                    {%if user.Author.Tier.Int32==1 %} Pro {%elif user.Author.Tier.Int32==2%} Max {%else%} Upgrade {%endif%}
+                  </a>
+                </div>
               </li>
             </ul>
           </nav>
@@ -442,7 +614,11 @@
       <div
         class="sticky top-0 z-40 flex items-center gap-x-6 bg-white px-4 py-4 shadow-sm sm:px-6 lg:hidden"
       >
-        <button type="button" class="-m-2.5 p-2.5 text-gray-700 lg:hidden">
+        <button
+          type="button"
+          onclick="toggleSidebar(true)"
+          class="-m-2.5 p-2.5 text-gray-700 lg:hidden"
+        >
           <span class="sr-only">Open sidebar</span>
           <svg
             class="h-6 w-6"
@@ -462,13 +638,19 @@
         <div class="flex-1 text-sm font-semibold leading-6 text-gray-900">
           Dashboard
         </div>
-        <a href="#">
+        <a href="/admin/settings">
           <span class="sr-only">Your profile</span>
           <img
             class="h-8 w-8 rounded-full bg-gray-50"
             src="{{user.Metadata.AvatarUrl}}"
             alt=""
           />
+        </a>
+        <a
+          href="/admin/billing"
+          class="text-sm font-semibold leading-6 text-emerald"
+        >
+          {%if user.Author.Tier.Int32==1 %} Pro {%elif user.Author.Tier.Int32==2%} Max {%else%} Upgrade {%endif%}
         </a>
       </div>
 
@@ -493,7 +675,11 @@
       const navHrefs = document.querySelectorAll("nav ul li a");
 
       const url = window.location.pathname;
-      navHrefs.forEach((elm) => {
+      navHrefs.forEach((elm, i, arr) => {
+        if (i === arr.length - 1) {
+          return;
+        }
+
         if (!url.includes(elm.href.split("/").pop())) {
           elm.children[0].classList.add("text-gray-400");
           elm.classList.add("text-gray-700");
@@ -536,6 +722,57 @@
         setTimeout(() => {
           bannerElm.remove();
         }, 300);
+      }
+
+      function toggleSidebar(open) {
+        const mobileMenuCanvasElm =
+          document.getElementById("mobile-menu-canvas");
+        const mobileMenuElm = document.getElementById("mobile-menu");
+        const closeButtonElm = document.getElementById(
+          "mobile-menu-close-button"
+        );
+
+        if (!mobileMenuCanvasElm || !mobileMenuElm || !closeButtonElm) {
+          return;
+        }
+
+        const backdropClassOpening = "opacity-100";
+        const backdropClassClosing = "opacity-0";
+
+        const menuClassOpening = "translate-x-0";
+        const menuClassClosing = "-translate-x-full";
+
+        const closeButtonOpening = "opacity-100";
+        const closeButtonClosing = "opacity-0";
+
+        if (open) {
+          mobileMenuCanvasElm.classList.remove("hidden");
+
+
+          setTimeout(() => {
+            mobileMenuCanvasElm.classList.remove(backdropClassClosing);
+            mobileMenuCanvasElm.classList.add(backdropClassOpening);
+
+            mobileMenuElm.classList.remove(menuClassClosing);
+            mobileMenuElm.classList.add(menuClassOpening);
+
+            closeButtonElm.classList.remove(closeButtonClosing);
+            closeButtonElm.classList.add(closeButtonOpening);
+          }, 20);
+        } else {
+          mobileMenuCanvasElm.classList.remove(backdropClassOpening);
+          mobileMenuCanvasElm.classList.add(backdropClassClosing);
+
+          mobileMenuElm.classList.remove(menuClassOpening);
+          mobileMenuElm.classList.add(menuClassClosing);
+
+          closeButtonElm.classList.remove(closeButtonOpening);
+          closeButtonElm.classList.add(closeButtonClosing);
+
+          setTimeout(() => {
+            mobileMenuCanvasElm.classList.add("hidden");
+          }, 320);
+        }
       }
     </script>
 

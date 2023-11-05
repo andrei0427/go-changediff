@@ -160,5 +160,25 @@
       .dispatchEvent(new Event("tabchange"));
     updateNavTabs(window.location.hash);
   };
+
+  function handleColorPickerChange(event) {
+    const {
+      srcElement,
+      target: { value },
+    } = event;
+
+    const amIHexElm = srcElement.type === "text";
+
+    let hexElm, colorPickerElm;
+    if (amIHexElm) {
+      hexElm = srcElement;
+      colorPickerElm = srcElement.previousElementSibling.lastChild;
+    } else {
+      colorPickerElm = srcElement;
+      hexElm = srcElement.parentElement.nextElementSibling;
+    }
+
+    colorPickerElm.value = hexElm.value = event.target.value;
+  }
 </script>
 {% endblock %}

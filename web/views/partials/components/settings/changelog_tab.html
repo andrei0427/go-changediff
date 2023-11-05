@@ -8,61 +8,71 @@
       <h3 class="text-lg font-medium leading-6 text-gray-900">Labels</h3>
       <p class="mt-2 text-sm text-gray-700">
         Labels categorize and color code posts so it's easier for users to
-				identify what kind of content they're reading.
-			</p>
-		</div>
-		<div class="mt-4 sm:ml-16 sm:mt-0 sm:flex-none">
-			<button type="button" hx-get="/admin/settings/changelog/labels/new" hx-target="#table-labels" hx-swap="beforeend"
-				hx-on::after-request="fixIds()"
-				class="block rounded-md bg-emerald px-3 py-2 text-center text-sm font-semibold text-white shadow-sm hover:bg-emerald focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald">
-				Add label
-			</button>
-		</div>
-	</div>
+        identify what kind of content they're reading.
+      </p>
+    </div>
+    <div class="mt-4 sm:ml-16 sm:mt-0 sm:flex-none">
+      <button
+        type="button"
+        hx-get="/admin/settings/changelog/labels/new"
+        hx-target="#table-labels"
+        hx-swap="beforeend"
+        hx-on::after-request="fixIds()"
+        class="block rounded-md bg-emerald px-3 py-2 text-center text-sm font-semibold text-white shadow-sm hover:bg-emerald focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald"
+      >
+        Add label
+      </button>
+    </div>
+  </div>
 
-	<div class="mt-8 flow-root">
-		<div class="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
-			<div class="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
-				<table class="min-w-full divide-y divide-gray-300">
-					<thead>
-						<tr>
-							<th scope="col"
-								class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-0">
-								Label
-							</th>
-							<th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-								Color
-							</th>
-							<th scope="col" class="relative py-3.5 pl-3 pr-4 sm:pr-0">
-								<span class="sr-only">Save</span>
-							</th>
-							<th scope="col" class="relative py-3.5 pl-3 pr-4 sm:pr-0">
-								<span class="sr-only">Delete</span>
-							</th>
-						</tr>
-					</thead>
-					<tbody class="divide-y divide-gray-200" id="table-labels">
-						{% for label in Labels %}
-						{% include 'partials/components/settings/label_row.html' %}
-						{%endfor%}
-					</tbody>
-				</table>
-			</div>
-		</div>
-	</div>
+  <div class="mt-8 flow-root">
+    <div class="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
+      <div class="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
+        <table class="min-w-full divide-y divide-gray-300">
+          <thead>
+            <tr>
+              <th
+                scope="col"
+                class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-0"
+              >
+                Label
+              </th>
+              <th
+                scope="col"
+                class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900"
+              >
+                Color
+              </th>
+              <th scope="col" class="relative py-3.5 pl-3 pr-4 sm:pr-0">
+                <span class="sr-only">Save</span>
+              </th>
+              <th scope="col" class="relative py-3.5 pl-3 pr-4 sm:pr-0">
+                <span class="sr-only">Delete</span>
+              </th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-200" id="table-labels">
+            {% for label in Labels %} {% include 'partials/components/settings/label_row.html' %} {%endfor%}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
 </div>
 
 <div class="mt-6 flex items-center justify-end gap-x-6">
-	<p class="mt-2 text-sm text-red-600">{{Error}}</p>
+  <p class="mt-2 text-sm text-red-600">{{Error}}</p>
 </div>
 
 <script>
-	function fixIds() {
-		const labelTableRows = document.querySelectorAll('#table-labels tr');
+  function fixIds() {
+    const labelTableRows = document.querySelectorAll("#table-labels tr");
 
-		labelTableRows.forEach((elm, i) => {
-			elm.setAttribute('id', 'form-'.concat(i));
-			document.querySelector('#form-'.concat(i).concat(' .save-btn')).setAttribute('hx-include', '#form-'.concat(i).concat(' input'));
-		});
-	}
+    labelTableRows.forEach((elm, i) => {
+      elm.setAttribute("id", "form-".concat(i));
+      document
+        .querySelector("#form-".concat(i).concat(" .save-btn"))
+        .setAttribute("hx-include", "#form-".concat(i).concat(" input"));
+    });
+  }
 </script>

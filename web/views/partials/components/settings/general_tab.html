@@ -202,7 +202,7 @@
                 type="text"
                 name="accent_color_hex"
                 id="accent_color_hex"
-                class="block w-full min-w-0 flex-1 rounded-none rounded-r-md border-0 py-1.5 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                class="block w-full min-w-0 flex-1 rounded-none rounded-r-md border-0 py-1.5 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-emerald sm:text-sm sm:leading-6"
                 value="{{Form.AccentColor}}"
                 onchange="handleColorPickerChange(event)"
               />
@@ -271,12 +271,3 @@
     </button>
   </div>
 </form>
-
-<script>
-  function handleColorPickerChange(event) {
-    const colorPickerElm = document.getElementById("accent_color");
-    const colorPickerHexElm = document.getElementById("accent_color_hex");
-
-    colorPickerElm.value = colorPickerHexElm.value = event.target.value;
-  }
-</script>

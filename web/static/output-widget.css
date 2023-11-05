@@ -1350,6 +1350,10 @@ select{
   left: 0px;
 }
 
+.bottom-0{
+  bottom: 0px;
+}
+
 .z-10{
   z-index: 10;
 }
@@ -1389,6 +1393,22 @@ select{
 
 .mt-8{
   margin-top: 2rem;
+}
+
+.-mb-10{
+  margin-bottom: -2.5rem;
+}
+
+.-mb-16{
+  margin-bottom: -4rem;
+}
+
+.-mb-32{
+  margin-bottom: -8rem;
+}
+
+.-mt-32{
+  margin-top: -8rem;
 }
 
 .block{
@@ -1435,6 +1455,10 @@ select{
   height: 100vh;
 }
 
+.max-h-96{
+  max-height: 24rem;
+}
+
 .w-10{
   width: 2.5rem;
 }
@@ -1457,18 +1481,6 @@ select{
 
 .max-w-7xl{
   max-width: 80rem;
-}
-
-.max-w-md{
-  max-width: 28rem;
-}
-
-.max-w-sm{
-  max-width: 24rem;
-}
-
-.max-w-xs{
-  max-width: 20rem;
 }
 
 .flex-1{
@@ -1698,10 +1710,6 @@ select{
   padding-top: 1rem;
 }
 
-.pr-4{
-  padding-right: 1rem;
-}
-
 .text-center{
   text-align: center;
 }
@@ -1768,11 +1776,6 @@ select{
   color: rgb(107 114 128 / var(--tw-text-opacity));
 }
 
-.text-gray-600{
-  --tw-text-opacity: 1;
-  color: rgb(75 85 99 / var(--tw-text-opacity));
-}
-
 .text-gray-700{
   --tw-text-opacity: 1;
   color: rgb(55 65 81 / var(--tw-text-opacity));
@@ -1823,6 +1826,58 @@ select{
 .placeholder\:text-gray-400::placeholder{
   --tw-text-opacity: 1;
   color: rgb(156 163 175 / var(--tw-text-opacity));
+}
+
+.after\:absolute::after{
+  content: var(--tw-content);
+  position: absolute;
+}
+
+.after\:bottom-0::after{
+  content: var(--tw-content);
+  bottom: 0px;
+}
+
+.after\:left-0::after{
+  content: var(--tw-content);
+  left: 0px;
+}
+
+.after\:h-80::after{
+  content: var(--tw-content);
+  height: 20rem;
+}
+
+.after\:h-96::after{
+  content: var(--tw-content);
+  height: 24rem;
+}
+
+.after\:w-full::after{
+  content: var(--tw-content);
+  width: 100%;
+}
+
+.after\:bg-gradient-to-b::after{
+  content: var(--tw-content);
+  background-image: linear-gradient(to bottom, var(--tw-gradient-stops));
+}
+
+.after\:from-transparent::after{
+  content: var(--tw-content);
+  --tw-gradient-from: transparent var(--tw-gradient-from-position);
+  --tw-gradient-to: rgb(0 0 0 / 0) var(--tw-gradient-to-position);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+
+.after\:to-white-100::after{
+  content: var(--tw-content);
+  --tw-gradient-to: rgba(255,255,255,1) var(--tw-gradient-to-position);
+}
+
+.after\:content-\[\'\'\]::after{
+  --tw-content: '';
+  content: var(--tw-content);
 }
 
 .focus-within\:ring-2:focus-within{

@@ -155,7 +155,13 @@
             >
               Published
             </div>
-            {% else %}
+            {% elif post.Status == 2 %}
+            <div
+              class="rounded-full px-2.5 py-0.5 text-sm font-medium bg-gray-100 text-gray-800"
+            >
+              Expired
+            </div>
+            {%else%}
             <div
               class="rounded-full px-2.5 py-0.5 text-sm font-medium bg-yellow-100 text-yellow-800"
             >

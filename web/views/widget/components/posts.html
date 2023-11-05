@@ -15,7 +15,7 @@
       >{{formatDate(convertDate(post.PublishedOn, timezone))}}</time
     >
   </div>
-  <div class="group relative overflow-hidden" style="width: 100%">
+  <div class="post group relative" style="width: 100%">
     <h3
       class="mt-3 text-lg font-semibold leading-6 text-gray-900 group-hover:text-gray-600"
     >
@@ -35,10 +35,17 @@
     </div>
   </div>
 
+  <div
+    class="read-more font-semibold w-full text-center cursor-pointer"
+    onclick="handleReadMoreClick(event)"
+  >
+    Read More
+  </div>
+
   <div class="flex mt-8 justify-between w-full">
     <div class="relative flex items-center gap-x-4">
       <img
-        src="{%if post.PictureUrl.String%}{{post.PictureUrl.String}}{%else%}/static/logo.png{%endif%}"
+        src="{%if post.PictureUrl.String%}{{CDNUrl(post.PictureUrl.String)}}{%else%}/static/logo.png{%endif%}"
         alt=""
         class="h-10 w-10 rounded-full bg-gray-50"
       />
@@ -153,6 +160,32 @@
 {% endfor %}
 
 <script>
+  function buildReadMores() {
+    const classes = [
+      "overflow-hidden",
+      "after:content-['']",
+      "after:bg-gradient-to-b",
+      "after:from-transparent",
+      "after:to-white-100",
+      "after:absolute",
+      "after:bottom-0",
+      "after:left-0",
+      "after:w-full",
+      "after:h-96",
+    ];
+
+    const articles = document.querySelectorAll("article .post").forEach((a) => {
+      const height = a.offsetHeight;
+
+      if (height < 500) {
+        return;
+      }
+
+      a.classList.add(...classes);
+      a.setAttribute("style", "max-height: 500px");
+    });
+  }
+
   function toggleReaction(postId, reaction) {
     document
       .querySelectorAll("#post-".concat(postId).concat(" button"))
@@ -164,6 +197,28 @@
       });
   }
 
+  function handleReadMoreClick(event) {
+    const classes = [
+      "overflow-hidden",
+      "after:content-['']",
+      "after:bg-gradient-to-b",
+      "after:from-transparent",
+      "after:to-white-100",
+      "after:absolute",
+      "after:bottom-0",
+      "after:left-0",
+      "after:w-full",
+      "after:h-96",
+    ];
+
+    const { srcElement } = event;
+    srcElement.classList.add("hidden");
+    const articleElm = srcElement.previousElementSibling;
+
+    articleElm.setAttribute("style", "");
+    articleElm.classList.remove(...classes);
+  }
+
   document
     .querySelectorAll(".input-comment")
     .forEach((elm) =>
@@ -171,4 +226,6 @@
         ? elm.classList.add("basis-full", "pt-3")
         : elm.classList.add("basis-1/4")
     );
+
+  buildReadMores();
 </script>

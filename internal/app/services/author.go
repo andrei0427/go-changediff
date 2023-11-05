@@ -29,6 +29,23 @@ func (s *AuthorService) GetAuthorByUser(ctx context.Context, userId uuid.UUID) (
 	return &authors[0], err
 }
 
+func (s *AuthorService) UpdateAuthorForUser(ctx context.Context, userId uuid.UUID, projectId int32, user models.GeneralSettingsModel, imageUrl *string) (data.Author, error) {
+	model := data.UpdateAuthorParams{
+		FirstName:  user.FirstName,
+		LastName:   user.LastName,
+		UserID:     userId,
+		ProjectID:  projectId,
+		PictureUrl: sql.NullString{},
+	}
+
+	if imageUrl != nil {
+		model.PictureUrl = sql.NullString{String: *imageUrl, Valid: true}
+	}
+
+	return s.db.UpdateAuthor(ctx, model)
+
+}
+
 func (s *AuthorService) InsertAuthorForUser(ctx context.Context, user models.SessionUser) (*data.Author, error) {
 	if user.Project == nil {
 		return nil, errors.New("a project is required")

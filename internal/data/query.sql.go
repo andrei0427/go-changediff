@@ -548,7 +548,9 @@ SELECT p.id, p.title, p.published_on, p.is_published, p.expires_on, l.label, l.c
     CASE WHEN p.expires_on is not null and p.expires_on <= current_timestamp THEN 2 
        ELSE 1 END 
       ELSE 0 END AS status, 
-  COUNT(r.id) as ViewCount FROM posts p left join labels l on p.label_id = l.id or p.label_id is null left join post_reactions r on (p.id = r.post_id and r.reaction is null) OR r.id is null 
+  COUNT(r.id) as ViewCount FROM posts p 
+       left join labels l on p.label_id = l.id 
+       left join post_reactions r on (p.id = r.post_id and r.reaction is null) OR r.id is null 
   WHERE p.project_id = $1
   GROUP BY 1,2,3,4,5,6,7
   ORDER BY p.published_on DESC
@@ -1169,6 +1171,40 @@ func (q *Queries) UnsetLabels(ctx context.Context, arg UnsetLabelsParams) ([]int
 		return nil, err
 	}
 	return items, nil
+}
+
+const updateAuthor = `-- name: UpdateAuthor :one
+UPDATE authors SET first_name = $1, last_name = $2, picture_url = $3 WHERE user_id = $4 and project_id = $5 RETURNING id, first_name, last_name, picture_url, user_id, project_id, created_on, updated_on
+`
+
+type UpdateAuthorParams struct {
+	FirstName  string
+	LastName   string
+	PictureUrl sql.NullString
+	UserID     uuid.UUID
+	ProjectID  int32
+}
+
+func (q *Queries) UpdateAuthor(ctx context.Context, arg UpdateAuthorParams) (Author, error) {
+	row := q.db.QueryRowContext(ctx, updateAuthor,
+		arg.FirstName,
+		arg.LastName,
+		arg.PictureUrl,
+		arg.UserID,
+		arg.ProjectID,
+	)
+	var i Author
+	err := row.Scan(
+		&i.ID,
+		&i.FirstName,
+		&i.LastName,
+		&i.PictureUrl,
+		&i.UserID,
+		&i.ProjectID,
+		&i.CreatedOn,
+		&i.UpdatedOn,
+	)
+	return i, err
 }
 
 const updateBoard = `-- name: UpdateBoard :one

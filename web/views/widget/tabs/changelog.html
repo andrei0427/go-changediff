@@ -38,12 +38,17 @@
 <style>
   .hover-comment-send:hover,
   .hover-text-color:hover {
-    color: {{Project.AccentColor}}
+    color: {{Project.AccentColor}};
   }
 
   .focus-ring-color:focus,
   .focus-ring-color:focus-within {
-    --tw-ring-color: {{Project.AccentColor}}
+    --tw-ring-color: {{Project.AccentColor}};
+  }
+
+  .read-more {
+    color: {{Project.AccentColor}};
+
   }
 </style>
 
@@ -66,17 +71,6 @@
 <div
   id="changelog-content"
   hx-get="/widget/changelog/posts/{{Project.AppKey}}"
-  hx-indicator="#skeleton"
   hx-trigger="load"
   hx-swap="innerHtml"
 ></div>
-
-<div
-  id="skeleton"
-  class="htmx-indicator h-screen space-y-4 flex-shrink-0 flex flex-col"
->
-  <div class="w-full flex basis-52 bg-gray-200 rounded animate-pulse"></div>
-  <div class="w-full flex basis-52 bg-gray-200 rounded animate-pulse"></div>
-  <div class="w-full flex basis-52 bg-gray-200 rounded animate-pulse"></div>
-  <div class="w-full flex basis-52 bg-gray-200 rounded animate-pulse"></div>
-</div>

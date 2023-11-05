@@ -115,6 +115,22 @@
 						</div>
 
 						<div class="col-span-2">
+							<label for="expires_on" class="block text-sm font-medium leading-6 text-gray-900">Expiry date</label>
+							<div class="mt-2">
+								<input type="datetime-local" name="expires_on" id="expires_on"
+									value="{%if form.ExpiresOn%}{{formatHTMLInputDateTime(convertDate(parseDateTime(form.ExpiresOn), user.Timezone))}}{%endif%}"
+									aria-describedby="published-on-error" 
+									class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-emerald">
+
+								{% if errors['ExpiresOn']%}
+								<p class="mt-2 text-sm text-red-600" id="published-on-error">
+									{{errors['ExpiresOn']}}</p>
+								{% endif %}
+							</div>
+						</div>
+
+
+						<div class="col-span-2">
 							<div class="flex items-start">
 								<div class="flex h-6 items-center">
 									<input id="is_published" aria-describedby="is_published-description"
@@ -129,21 +145,6 @@
 										Unticking this will hide the post publically and put it in a draft state.
 									</p>
 								</div>
-							</div>
-						</div>
-
-						<div class="col-span-2">
-							<label for="expires_on" class="block text-sm font-medium leading-6 text-gray-900">Expiry date</label>
-							<div class="mt-2">
-								<input type="datetime-local" name="expires_on" id="expires_on"
-									value="{%if form.ExpiresOn%}{{formatHTMLInputDateTime(convertDate(parseDateTime(form.ExpiresOn), user.Timezone))}}{%endif%}"
-									aria-describedby="published-on-error" 
-									class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-emerald">
-
-								{% if errors['ExpiresOn']%}
-								<p class="mt-2 text-sm text-red-600" id="published-on-error">
-									{{errors['ExpiresOn']}}</p>
-								{% endif %}
 							</div>
 						</div>
 
@@ -168,8 +169,8 @@
 		</div>
 </form>
 
-<link rel="stylesheet" href="/static/lexical/main.0f27e148.css">
-<script type="module" src="/static/lexical/main.2a655075.js"></script>
+<link rel="stylesheet" href="/static/lexical/main.78c774c4.css">
+<script type="module" src="/static/lexical/main.240d9b7b.js"></script>
 
 <script>
 	function toggleLabelDDL() {

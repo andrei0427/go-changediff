@@ -37,6 +37,14 @@ type UserInfo struct {
 	Info  map[string]interface{} `json:"info"`
 }
 
+type GeneralSettingsModel struct {
+	Name        string `form:"name"`
+	Description string `form:"description"`
+	AccentColor string `form:"accent_color"`
+	FirstName   string `form:"first_name"`
+	LastName    string `form:"last_name"`
+}
+
 type ProjectModel struct {
 	ID          *int32  `form:"id"`
 	Name        string  `form:"name"`

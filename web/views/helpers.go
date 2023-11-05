@@ -3,6 +3,7 @@ package views
 import (
 	"os"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -48,6 +49,9 @@ func convertDate(date time.Time, timeZone string) time.Time {
 }
 
 func CDNUrl(filePath string) string {
+	if strings.Contains(filePath, "http") {
+		return filePath
+	}
 	return os.Getenv("CLOUDFLARE_R2_PUBLIC_URL") + "/" + filePath
 }
 

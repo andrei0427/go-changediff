@@ -120,6 +120,7 @@ func (s *PostService) InsertPost(ctx context.Context, post models.PostModel, aut
 		AuthorID:    authorId,
 		ProjectID:   projectId,
 		IsPublished: sql.NullBool{Bool: post.IsPublished, Valid: true},
+		LabelID:     sql.NullInt32{Valid: false},
 	}
 
 	parsedDate, err := time.ParseInLocation("2006-01-02T15:04", post.PublishedOn, userLocation)
@@ -129,7 +130,7 @@ func (s *PostService) InsertPost(ctx context.Context, post models.PostModel, aut
 
 	toInsert.PublishedOn = parsedDate.UTC()
 
-	if post.LabelId != nil {
+	if post.LabelId != nil && *post.LabelId > 0 {
 		toInsert.LabelID = sql.NullInt32{Int32: int32(*post.LabelId), Valid: true}
 	}
 

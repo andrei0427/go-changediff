@@ -7,6 +7,7 @@
     const backdrop = (this.backdrop = document.createElement("div"));
 
     iframe.src = "/widget/".concat(options.appKey).concat("?embed=1");
+    iframe.id = "releaserover";
     iframe.style.top = "0";
     iframe.style.right = "-500px";
     iframe.style.position = "absolute";
@@ -88,6 +89,16 @@
   window.changediff.close = function () {
     this.iframe.style.right = "-500px";
     this.backdrop.style.opacity = 0;
+
+    document
+      .getElementById("releaserover")
+      ?.contentWindow.document.querySelectorAll("iframe")
+      .forEach((elm) =>
+        elm.contentWindow.postMessage(
+          '{"event":"command","func":"pauseVideo","args":""}',
+          "*"
+        )
+      );
 
     setTimeout(() => {
       this.backdrop.style.display = "none";

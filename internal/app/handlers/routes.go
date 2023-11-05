@@ -314,7 +314,16 @@ func (a *AppHandler) SettingsTab(c *fiber.Ctx) error {
 
 	switch tabName {
 	case "general":
-		return c.Render("partials/components/settings/general_tab", fiber.Map{"Form": curUser.Project})
+		fmt.Println(curUser.Author)
+		form := models.GeneralSettingsModel{
+			Name:        curUser.Project.Name,
+			Description: curUser.Project.Description,
+			AccentColor: curUser.Project.AccentColor,
+			FirstName:   curUser.Author.FirstName,
+			LastName:    curUser.Author.LastName,
+		}
+
+		return c.Render("partials/components/settings/general_tab", fiber.Map{"Form": form})
 
 	case "changelog":
 		labels, err := a.LabelService.GetLabels(c.Context(), curUser.Project.ID)
@@ -622,7 +631,7 @@ func (a *AppHandler) SaveSettingsGeneralTab(c *fiber.Ctx) error {
 	viewPath := "partials/components/settings/general_tab"
 	curUser := c.Locals("user").(*models.SessionUser)
 
-	form := new(models.ProjectModel)
+	form := new(models.GeneralSettingsModel)
 	if err := c.BodyParser(form); err != nil {
 		return c.Render(viewPath, fiber.Map{"Error": err.Error()})
 	}
@@ -630,6 +639,14 @@ func (a *AppHandler) SaveSettingsGeneralTab(c *fiber.Ctx) error {
 	errs := make(map[string]string)
 	if len(strings.TrimSpace(form.Name)) == 0 {
 		errs["Name"] = "Name is required"
+	}
+
+	if len(strings.TrimSpace(form.FirstName)) == 0 {
+		errs["FirstName"] = "First name is required"
+	}
+
+	if len(strings.TrimSpace(form.LastName)) == 0 {
+		errs["LastName"] = "Last name is required"
 	}
 
 	if len(strings.TrimSpace(form.Description)) == 0 {
@@ -645,7 +662,6 @@ func (a *AppHandler) SaveSettingsGeneralTab(c *fiber.Ctx) error {
 	}
 
 	var fileName *string
-
 	if file, err := c.FormFile("photo"); err == nil {
 		uploadedFile, err := a.CDNService.UploadImage(file, 250)
 		if err != nil {
@@ -657,14 +673,42 @@ func (a *AppHandler) SaveSettingsGeneralTab(c *fiber.Ctx) error {
 		fileName = &curUser.Project.LogoUrl.String
 	}
 
-	savedProject, err := a.ProjectService.SaveProject(c.Context(), curUser.Id, *form, fileName)
+	var profilePictureUrl *string
+	if file, err := c.FormFile("display_picture"); err == nil {
+		uploadedFile, err := a.CDNService.UploadImage(file, 250)
+		if err != nil {
+			return c.Render(viewPath, fiber.Map{"Error": err.Error(), "Form": form})
+		}
+
+		profilePictureUrl = uploadedFile
+	} else if curUser.Author.PictureUrl.Valid {
+		profilePictureUrl = &curUser.Author.PictureUrl.String
+	}
+
+	_, err := a.AuthorService.UpdateAuthorForUser(c.Context(), curUser.Id, curUser.Project.ID, *form, profilePictureUrl)
+	if err != nil {
+		return c.Render(viewPath, fiber.Map{"Error": err.Error(), "Form": form})
+	}
+	savedAuthor, err := a.AuthorService.GetAuthorByUser(c.Context(), curUser.Id)
+	if err != nil {
+		return c.Render(viewPath, fiber.Map{"Error": err.Error(), "Form": form})
+	}
+
+	projectModel := models.ProjectModel{
+		Name:        form.Name,
+		Description: form.Description,
+		AccentColor: form.AccentColor,
+		ID:          &curUser.Project.ID,
+	}
+	savedProject, err := a.ProjectService.SaveProject(c.Context(), curUser.Id, projectModel, fileName)
 	if err != nil {
 		return c.Render(viewPath, fiber.Map{"Error": err.Error(), "Form": form})
 	}
 
 	a.CacheService.Set("user-"+fmt.Sprint(curUser.Id)+"project", &savedProject, nil)
+	a.CacheService.Set("user-"+fmt.Sprint(curUser.Id)+"author", savedAuthor, nil)
 
-	return c.Render(viewPath, fiber.Map{"Form": savedProject, "Success": true, "Message": "Settings saved successfully!"})
+	return c.Render(viewPath, fiber.Map{"Form": form, "SavedProfilePictureUrl": *profilePictureUrl, "Success": true, "Message": "Settings saved successfully!"})
 }
 
 func (a *AppHandler) ComposePost(c *fiber.Ctx) error {
@@ -888,11 +932,13 @@ func (a *AppHandler) SavePost(c *fiber.Ctx) error {
 	if form.ID != nil && *form.ID > 0 {
 		_, err := a.PostService.UpdatePost(c.Context(), *form, curUser.Project.ID, loc)
 		if err != nil {
+			form.Content = template.HTMLEscapeString(form.Content)
 			return c.Render("partials/components/post_form", fiber.Map{"error": err.Error(), "form": form, "firstForm": form.First})
 		}
 	} else {
 		_, err := a.PostService.InsertPost(c.Context(), *form, curUser.Author.ID, curUser.Project.ID, loc)
 		if err != nil {
+			form.Content = template.HTMLEscapeString(form.Content)
 			return c.Render("partials/components/post_form", fiber.Map{"error": err.Error(), "form": form, "firstForm": form.First})
 		}
 	}

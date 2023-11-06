@@ -143,7 +143,7 @@
             <span class="flex-grow">
               <img
                 class="h-8 w-8"
-                src="{%if Form.LogoUrl.Valid%}{{ CDNUrl(Form.LogoUrl.String)}}{%else%}/static/logo.png{%endif%}"
+                src="{%if LogoUrl.Valid%}{{ CDNUrl(LogoUrl.String)}}{%else%}/static/logo.png{%endif%}"
                 alt="project logo"
               />
             </span>

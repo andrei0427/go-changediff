@@ -105,7 +105,7 @@ type RoadmapPost struct {
 	ID        int32
 	Body      string
 	DueDate   sql.NullTime
-	BoardID   int32
+	BoardID   sql.NullInt32
 	StatusID  int32
 	CreatedOn time.Time
 	CreatedBy uuid.UUID

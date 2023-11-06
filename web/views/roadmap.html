@@ -1,0 +1,191 @@
+{% extends 'partials/base/auth_base.html' %} {% block head %}
+<title>ReleaseRover - Roadmap</title>
+{% endblock %} {% block content %}
+
+<div class="min-w-0 flex-1">
+  <h2
+    class="text-2xl font-bold leading-7 text-gray-900 sm:truncate sm:text-3xl sm:tracking-tight"
+  >
+    Your Roadmap
+  </h2>
+</div>
+
+<div id="banner-placeholder"></div>
+
+<div class="relative pt-8 inline-block text-left">
+  <div>
+    <button
+      type="button"
+      class="inline-flex w-full justify-center gap-x-1.5 rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
+      id="menu-button"
+      aria-expanded="true"
+      aria-haspopup="true"
+      onclick="toggleDropdown(event)"
+    >
+      Boards
+      <svg
+        class="-mr-1 h-5 w-5 text-gray-400"
+        viewBox="0 0 20 20"
+        fill="currentColor"
+        aria-hidden="true"
+      >
+        <path
+          fill-rule="evenodd"
+          d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"
+          clip-rule="evenodd"
+        />
+      </svg>
+    </button>
+  </div>
+
+  <div
+    class="absolute left-0 transform ease-out opacity-0 scale-95 right-0 z-10 mt-2 w-56 origin-top-right divide-y divide-gray-100 rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
+    role="menu"
+    id="ddlBoards"
+    aria-orientation="vertical"
+    aria-labelledby="menu-button"
+    tabindex="-1"
+  >
+    <div class="px-4 py-3" role="none">
+      <p class="truncate text-sm font-medium text-gray-900" role="none">
+        Public boards
+      </p>
+    </div>
+    <div class="py-1" role="none">
+      <!-- Active: "bg-gray-100 text-gray-900", Not Active: "text-gray-700" -->
+
+      {%for b in PublicBoards%}
+      <a
+        class="text-gray-700 block px-4 py-2 text-sm hover:bg-gray-100 w-full text-left"
+        role="menuitem"
+        tabindex="-1"
+        href="#{{b.ID}}"
+      >
+        {{b.Name}}
+      </a>
+      {%empty%} No public boards created! {%endfor%}
+    </div>
+
+    {%if HasPrivateBoards%}
+    <div class="px-4 py-3" role="none">
+      <p class="truncate text-sm font-medium text-gray-900" role="none">
+        Private boards
+      </p>
+    </div>
+    <div class="py-1" role="none">
+      <!-- Active: "bg-gray-100 text-gray-900", Not Active: "text-gray-700" -->
+      {%for b in PrivateBoards%}
+      <a
+        class="text-gray-700 block px-4 py-2 text-sm hover:bg-gray-100 w-full text-left"
+        role="menuitem"
+        tabindex="-1"
+        href="#{{b.ID}}"
+      >
+        {{b.Name}}
+      </a>
+      {%endfor%}
+    </div>
+
+    <div class="py-1" role="none">
+      <button
+        class="text-gray-900 block px-4 py-2 text-sm font-medium hover:bg-gray-100 w-full text-left"
+        role="menuitem"
+        tabindex="-1"
+        hx-get="/admin/settings/roadmap/boards/open"
+        hx-swap="beforeend"
+        hx-target="body"
+      >
+        Create a board
+      </button>
+    </div>
+
+    {%endif%}
+  </div>
+</div>
+
+<div
+  id="board-content"
+  hx-get="/admin/roadmap/board"
+  hx-swap="innerHtml"
+  hx-vals="js:{id: window.location.hash.replace('#', '')}"
+  hx-trigger="boardchange"
+></div>
+
+<script>
+  let ddlBoardOpen = false;
+
+  function toggleDropdown(e) {
+    const elementToAnimate = document.getElementById("ddlBoards");
+
+    if (!elementToAnimate) {
+      return;
+    }
+
+    const enteringClasses = [
+      "ease-out",
+      "duration-100",
+      "opacity-100",
+      "scale-100",
+    ];
+    const closingClasses = ["ease-in", "duration-75", "opacity-0", "scale-95"];
+
+    ddlBoardOpen = !ddlBoardOpen;
+    const mainElm = document.querySelector("main");
+
+    if (ddlBoardOpen) {
+      elementToAnimate.classList.remove(...closingClasses);
+      setTimeout(() => {
+        elementToAnimate.classList.add(...enteringClasses);
+        mainElm.addEventListener("click", clickAwayHandler);
+      }, 20);
+    } else {
+      elementToAnimate.classList.remove(...enteringClasses);
+      setTimeout(() => {
+        elementToAnimate.classList.add(...closingClasses);
+        mainElm.removeEventListener("click", clickAwayHandler);
+      }, 20);
+    }
+  }
+
+  function clickAwayHandler(event) {
+    const { srcElement } = event;
+
+    const menuButtonElm = document.getElementById("menu-button");
+    if (srcElement.id === "menu-button" || menuButtonElm.contains(srcElement)) {
+      return;
+    }
+
+    return toggleDropdown(event);
+  }
+
+  window.onhashchange = function () {
+    document
+      .getElementById("board-content")
+      .dispatchEvent(new Event("boardchange"));
+  };
+
+  if (!window.location.hash && "{{FirstBoardID}}") {
+    window.location.hash = "{{FirstBoardID}}";
+  } else if (window.location.hash) {
+    setTimeout(() => {
+      document
+        .getElementById("board-content")
+        .dispatchEvent(new Event("boardchange"));
+    }, 200);
+  }
+</script>
+
+{% if Message %}
+<div id="html-to-move" class="hidden pt-4">
+  {% include 'partials/components/banner.html' %}
+</div>
+{% endif %}
+
+<script>
+  if (String("{{Message}}")) {
+    document.getElementById("banner-placeholder").innerHTML =
+      document.getElementById("html-to-move").innerHTML;
+  }
+</script>
+
+{% endblock %}

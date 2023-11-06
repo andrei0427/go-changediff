@@ -75,7 +75,7 @@ func InitRoutes(app *app.App) {
 	admin := app.Fiber.Group("/admin", middleware.UseAuth)
 	admin.Get("/dashboard", appHandler.Dashboard)
 	admin.Use(func(c *fiber.Ctx) error {
-		return middleware.UseProject(c, appHandler.CacheService, appHandler.ProjectService)
+		return middleware.UseProject(c, appHandler.CacheService, appHandler.ProjectService, false)
 	})
 	admin.Get("/project", appHandler.GetProject)
 	admin.Post("/onboarding", appHandler.PostOnboarding)
@@ -99,6 +99,10 @@ func InitRoutes(app *app.App) {
 	posts.Get("/load-reactions/:postId", appHandler.LoadPostReactions)
 	posts.Delete("/delete/:id", appHandler.DeletePost)
 	posts.Delete("/confirm-delete/:id", appHandler.ConfirmDeletePost)
+
+	roadmap := admin.Group("/roadmap")
+	roadmap.Get("/", appHandler.GetRoadmap)
+	roadmap.Get("/board", appHandler.GetBoard)
 
 	settings := admin.Group("/settings")
 	settings.Get("/", appHandler.Settings)
@@ -297,6 +301,8 @@ func (a *AppHandler) WidgetFeedback(c *fiber.Ctx) error {
 // Protected Routes
 
 func (a *AppHandler) Dashboard(c *fiber.Ctx) error {
+	middleware.UseProject(c, a.CacheService, a.ProjectService, true)
+
 	return c.Render("dashboard", fiber.Map{})
 }
 
@@ -314,7 +320,6 @@ func (a *AppHandler) SettingsTab(c *fiber.Ctx) error {
 
 	switch tabName {
 	case "general":
-		fmt.Println(curUser.Author)
 		form := models.GeneralSettingsModel{
 			Name:        curUser.Project.Name,
 			Description: curUser.Project.Description,
@@ -323,7 +328,7 @@ func (a *AppHandler) SettingsTab(c *fiber.Ctx) error {
 			LastName:    curUser.Author.LastName,
 		}
 
-		return c.Render("partials/components/settings/general_tab", fiber.Map{"Form": form})
+		return c.Render("partials/components/settings/general_tab", fiber.Map{"Form": form, "LogoUrl": curUser.Project.LogoUrl})
 
 	case "changelog":
 		labels, err := a.LabelService.GetLabels(c.Context(), curUser.Project.ID)
@@ -702,13 +707,13 @@ func (a *AppHandler) SaveSettingsGeneralTab(c *fiber.Ctx) error {
 	}
 	savedProject, err := a.ProjectService.SaveProject(c.Context(), curUser.Id, projectModel, fileName)
 	if err != nil {
-		return c.Render(viewPath, fiber.Map{"Error": err.Error(), "Form": form})
+		return c.Render(viewPath, fiber.Map{"Error": err.Error(), "Form": form, "LogoUrl": curUser.Project.LogoUrl})
 	}
 
 	a.CacheService.Set("user-"+fmt.Sprint(curUser.Id)+"project", &savedProject, nil)
 	a.CacheService.Set("user-"+fmt.Sprint(curUser.Id)+"author", savedAuthor, nil)
 
-	return c.Render(viewPath, fiber.Map{"Form": form, "SavedProfilePictureUrl": *profilePictureUrl, "Success": true, "Message": "Settings saved successfully!"})
+	return c.Render(viewPath, fiber.Map{"Form": form, "LogoUrl": savedProject.LogoUrl, "SavedProfilePictureUrl": *profilePictureUrl, "Success": true, "Message": "Settings saved successfully!"})
 }
 
 func (a *AppHandler) ComposePost(c *fiber.Ctx) error {
@@ -966,12 +971,56 @@ func (a *AppHandler) GetBilling(c *fiber.Ctx) error {
 	return c.Render("billing", fiber.Map{"user": curUser, "ProPrice": proPrice, "ProAnnualPrice": proAnnualPrice, "MaxPrice": maxPrice, "MaxAnnualPrice": maxAnnualPrice, "ExpirationDate": expirationDate})
 }
 
+func (a *AppHandler) GetRoadmap(c *fiber.Ctx) error {
+	curUser := c.Locals("user").(*models.SessionUser)
+
+	boards, err := a.RoadmapService.GetBoards(c.Context(), curUser.Project.ID)
+	if err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, "error when fetching boards")
+	}
+
+	var publicBoards, privateBoards []data.GetBoardsRow
+
+	for _, item := range boards {
+		if item.IsPrivate {
+			privateBoards = append(privateBoards, item)
+		} else {
+			publicBoards = append(publicBoards, item)
+		}
+	}
+
+	var firstBoardId int32
+	if len(publicBoards) > 0 {
+		firstBoardId = publicBoards[0].ID
+	} else if len(privateBoards) > 0 {
+		firstBoardId = privateBoards[0].ID
+	}
+
+	return c.Render("roadmap", fiber.Map{"FirstBoardID": firstBoardId, "PublicBoards": publicBoards, "PrivateBoards": privateBoards, "HasPrivateBoards": len(privateBoards), "BoardCount": len(boards)})
+}
+
+func (a *AppHandler) GetBoard(c *fiber.Ctx) error {
+	curUser := c.Locals("user").(*models.SessionUser)
+	boardId := c.QueryInt("id")
+
+	if boardId <= 0 {
+		return fiber.NewError(fiber.StatusBadRequest, "bad id")
+	}
+
+	board, err := a.RoadmapService.GetBoard(c.Context(), int32(boardId), curUser.Project.ID)
+	if err != nil {
+		return fiber.NewError(fiber.StatusNotFound, "board not found")
+	}
+
+	return c.Render("partials/components/roadmap/board", fiber.Map{"Board": board})
+
+}
+
 func (a *AppHandler) GetUserAnalytics(c *fiber.Ctx) error {
 	curUser := c.Locals("user").(*models.SessionUser)
 
 	data, err := a.PostService.GetAnalytics(c.Context(), curUser.Project.ID, nil, nil)
 	if err != nil {
-		fmt.Println(err)
 		return fiber.NewError(fiber.StatusInternalServerError, "error when fetching analytics")
 	}
 

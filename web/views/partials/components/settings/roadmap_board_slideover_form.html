@@ -152,11 +152,17 @@
     }
 
     if (String("{{ Close }}")) {
-      document
-        .getElementById("tab-content")
-        .dispatchEvent(new Event("tabchange"));
+      const tabContentElm = document.getElementById("tab-content");
+
+      if (tabContentElm) {
+        tabContentElm.dispatchEvent(new Event("tabchange"));
+      }
 
       closeSlideOver();
+
+      if (!tabContentElm) {
+        setTimeout(() => window.location.reload(), 500);
+      }
     }
   </script>
 </form>

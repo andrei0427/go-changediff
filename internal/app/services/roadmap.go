@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 
 	"github.com/andrei0427/go-changediff/internal/app/models"
@@ -49,7 +50,7 @@ func (s *RoadmapService) SaveBoard(ctx context.Context, model models.RoadmapBoar
 }
 
 func (s *RoadmapService) DeleteBoard(ctx context.Context, boardId int32, projectId int32) error {
-	posts, err := s.db.HasPostsForBoard(ctx, boardId)
+	posts, err := s.db.HasPostsForBoard(ctx, sql.NullInt32{Int32: boardId, Valid: true})
 	if err != nil {
 		return err
 	}

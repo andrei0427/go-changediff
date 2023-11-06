@@ -852,7 +852,7 @@ const hasPostsForBoard = `-- name: HasPostsForBoard :one
 SELECT COUNT(*) FROM roadmap_posts WHERE board_id = $1
 `
 
-func (q *Queries) HasPostsForBoard(ctx context.Context, boardID int32) (int64, error) {
+func (q *Queries) HasPostsForBoard(ctx context.Context, boardID sql.NullInt32) (int64, error) {
 	row := q.db.QueryRowContext(ctx, hasPostsForBoard, boardID)
 	var count int64
 	err := row.Scan(&count)

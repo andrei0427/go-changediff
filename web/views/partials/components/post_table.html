@@ -1,18 +1,19 @@
-<div id="post-table" class="px-4 sm:px-6 lg:px-8">
-  <div class="sm:flex sm:items-center">
-    <div class="sm:flex-auto">
-      <h1 class="text-base font-semibold leading-6 text-gray-900">Posts</h1>
-      <p class="mt-2 text-sm text-gray-700">
-        View and manage the content of your publications and also monitor their
-        visibility rate.
-      </p>
+<div id="post-table">
+
+  <div class="md:flex md:items-center md:justify-between pb-8">
+    <div class="min-w-0 flex-1">
+      <h2
+        class="text-2xl font-bold leading-7 text-gray-900 sm:truncate sm:text-3xl sm:tracking-tight"
+      >
+      Posts
+      </h2>
     </div>
-    <div class="mt-4 sm:ml-16 sm:mt-0 sm:flex-none">
-      <a
+    <div class="mt-4 flex md:ml-4 md:mt-0">
+     <a
         href="/admin/posts/compose"
         class="inline-flex items-center rounded-md bg-emerald px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald"
       >
-        <svg
+      <svg
           class="-ml-0.5 mr-1.5 h-5 w-5"
           viewBox="0 0 20 20"
           fill="currentColor"
@@ -22,10 +23,11 @@
             d="M10.75 4.75a.75.75 0 00-1.5 0v4.5h-4.5a.75.75 0 000 1.5h4.5v4.5a.75.75 0 001.5 0v-4.5h4.5a.75.75 0 000-1.5h-4.5v-4.5z"
           />
         </svg>
-        New Post
+      New Post
       </a>
     </div>
   </div>
+
 
   <div class="-mx-4 mt-8 sm:-mx-0">
     {% if Empty%}

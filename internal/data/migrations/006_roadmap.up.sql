@@ -23,7 +23,7 @@ CREATE TABLE IF NOT EXISTS roadmap_posts (
     body TEXT NOT NULL,
     due_date date null,
 
-    board_id integer REFERENCES roadmap_boards(id) NOT NULL,
+    board_id integer REFERENCES roadmap_boards(id) NULL,
     status_id integer REFERENCES roadmap_statuses(id) NOT NULL,
     created_on timestamp NOT NULL DEFAULT current_timestamp,
     created_by uuid NOT NULL

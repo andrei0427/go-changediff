@@ -9,7 +9,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-func UseProject(c *fiber.Ctx, cacheService *services.CacheService, projectService *services.ProjectService) error {
+func UseProject(c *fiber.Ctx, cacheService *services.CacheService, projectService *services.ProjectService, inRoute bool) error {
 	curUser := c.Locals("user").(*models.SessionUser)
 
 	userProjectCacheKey := "user-" + fmt.Sprint(curUser.Id) + "project"
@@ -30,6 +30,10 @@ func UseProject(c *fiber.Ctx, cacheService *services.CacheService, projectServic
 	}
 
 	c.Locals("user", curUser)
+
+	if inRoute {
+		return nil
+	}
 
 	return c.Next()
 }

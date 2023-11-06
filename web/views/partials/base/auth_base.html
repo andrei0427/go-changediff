@@ -117,7 +117,7 @@
 
                   <li>
                     <a
-                      href="#"
+                      href="/admin/roadmap"
                       class="hover:text-emerald hover:bg-gray-50 group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold"
                       ><svg
                         xmlns="http://www.w3.org/2000/svg"
@@ -135,10 +135,6 @@
                       </svg>
 
                       Roadmap
-                      <span
-                        class="text-xs uppercase leading-tight bg-slate-400 text-white px-2 py-1 rounded-md"
-                        >Coming soon</span
-                      >
                     </a>
                   </li>
 
@@ -316,7 +312,6 @@
           </div>
         </div>
       </div>
-      </div>
 
       <!-- Static sidebar for desktop -->
       <div
@@ -331,7 +326,7 @@
             <span class="m-4 text-sm font-bold">ReleaseRover</span>
           </div>
           <nav class="flex flex-1 flex-col">
-            <ul role="list" class="flex flex-1 flex-col gap-y-7">
+            <ul role="list" class="flex flex-1 flex-col">
               <li>
                 <ul role="list" class="-mx-2 space-y-1">
                   <li>
@@ -382,7 +377,7 @@
 
                   <li>
                     <a
-                      href="#"
+                      href="/admin/roadmap"
                       class="hover:text-emerald hover:bg-gray-50 group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold"
                       ><svg
                         xmlns="http://www.w3.org/2000/svg"
@@ -400,10 +395,6 @@
                       </svg>
 
                       Roadmap
-                      <span
-                        class="text-xs uppercase leading-tight bg-slate-400 text-white px-2 py-1 rounded-md"
-                        >Coming soon</span
-                      >
                     </a>
                   </li>
 
@@ -578,7 +569,28 @@
                 </ul>
               </li>
 
-              <li class="-mx-6 mt-auto">
+              <li class="-mx-6 mt-auto">  
+                <div
+                  class="flex justify-between  gap-x-4 px-6 py-3 hover:bg-gray-50"
+                >
+                  <a
+                    href="/widget/{{user.Project.AppKey}}"
+                    class="hover:text-emerald group text-gray-900 flex items-center gap-x-3 rounded-md text-sm leading-6 font-semibold"
+                    target="_blank"
+                  >
+                  <img
+                      class="h-8 w-8 rounded-full"
+                      src="{%if user.Project.LogoUrl.Valid %}{{CDNUrl(user.Project.LogoUrl.String)}}{%else%}/static/logo.png{%endif%}"
+                      referrerpolicy="no-referrer"
+                      alt="user avatar"
+                    />
+
+                    Open Your Changelog
+                  </a>
+                </div>
+              </li>
+
+              <li class="-mx-6">
                 <div
                   class="flex justify-between items-center gap-x-4 px-6 py-3 hover:bg-gray-50"
                 >
@@ -747,7 +759,6 @@
 
         if (open) {
           mobileMenuCanvasElm.classList.remove("hidden");
-
 
           setTimeout(() => {
             mobileMenuCanvasElm.classList.remove(backdropClassClosing);

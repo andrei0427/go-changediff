@@ -103,10 +103,12 @@ type RoadmapCategory struct {
 
 type RoadmapPost struct {
 	ID        int32
+	Title     string
 	Body      string
 	DueDate   sql.NullTime
 	BoardID   sql.NullInt32
-	StatusID  int32
+	ProjectID int32
+	StatusID  sql.NullInt32
 	CreatedOn time.Time
 	CreatedBy uuid.UUID
 	IsPrivate bool
@@ -131,6 +133,7 @@ type RoadmapStatus struct {
 	CreatedOn   time.Time
 	ProjectID   int32
 	IsPrivate   bool
+	SortOrder   int32
 }
 
 type Subscription struct {

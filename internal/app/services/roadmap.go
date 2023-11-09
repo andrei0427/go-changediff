@@ -10,11 +10,12 @@ import (
 )
 
 type RoadmapService struct {
-	db *data.Queries
+	db  *data.Queries
+	sql *sql.DB
 }
 
-func NewRoadmapSercice(db *data.Queries) *RoadmapService {
-	return &RoadmapService{db: db}
+func NewRoadmapService(db *data.Queries, sql *sql.DB) *RoadmapService {
+	return &RoadmapService{db: db, sql: sql}
 }
 
 func (s *RoadmapService) GetBoards(ctx context.Context, projectId int32) ([]data.GetBoardsRow, error) {
@@ -71,32 +72,90 @@ func (s *RoadmapService) GetStatus(ctx context.Context, id int32, projectId int3
 	return s.db.GetStatus(ctx, data.GetStatusParams{ID: id, ProjectID: projectId})
 }
 
-func (s *RoadmapService) SaveStatus(ctx context.Context, model models.RoadmapStatusModel, project_id int32) (data.RoadmapStatus, error) {
+func (s *RoadmapService) UpdateStatusSortOrder(ctx context.Context, up bool, statusId int32, projectId int32) (*[]data.UpdateStatusOrderRow, error) {
+	statuses, err := s.GetStatuses(ctx, projectId)
+	if err != nil {
+		return nil, err
+	}
+
+	statusToMove := data.GetStatusesRow{ID: 0}
+	for _, status := range statuses {
+		if status.ID == statusId {
+			statusToMove = status
+		}
+	}
+
+	newSortOrder := statusToMove.SortOrder
+	if up {
+		newSortOrder--
+	} else {
+		newSortOrder++
+	}
+
+	if statusToMove.ID == 0 {
+		return nil, errors.New("status not found")
+	}
+
+	statuses = append(statuses[:statusToMove.SortOrder], statuses[statusToMove.SortOrder+1:]...)
+	statuses = append(statuses[:newSortOrder], append([]data.GetStatusesRow{statusToMove}, statuses[newSortOrder:]...)...)
+
+	tx, err := s.sql.Begin()
+	if err != nil {
+		return nil, err
+	}
+
+	defer tx.Rollback()
+
+	qtx := s.db.WithTx(tx)
+	var updatedStatuses []data.UpdateStatusOrderRow
+	for i, status := range statuses {
+		updated, err := qtx.UpdateStatusOrder(ctx, data.UpdateStatusOrderParams{SortOrder: int32(i), ID: status.ID, ProjectID: projectId})
+
+		if err != nil {
+			return nil, errors.New("could not update status")
+		}
+
+		updatedStatuses = append(updatedStatuses, updated)
+	}
+
+	tx.Commit()
+	return &updatedStatuses, nil
+}
+
+func (s *RoadmapService) SaveStatus(ctx context.Context, model models.RoadmapStatusModel, projectId int32) (*data.RoadmapStatus, error) {
 	if model.ID != nil {
 		toUpdate := data.UpdateStatusParams{
 			ID:          *model.ID,
 			Status:      model.Status,
 			Color:       model.Color,
 			Description: model.Description,
-			ProjectID:   project_id,
+			ProjectID:   projectId,
 		}
 
-		return s.db.UpdateStatus(ctx, toUpdate)
+		updated, err := s.db.UpdateStatus(ctx, toUpdate)
+		return &updated, err
 
+	}
+
+	nextSortOrder, err := s.db.GetNextSortOrderForStatus(ctx, projectId)
+	if err != nil {
+		return nil, err
 	}
 
 	toInsert := data.InsertStatusParams{
 		Status:      model.Status,
 		Color:       model.Color,
 		Description: model.Description,
-		ProjectID:   project_id,
+		ProjectID:   projectId,
+		SortOrder:   nextSortOrder,
 	}
 
-	return s.db.InsertStatus(ctx, toInsert)
+	inserted, err := s.db.InsertStatus(ctx, toInsert)
+	return &inserted, err
 }
 
 func (s *RoadmapService) DeleteStatus(ctx context.Context, boardId int32, projectId int32) error {
-	posts, err := s.db.HasPostsForStatus(ctx, boardId)
+	posts, err := s.db.HasPostsForStatus(ctx, sql.NullInt32{Int32: boardId, Valid: true})
 	if err != nil {
 		return err
 	}
@@ -107,4 +166,8 @@ func (s *RoadmapService) DeleteStatus(ctx context.Context, boardId int32, projec
 
 	_, err = s.db.DeleteStatus(ctx, data.DeleteStatusParams{ID: boardId, ProjectID: projectId})
 	return err
+}
+
+func (s *RoadmapService) GetPostsForBoard(ctx context.Context, boardId int32, projectId int32) ([]data.GetPostsForBoardRow, error) {
+	return s.db.GetPostsForBoard(ctx, data.GetPostsForBoardParams{BoardID: sql.NullInt32{Int32: boardId, Valid: true}, ProjectID: projectId})
 }

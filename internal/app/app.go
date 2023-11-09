@@ -25,7 +25,8 @@ type App struct {
 }
 
 func NewApp() *App {
-	dbConn := data.InitPostgresDb()
+	db := data.InitPostgresDb()
+	dbConn := data.New(db)
 
 	engine := django.New("web/views", ".html")
 	engine.AddFuncMap(views.HelperFuncMap)
@@ -45,7 +46,7 @@ func NewApp() *App {
 	projectService := services.NewProjectService(dbConn)
 	postService := services.NewPostService(dbConn)
 	labelService := services.NewLabelService(dbConn)
-	roadmapService := services.NewRoadmapSercice(dbConn)
+	roadmapService := services.NewRoadmapService(dbConn, db)
 	cdnService := services.NewCDNService()
 	cacheService := services.NewCacheService()
 

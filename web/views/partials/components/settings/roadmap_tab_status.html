@@ -32,6 +32,9 @@
             Name
           </th>
           <th scope="col" class="relative py-3.5 pl-3 pr-4 sm:pr-0">
+            <span class="sr-only">Order</span>
+          </th>
+          <th scope="col" class="relative py-3.5 pl-3 pr-4 sm:pr-0">
             <span class="sr-only">Edit</span>
           </th>
           <th scope="col" class="relative py-3.5 pl-3 pr-4 sm:pr-0">
@@ -55,6 +58,55 @@
             class="w-8/12 whitespace-nowrap px-3 py-4 text-sm font-medium text-gray-900"
           >
             {{status.Status}}
+          </td>
+          <td
+            class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-0"
+          >
+            {%if status.SortOrder > 0%}
+            <button
+              hx-post="/admin/settings/roadmap/status/order/up/{{status.ID}}"
+              hx-target="#status-content"
+              hx-swap="innerHtml"
+              class="text-emerald hover:text-emerald"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke-width="1.5"
+                stroke="currentColor"
+                class="w-6 h-6"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M4.5 15.75l7.5-7.5 7.5 7.5"
+                />
+              </svg>
+            </button>
+            {%endif%} {% if status.SortOrder < Statuses|length-1 %}
+            <button
+              hx-post="/admin/settings/roadmap/status/order/down/{{status.ID}}"
+              hx-target="#status-content"
+              hx-swap="innerHtml"
+              class="text-emerald hover:text-emerald"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke-width="1.5"
+                stroke="currentColor"
+                class="w-6 h-6"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M19.5 8.25l-7.5 7.5-7.5-7.5"
+                />
+              </svg>
+            </button>
+            {%endif%}
           </td>
           <td
             class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-0"

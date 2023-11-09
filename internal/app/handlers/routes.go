@@ -123,6 +123,12 @@ func InitRoutes(app *app.App) {
 	settings.Post("/roadmap/status/save", appHandler.RoadmapStatusSave)
 	settings.Get("/roadmap/status/confirm-delete/:id", appHandler.ConfirmDeleteStatus)
 	settings.Delete("/roadmap/status/delete/:id", appHandler.DeleteSettingsStatus)
+	settings.Post("/roadmap/status/order/up/:id", func(c *fiber.Ctx) error {
+		return appHandler.ChangeStatusOrder(c, true)
+	})
+	settings.Post("/roadmap/status/order/down/:id", func(c *fiber.Ctx) error {
+		return appHandler.ChangeStatusOrder(c, false)
+	})
 }
 
 // Public Routes
@@ -432,6 +438,29 @@ func (a *AppHandler) DeleteSettingsStatus(c *fiber.Ctx) error {
 	updatedStatuses = append(updatedStatuses, currentStatuses[statusIdxToDelete+1:]...)
 
 	return c.Render(viewPath, fiber.Map{"Statuses": updatedStatuses, "Success": true, "Message": "Status successfully deleted"})
+}
+
+func (a *AppHandler) ChangeStatusOrder(c *fiber.Ctx, up bool) error {
+	viewPath := "partials/components/settings/roadmap_tab_status"
+	curUser := c.Locals("user").(*models.SessionUser)
+
+	currentStatuses, err := a.RoadmapService.GetStatuses(c.Context(), curUser.Project.ID)
+	if err != nil {
+		return c.Render(viewPath, fiber.Map{"Error": err.Error()})
+	}
+
+	id, err := c.ParamsInt("id")
+	if err != nil {
+		return c.Render(viewPath, fiber.Map{"Statuses": currentStatuses, "Error": err.Error()})
+	}
+
+	updatedStatuses, err := a.RoadmapService.UpdateStatusSortOrder(c.Context(), up, int32(id), curUser.Project.ID)
+	if err != nil {
+		return c.Render(viewPath, fiber.Map{"Statuses": currentStatuses, "Error": err.Error()})
+	}
+
+	return c.Render(viewPath, fiber.Map{"Statuses": updatedStatuses, "Success": true, "Message": "Status order successfully updated"})
+
 }
 
 func (a *AppHandler) RoadmapStatusOpen(c *fiber.Ctx) error {
@@ -1012,7 +1041,44 @@ func (a *AppHandler) GetBoard(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusNotFound, "board not found")
 	}
 
-	return c.Render("partials/components/roadmap/board", fiber.Map{"Board": board})
+	statuses, err := a.RoadmapService.GetStatuses(c.Context(), curUser.Project.ID)
+	if err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, "error fetching statuses")
+	}
+
+	posts, err := a.RoadmapService.GetPostsForBoard(c.Context(), board.ID, curUser.Project.ID)
+	if err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, "error fetching posts")
+	}
+
+	var unassignedPosts []data.GetPostsForBoardRow
+	for _, p := range posts {
+		if !p.BoardID.Valid {
+			unassignedPosts = append(unassignedPosts, p)
+		}
+	}
+
+	var statusesWithPosts []models.RoadmapBoardStatusWithPosts
+	statusesWithPosts = append(statusesWithPosts, models.RoadmapBoardStatusWithPosts{
+		Status: data.GetStatusesRow{ID: -1, Status: "Unassigned", Color: "#DDDDDD"},
+		Posts:  unassignedPosts,
+	})
+
+	for _, s := range statuses {
+		var statusPosts []data.GetPostsForBoardRow
+
+		for _, p := range posts {
+			if p.StatusID.Int32 == s.ID {
+				statusPosts = append(statusPosts, p)
+			}
+		}
+
+		statusesWithPosts = append(statusesWithPosts, models.RoadmapBoardStatusWithPosts{Status: s, Posts: statusPosts})
+	}
+
+	fmt.Println(statusesWithPosts)
+
+	return c.Render("partials/components/roadmap/board", fiber.Map{"Board": board, "StatusesWithPosts": statusesWithPosts})
 
 }
 

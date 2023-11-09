@@ -39,7 +39,7 @@
   </div>
 
   <div
-    class="absolute left-0 transform ease-out opacity-0 scale-95 right-0 z-10 mt-2 w-56 origin-top-right divide-y divide-gray-100 rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
+    class="absolute hidden left-0 transform ease-out opacity-0 scale-95 right-0 z-10 mt-2 w-56 origin-top-right divide-y divide-gray-100 rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
     role="menu"
     id="ddlBoards"
     aria-orientation="vertical"
@@ -61,7 +61,7 @@
         tabindex="-1"
         href="#{{b.ID}}"
       >
-        {{b.Name}}
+        &nbsp;&nbsp;{{b.Name}}
       </a>
       {%empty%} No public boards created! {%endfor%}
     </div>
@@ -81,10 +81,12 @@
         tabindex="-1"
         href="#{{b.ID}}"
       >
-        {{b.Name}}
+        &nbsp;&nbsp;{{b.Name}}
       </a>
       {%endfor%}
     </div>
+
+    {%endif%}
 
     <div class="py-1" role="none">
       <button
@@ -98,8 +100,6 @@
         Create a board
       </button>
     </div>
-
-    {%endif%}
   </div>
 </div>
 
@@ -145,6 +145,10 @@
         mainElm.removeEventListener("click", clickAwayHandler);
       }, 20);
     }
+
+    setTimeout(() => {
+      elementToAnimate.classList.toggle("hidden");
+    }, 120);
   }
 
   function clickAwayHandler(event) {

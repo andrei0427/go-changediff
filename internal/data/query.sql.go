@@ -364,6 +364,17 @@ func (q *Queries) GetLabels(ctx context.Context, projectID int32) ([]Label, erro
 	return items, nil
 }
 
+const getNextSortOrderForStatus = `-- name: GetNextSortOrderForStatus :one
+SELECT MAX(sort_order) + 1 as NextSortOrder FROM roadmap_statuses WHERE project_id = $1
+`
+
+func (q *Queries) GetNextSortOrderForStatus(ctx context.Context, projectID int32) (int32, error) {
+	row := q.db.QueryRowContext(ctx, getNextSortOrderForStatus, projectID)
+	var nextsortorder int32
+	err := row.Scan(&nextsortorder)
+	return nextsortorder, err
+}
+
 const getPost = `-- name: GetPost :one
 SELECT p.id, p.title, p.body, p.published_on, p.author_id, p.project_id, p.created_on, p.updated_on, p.label_id, p.is_published, p.expires_on, l.label as Label FROM posts p LEFT JOIN labels l on p.label_id = l.id or p.label_id is null WHERE p.id = $1 AND p.project_id = $2
 `
@@ -601,6 +612,56 @@ func (q *Queries) GetPosts(ctx context.Context, projectID int32) ([]GetPostsRow,
 	return items, nil
 }
 
+const getPostsForBoard = `-- name: GetPostsForBoard :many
+SELECT id, title, due_date, status_id, created_by, created_on, board_id from roadmap_posts WHERE project_id = $1 AND (board_id IS NULL OR board_id = $2) ORDER BY due_date ASC
+`
+
+type GetPostsForBoardParams struct {
+	ProjectID int32
+	BoardID   sql.NullInt32
+}
+
+type GetPostsForBoardRow struct {
+	ID        int32
+	Title     string
+	DueDate   sql.NullTime
+	StatusID  sql.NullInt32
+	CreatedBy uuid.UUID
+	CreatedOn time.Time
+	BoardID   sql.NullInt32
+}
+
+func (q *Queries) GetPostsForBoard(ctx context.Context, arg GetPostsForBoardParams) ([]GetPostsForBoardRow, error) {
+	rows, err := q.db.QueryContext(ctx, getPostsForBoard, arg.ProjectID, arg.BoardID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetPostsForBoardRow
+	for rows.Next() {
+		var i GetPostsForBoardRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Title,
+			&i.DueDate,
+			&i.StatusID,
+			&i.CreatedBy,
+			&i.CreatedOn,
+			&i.BoardID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getProject = `-- name: GetProject :many
 SELECT id, name, description, accent_color, logo_url, app_key, user_id, created_on, updated_on FROM projects WHERE user_id = $1 LIMIT 1
 `
@@ -788,7 +849,7 @@ func (q *Queries) GetReaction(ctx context.Context, arg GetReactionParams) ([]sql
 }
 
 const getStatus = `-- name: GetStatus :one
-SELECT id, status, description, color FROM roadmap_statuses WHERE id = $1 AND project_id = $2
+SELECT id, status, description, sort_order, color FROM roadmap_statuses WHERE id = $1 AND project_id = $2
 `
 
 type GetStatusParams struct {
@@ -800,6 +861,7 @@ type GetStatusRow struct {
 	ID          int32
 	Status      string
 	Description string
+	SortOrder   int32
 	Color       string
 }
 
@@ -810,19 +872,21 @@ func (q *Queries) GetStatus(ctx context.Context, arg GetStatusParams) (GetStatus
 		&i.ID,
 		&i.Status,
 		&i.Description,
+		&i.SortOrder,
 		&i.Color,
 	)
 	return i, err
 }
 
 const getStatuses = `-- name: GetStatuses :many
-SELECT id, status, color FROM roadmap_statuses WHERE project_id = $1
+SELECT id, status, sort_order, color FROM roadmap_statuses WHERE project_id = $1 ORDER BY sort_order
 `
 
 type GetStatusesRow struct {
-	ID     int32
-	Status string
-	Color  string
+	ID        int32
+	Status    string
+	SortOrder int32
+	Color     string
 }
 
 func (q *Queries) GetStatuses(ctx context.Context, projectID int32) ([]GetStatusesRow, error) {
@@ -834,7 +898,12 @@ func (q *Queries) GetStatuses(ctx context.Context, projectID int32) ([]GetStatus
 	var items []GetStatusesRow
 	for rows.Next() {
 		var i GetStatusesRow
-		if err := rows.Scan(&i.ID, &i.Status, &i.Color); err != nil {
+		if err := rows.Scan(
+			&i.ID,
+			&i.Status,
+			&i.SortOrder,
+			&i.Color,
+		); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -863,7 +932,7 @@ const hasPostsForStatus = `-- name: HasPostsForStatus :one
 SELECT COUNT(*) FROM roadmap_posts WHERE status_id = $1
 `
 
-func (q *Queries) HasPostsForStatus(ctx context.Context, statusID int32) (int64, error) {
+func (q *Queries) HasPostsForStatus(ctx context.Context, statusID sql.NullInt32) (int64, error) {
 	row := q.db.QueryRowContext(ctx, hasPostsForStatus, statusID)
 	var count int64
 	err := row.Scan(&count)
@@ -1111,7 +1180,7 @@ func (q *Queries) InsertReaction(ctx context.Context, arg InsertReactionParams) 
 }
 
 const insertStatus = `-- name: InsertStatus :one
-INSERT INTO roadmap_statuses (status, description, color, project_id, created_on) VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP) RETURNING id, status, color, description, created_on, project_id, is_private
+INSERT INTO roadmap_statuses (status, description, color, project_id, created_on, sort_order) VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP, $5) RETURNING id, status, color, description, created_on, project_id, is_private, sort_order
 `
 
 type InsertStatusParams struct {
@@ -1119,6 +1188,7 @@ type InsertStatusParams struct {
 	Description string
 	Color       string
 	ProjectID   int32
+	SortOrder   int32
 }
 
 func (q *Queries) InsertStatus(ctx context.Context, arg InsertStatusParams) (RoadmapStatus, error) {
@@ -1127,6 +1197,7 @@ func (q *Queries) InsertStatus(ctx context.Context, arg InsertStatusParams) (Roa
 		arg.Description,
 		arg.Color,
 		arg.ProjectID,
+		arg.SortOrder,
 	)
 	var i RoadmapStatus
 	err := row.Scan(
@@ -1137,6 +1208,7 @@ func (q *Queries) InsertStatus(ctx context.Context, arg InsertStatusParams) (Roa
 		&i.CreatedOn,
 		&i.ProjectID,
 		&i.IsPrivate,
+		&i.SortOrder,
 	)
 	return i, err
 }
@@ -1381,7 +1453,7 @@ func (q *Queries) UpdateReaction(ctx context.Context, arg UpdateReactionParams) 
 }
 
 const updateStatus = `-- name: UpdateStatus :one
-UPDATE roadmap_statuses SET status = $1, description = $2, color = $3 WHERE id = $4 AND project_id = $5 RETURNING id, status, color, description, created_on, project_id, is_private
+UPDATE roadmap_statuses SET status = $1, description = $2, color = $3 WHERE id = $4 AND project_id = $5 RETURNING id, status, color, description, created_on, project_id, is_private, sort_order
 `
 
 type UpdateStatusParams struct {
@@ -1409,6 +1481,36 @@ func (q *Queries) UpdateStatus(ctx context.Context, arg UpdateStatusParams) (Roa
 		&i.CreatedOn,
 		&i.ProjectID,
 		&i.IsPrivate,
+		&i.SortOrder,
+	)
+	return i, err
+}
+
+const updateStatusOrder = `-- name: UpdateStatusOrder :one
+UPDATE roadmap_statuses SET sort_order = $1 WHERE id = $2 AND project_id = $3 RETURNING id, status, sort_order, color
+`
+
+type UpdateStatusOrderParams struct {
+	SortOrder int32
+	ID        int32
+	ProjectID int32
+}
+
+type UpdateStatusOrderRow struct {
+	ID        int32
+	Status    string
+	SortOrder int32
+	Color     string
+}
+
+func (q *Queries) UpdateStatusOrder(ctx context.Context, arg UpdateStatusOrderParams) (UpdateStatusOrderRow, error) {
+	row := q.db.QueryRowContext(ctx, updateStatusOrder, arg.SortOrder, arg.ID, arg.ProjectID)
+	var i UpdateStatusOrderRow
+	err := row.Scan(
+		&i.ID,
+		&i.Status,
+		&i.SortOrder,
+		&i.Color,
 	)
 	return i, err
 }

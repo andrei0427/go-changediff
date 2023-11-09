@@ -91,3 +91,8 @@ type RoadmapStatusModel struct {
 	Color       string `form:"color"`
 	Description string `form:"description"`
 }
+
+type RoadmapBoardStatusWithPosts struct {
+	Status data.GetStatusesRow
+	Posts  []data.GetPostsForBoardRow
+}

@@ -16,12 +16,12 @@ func GetConnectionString() string {
 
 }
 
-func InitPostgresDb() *Queries {
+func InitPostgresDb() *sql.DB {
 	sqlc, err := sql.Open("postgres", GetConnectionString())
 
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	return New(sqlc)
+	return sqlc
 }

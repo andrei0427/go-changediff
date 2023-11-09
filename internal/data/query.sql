@@ -198,19 +198,28 @@ UPDATE roadmap_boards SET name = $1, is_private = $2, description = $3 WHERE id 
 DELETE FROM roadmap_boards WHERE id = $1 and project_id = $2 RETURNING id;
 
 -- name: GetStatuses :many
-SELECT id, status, color FROM roadmap_statuses WHERE project_id = $1;
+SELECT id, status, sort_order, color FROM roadmap_statuses WHERE project_id = $1 ORDER BY sort_order;
 
 -- name: GetStatus :one
-SELECT id, status, description, color FROM roadmap_statuses WHERE id = $1 AND project_id = $2;
+SELECT id, status, description, sort_order, color FROM roadmap_statuses WHERE id = $1 AND project_id = $2;
 
 -- name: InsertStatus :one
-INSERT INTO roadmap_statuses (status, description, color, project_id, created_on) VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP) RETURNING *;
+INSERT INTO roadmap_statuses (status, description, color, project_id, created_on, sort_order) VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP, $5) RETURNING *;
 
 -- name: UpdateStatus :one
 UPDATE roadmap_statuses SET status = $1, description = $2, color = $3 WHERE id = $4 AND project_id = $5 RETURNING *;
 
+-- name: GetNextSortOrderForStatus :one
+SELECT MAX(sort_order) + 1 as NextSortOrder FROM roadmap_statuses WHERE project_id = $1;
+
+-- name: UpdateStatusOrder :one
+UPDATE roadmap_statuses SET sort_order = $1 WHERE id = $2 AND project_id = $3 RETURNING id, status, sort_order, color;
+
 -- name: DeleteStatus :one
 DELETE FROM roadmap_statuses WHERE id = $1 and project_id = $2 RETURNING id;
+
+-- name: GetPostsForBoard :many
+SELECT id, title, due_date, status_id, created_by, created_on, board_id from roadmap_posts WHERE project_id = $1 AND (board_id IS NULL OR board_id = $2) ORDER BY due_date ASC; 
 
 -- name: HasPostsForBoard :one
 SELECT COUNT(*) FROM roadmap_posts WHERE board_id = $1;

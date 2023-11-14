@@ -613,26 +613,57 @@ func (q *Queries) GetPosts(ctx context.Context, projectID int32) ([]GetPostsRow,
 }
 
 const getPostsForBoard = `-- name: GetPostsForBoard :many
-SELECT id, title, due_date, status_id, created_by, created_on, board_id from roadmap_posts WHERE project_id = $1 AND (board_id IS NULL OR board_id = $2) ORDER BY due_date ASC
+SELECT rp.id, title, body, due_date, board_id, rp.project_id, status_id, rp.created_on, is_private, author_id, rp.user_uuid, is_idea, a.id, first_name, last_name, picture_url, a.user_id, a.project_id, a.created_on, updated_on, u.id, u.user_uuid, ip_addr, user_agent, locale, reaction, post_id, u.created_on, user_data, u.user_id, user_name, user_email, user_role
+from roadmap_posts rp 
+  left join authors a on a.id = rp.author_id
+  left join post_reactions u on u.user_uuid = rp.user_uuid
+where rp.board_id = $1 and rp.project_id = $2
+order by due_date
 `
 
 type GetPostsForBoardParams struct {
-	ProjectID int32
 	BoardID   sql.NullInt32
+	ProjectID int32
 }
 
 type GetPostsForBoardRow struct {
-	ID        int32
-	Title     string
-	DueDate   sql.NullTime
-	StatusID  sql.NullInt32
-	CreatedBy uuid.UUID
-	CreatedOn time.Time
-	BoardID   sql.NullInt32
+	ID          int32
+	Title       string
+	Body        string
+	DueDate     sql.NullTime
+	BoardID     sql.NullInt32
+	ProjectID   int32
+	StatusID    sql.NullInt32
+	CreatedOn   time.Time
+	IsPrivate   bool
+	AuthorID    sql.NullInt32
+	UserUuid    uuid.NullUUID
+	IsIdea      bool
+	ID_2        sql.NullInt32
+	FirstName   sql.NullString
+	LastName    sql.NullString
+	PictureUrl  sql.NullString
+	UserID      uuid.NullUUID
+	ProjectID_2 sql.NullInt32
+	CreatedOn_2 sql.NullTime
+	UpdatedOn   sql.NullTime
+	ID_3        sql.NullInt32
+	UserUuid_2  uuid.NullUUID
+	IpAddr      sql.NullString
+	UserAgent   sql.NullString
+	Locale      sql.NullString
+	Reaction    sql.NullString
+	PostID      sql.NullInt32
+	CreatedOn_3 sql.NullTime
+	UserData    pqtype.NullRawMessage
+	UserID_2    sql.NullString
+	UserName    sql.NullString
+	UserEmail   sql.NullString
+	UserRole    sql.NullString
 }
 
 func (q *Queries) GetPostsForBoard(ctx context.Context, arg GetPostsForBoardParams) ([]GetPostsForBoardRow, error) {
-	rows, err := q.db.QueryContext(ctx, getPostsForBoard, arg.ProjectID, arg.BoardID)
+	rows, err := q.db.QueryContext(ctx, getPostsForBoard, arg.BoardID, arg.ProjectID)
 	if err != nil {
 		return nil, err
 	}
@@ -643,11 +674,37 @@ func (q *Queries) GetPostsForBoard(ctx context.Context, arg GetPostsForBoardPara
 		if err := rows.Scan(
 			&i.ID,
 			&i.Title,
+			&i.Body,
 			&i.DueDate,
-			&i.StatusID,
-			&i.CreatedBy,
-			&i.CreatedOn,
 			&i.BoardID,
+			&i.ProjectID,
+			&i.StatusID,
+			&i.CreatedOn,
+			&i.IsPrivate,
+			&i.AuthorID,
+			&i.UserUuid,
+			&i.IsIdea,
+			&i.ID_2,
+			&i.FirstName,
+			&i.LastName,
+			&i.PictureUrl,
+			&i.UserID,
+			&i.ProjectID_2,
+			&i.CreatedOn_2,
+			&i.UpdatedOn,
+			&i.ID_3,
+			&i.UserUuid_2,
+			&i.IpAddr,
+			&i.UserAgent,
+			&i.Locale,
+			&i.Reaction,
+			&i.PostID,
+			&i.CreatedOn_3,
+			&i.UserData,
+			&i.UserID_2,
+			&i.UserName,
+			&i.UserEmail,
+			&i.UserRole,
 		); err != nil {
 			return nil, err
 		}
@@ -1179,6 +1236,54 @@ func (q *Queries) InsertReaction(ctx context.Context, arg InsertReactionParams) 
 	return i, err
 }
 
+const insertRoadmapPost = `-- name: InsertRoadmapPost :one
+INSERT INTO roadmap_posts (title, body, due_date, is_private, author_id, is_idea, user_uuid, board_id, status_id, project_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id, title, body, due_date, board_id, project_id, status_id, created_on, is_private, author_id, user_uuid, is_idea
+`
+
+type InsertRoadmapPostParams struct {
+	Title     string
+	Body      string
+	DueDate   sql.NullTime
+	IsPrivate bool
+	AuthorID  sql.NullInt32
+	IsIdea    bool
+	UserUuid  uuid.NullUUID
+	BoardID   sql.NullInt32
+	StatusID  sql.NullInt32
+	ProjectID int32
+}
+
+func (q *Queries) InsertRoadmapPost(ctx context.Context, arg InsertRoadmapPostParams) (RoadmapPost, error) {
+	row := q.db.QueryRowContext(ctx, insertRoadmapPost,
+		arg.Title,
+		arg.Body,
+		arg.DueDate,
+		arg.IsPrivate,
+		arg.AuthorID,
+		arg.IsIdea,
+		arg.UserUuid,
+		arg.BoardID,
+		arg.StatusID,
+		arg.ProjectID,
+	)
+	var i RoadmapPost
+	err := row.Scan(
+		&i.ID,
+		&i.Title,
+		&i.Body,
+		&i.DueDate,
+		&i.BoardID,
+		&i.ProjectID,
+		&i.StatusID,
+		&i.CreatedOn,
+		&i.IsPrivate,
+		&i.AuthorID,
+		&i.UserUuid,
+		&i.IsIdea,
+	)
+	return i, err
+}
+
 const insertStatus = `-- name: InsertStatus :one
 INSERT INTO roadmap_statuses (status, description, color, project_id, created_on, sort_order) VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP, $5) RETURNING id, status, color, description, created_on, project_id, is_private, sort_order
 `
@@ -1448,6 +1553,50 @@ func (q *Queries) UpdateReaction(ctx context.Context, arg UpdateReactionParams) 
 		&i.UserName,
 		&i.UserEmail,
 		&i.UserRole,
+	)
+	return i, err
+}
+
+const updateRoadmapPost = `-- name: UpdateRoadmapPost :one
+UPDATE roadmap_posts SET title = $1, body = $2, due_date = $3, is_private = $4, board_id = $5, status_id = $6 WHERE id = $7 AND project_id = $8 RETURNING id, title, body, due_date, board_id, project_id, status_id, created_on, is_private, author_id, user_uuid, is_idea
+`
+
+type UpdateRoadmapPostParams struct {
+	Title     string
+	Body      string
+	DueDate   sql.NullTime
+	IsPrivate bool
+	BoardID   sql.NullInt32
+	StatusID  sql.NullInt32
+	ID        int32
+	ProjectID int32
+}
+
+func (q *Queries) UpdateRoadmapPost(ctx context.Context, arg UpdateRoadmapPostParams) (RoadmapPost, error) {
+	row := q.db.QueryRowContext(ctx, updateRoadmapPost,
+		arg.Title,
+		arg.Body,
+		arg.DueDate,
+		arg.IsPrivate,
+		arg.BoardID,
+		arg.StatusID,
+		arg.ID,
+		arg.ProjectID,
+	)
+	var i RoadmapPost
+	err := row.Scan(
+		&i.ID,
+		&i.Title,
+		&i.Body,
+		&i.DueDate,
+		&i.BoardID,
+		&i.ProjectID,
+		&i.StatusID,
+		&i.CreatedOn,
+		&i.IsPrivate,
+		&i.AuthorID,
+		&i.UserUuid,
+		&i.IsIdea,
 	)
 	return i, err
 }

@@ -4,9 +4,11 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"time"
 
 	"github.com/andrei0427/go-changediff/internal/app/models"
 	"github.com/andrei0427/go-changediff/internal/data"
+	"github.com/google/uuid"
 )
 
 type RoadmapService struct {
@@ -170,4 +172,76 @@ func (s *RoadmapService) DeleteStatus(ctx context.Context, boardId int32, projec
 
 func (s *RoadmapService) GetPostsForBoard(ctx context.Context, boardId int32, projectId int32) ([]data.GetPostsForBoardRow, error) {
 	return s.db.GetPostsForBoard(ctx, data.GetPostsForBoardParams{BoardID: sql.NullInt32{Int32: boardId, Valid: true}, ProjectID: projectId})
+}
+
+func (s *RoadmapService) InsertPost(ctx context.Context, post models.RoadmapPostModel, authorId *int32, userUuid *uuid.UUID, projectId int32, userLocation *time.Location, isIdea bool) (data.RoadmapPost, error) {
+	toInsert := data.InsertRoadmapPostParams{
+		Title:     post.Title,
+		Body:      post.Content,
+		ProjectID: projectId,
+		IsPrivate: post.IsPrivate,
+		IsIdea:    isIdea,
+		DueDate:   sql.NullTime{Valid: false},
+	}
+
+	if len(post.DueDate) > 0 {
+		parsedDate, err := time.ParseInLocation("2006-01-02T15:04", post.DueDate, userLocation)
+		if err != nil {
+			return data.RoadmapPost{}, errors.New("error parsing publish date")
+		}
+
+		toInsert.DueDate = sql.NullTime{Time: parsedDate.UTC(), Valid: true}
+	}
+
+	if post.StatusID > 0 {
+		toInsert.StatusID = sql.NullInt32{Int32: int32(post.StatusID), Valid: true}
+	}
+
+	if post.BoardID != nil && *post.BoardID > 0 {
+		toInsert.BoardID = sql.NullInt32{Int32: int32(*post.BoardID), Valid: true}
+	}
+
+	if authorId != nil {
+		toInsert.AuthorID = sql.NullInt32{Int32: *authorId, Valid: true}
+	} else if userUuid != nil {
+		toInsert.UserUuid = uuid.NullUUID{UUID: *userUuid, Valid: true}
+	} else {
+		return data.RoadmapPost{}, errors.New("eithor author id or user uuid are required")
+	}
+
+	return s.db.InsertRoadmapPost(ctx, toInsert)
+}
+
+func (s *RoadmapService) UpdatePost(ctx context.Context, post models.RoadmapPostModel, projectId int32, userLocation *time.Location) (data.RoadmapPost, error) {
+	if post.ID == nil {
+		return data.RoadmapPost{}, errors.New("ID is required when updating")
+	}
+
+	toUpdate := data.UpdateRoadmapPostParams{
+		ID:        *post.ID,
+		Title:     post.Title,
+		Body:      post.Content,
+		ProjectID: projectId,
+		IsPrivate: post.IsPrivate,
+		DueDate:   sql.NullTime{Valid: false},
+	}
+
+	if len(post.DueDate) > 0 {
+		parsedDate, err := time.ParseInLocation("2006-01-02T15:04", post.DueDate, userLocation)
+		if err != nil {
+			return data.RoadmapPost{}, errors.New("error parsing publish date")
+		}
+
+		toUpdate.DueDate = sql.NullTime{Time: parsedDate.UTC(), Valid: true}
+	}
+
+	if post.StatusID > 0 {
+		toUpdate.StatusID = sql.NullInt32{Int32: int32(post.StatusID), Valid: true}
+	}
+
+	if post.BoardID != nil && *post.BoardID > 0 {
+		toUpdate.BoardID = sql.NullInt32{Int32: int32(*post.BoardID), Valid: true}
+	}
+
+	return s.db.UpdateRoadmapPost(ctx, toUpdate)
 }

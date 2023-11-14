@@ -110,7 +110,6 @@ type RoadmapPost struct {
 	ProjectID int32
 	StatusID  sql.NullInt32
 	CreatedOn time.Time
-	CreatedBy uuid.UUID
 	IsPrivate bool
 	AuthorID  sql.NullInt32
 	UserUuid  uuid.NullUUID

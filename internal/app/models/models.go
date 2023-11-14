@@ -92,6 +92,16 @@ type RoadmapStatusModel struct {
 	Description string `form:"description"`
 }
 
+type RoadmapPostModel struct {
+	ID        *int32 `form:"id"`
+	StatusID  int32  `form:"status_id"`
+	BoardID   *int32 `form:"board_id"`
+	Title     string `form:"title"`
+	Content   string `form:"content"`
+	IsPrivate bool   `form:"is_private"`
+	DueDate   string `form:"due_date"`
+}
+
 type RoadmapBoardStatusWithPosts struct {
 	Status data.GetStatusesRow
 	Posts  []data.GetPostsForBoardRow

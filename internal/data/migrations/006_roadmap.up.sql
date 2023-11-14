@@ -27,6 +27,5 @@ CREATE TABLE IF NOT EXISTS roadmap_posts (
     board_id integer REFERENCES roadmap_boards(id) NULL,
     project_id integer REFERENCES projects(id) NOT NULL,
     status_id integer REFERENCES roadmap_statuses(id) NULL,
-    created_on timestamp NOT NULL DEFAULT current_timestamp,
-    created_by uuid NOT NULL
+    created_on timestamp NOT NULL DEFAULT current_timestamp
 );

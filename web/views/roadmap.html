@@ -111,6 +111,9 @@
   hx-trigger="boardchange"
 ></div>
 
+<script type="module" src="/static/lexical/main.9d8dd8ca.js"></script>
+<link rel="stylesheet" href="/static/lexical/main.8197594a.css">
+
 <script>
   let ddlBoardOpen = false;
 
@@ -175,7 +178,7 @@
       document
         .getElementById("board-content")
         .dispatchEvent(new Event("boardchange"));
-    }, 200);
+    }, 500);
   }
 </script>
 

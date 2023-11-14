@@ -103,6 +103,8 @@ func InitRoutes(app *app.App) {
 	roadmap := admin.Group("/roadmap")
 	roadmap.Get("/", appHandler.GetRoadmap)
 	roadmap.Get("/board", appHandler.GetBoard)
+	roadmap.Get("/compose", appHandler.GetRoadmapComposeForm)
+	roadmap.Post("/save-post", appHandler.SaveRoadmapPost)
 
 	settings := admin.Group("/settings")
 	settings.Get("/", appHandler.Settings)
@@ -1076,10 +1078,143 @@ func (a *AppHandler) GetBoard(c *fiber.Ctx) error {
 		statusesWithPosts = append(statusesWithPosts, models.RoadmapBoardStatusWithPosts{Status: s, Posts: statusPosts})
 	}
 
-	fmt.Println(statusesWithPosts)
-
 	return c.Render("partials/components/roadmap/board", fiber.Map{"Board": board, "StatusesWithPosts": statusesWithPosts})
+}
 
+func (a *AppHandler) GetRoadmapComposeForm(c *fiber.Ctx) error {
+	curUser := c.Locals("user").(*models.SessionUser)
+	id := c.QueryInt("id", 0)
+	statusId := c.QueryInt("statusId", 0)
+	boardId := c.QueryInt("boardId", 0)
+
+	statuses, err := a.RoadmapService.GetStatuses(c.Context(), curUser.Project.ID)
+	if err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, "error when fetching statuses")
+	}
+
+	boards, err := a.RoadmapService.GetBoards(c.Context(), curUser.Project.ID)
+	if err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, "error when fetching boards")
+	}
+
+	form := models.RoadmapPostModel{StatusID: 0}
+
+	if id <= 0 {
+		if statusId > 0 {
+			statusID := int32(statusId)
+			hasStatus := slices.ContainsFunc(statuses, func(s data.GetStatusesRow) bool {
+				return s.ID == statusID
+			})
+
+			if hasStatus {
+				form.StatusID = statusID
+			}
+		}
+
+		if boardId > 0 {
+			boardID := int32(boardId)
+			hasBoard := slices.ContainsFunc(boards, func(b data.GetBoardsRow) bool {
+				return b.ID == boardID
+			})
+
+			if hasBoard {
+				form.BoardID = &boardID
+			}
+		}
+	}
+
+	statuses = append([]data.GetStatusesRow{{ID: 0, Status: "Unassigned", SortOrder: -1, Color: "#DDDDDD"}}, statuses...)
+
+	return c.Render("partials/components/roadmap/post_slideover", fiber.Map{"form": form, "Statuses": statuses, "Boards": boards})
+
+}
+
+func (a *AppHandler) SaveRoadmapPost(c *fiber.Ctx) error {
+	curUser := c.Locals("user").(*models.SessionUser)
+	viewPath := "partials/components/roadmap/post_slideover_form"
+
+	form := new(models.RoadmapPostModel)
+	if err := c.BodyParser(form); err != nil {
+		return c.Render(viewPath, fiber.Map{"error": err.Error()})
+	}
+
+	errs := make(map[string]string)
+	if len(strings.TrimSpace(form.Title)) == 0 {
+		errs["Title"] = "Title is required"
+	}
+
+	if len(strings.TrimSpace(form.Content)) == 0 {
+		errs["Content"] = "Post content is required"
+	}
+
+	statuses, err := a.RoadmapService.GetStatuses(c.Context(), curUser.Project.ID)
+	if err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, "error when fetching statuses")
+	}
+
+	if form.StatusID > 0 {
+		hasStatus := slices.ContainsFunc[data.GetStatusesRow](statuses, func(d data.GetStatusesRow) bool {
+			return d.ID == form.StatusID
+		})
+
+		if !hasStatus {
+			errs["Status"] = "Status not found"
+		}
+	}
+
+	boards, err := a.RoadmapService.GetBoards(c.Context(), curUser.Project.ID)
+	if err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, "error when fetching boards")
+	}
+
+	if form.BoardID != nil {
+		hasBoard := slices.ContainsFunc[data.GetBoardsRow](boards, func(d data.GetBoardsRow) bool {
+			return d.ID == *form.BoardID
+		})
+
+		if !hasBoard {
+			errs["Board"] = "Board not found"
+		}
+	}
+
+	if len(errs) > 0 {
+		form.Content = template.HTMLEscapeString(form.Content)
+		return c.Render(viewPath, fiber.Map{"form": form, "errors": errs, "Statuses": statuses, "Boards": boards})
+	}
+
+	loc, err := time.LoadLocation(curUser.Timezone)
+	if err != nil {
+		return c.Render(viewPath, fiber.Map{"error": "Could not locate user timezone", "form": form, "Statuses": statuses, "Boards": boards})
+	}
+
+	var savedPost data.RoadmapPost
+	if form.ID != nil && *form.ID > 0 {
+		savedPost, err = a.RoadmapService.UpdatePost(c.Context(), *form, curUser.Project.ID, loc)
+		if err != nil {
+			form.Content = template.HTMLEscapeString(form.Content)
+			return c.Render(viewPath, fiber.Map{"error": err.Error(), "form": form, "Statuses": statuses, "Boards": boards})
+		}
+	} else {
+		author := curUser.Author
+		var userUuid *uuid.UUID
+		if c.Locals("userUuid") != nil {
+			userUuid = c.Locals("userUuid").(*uuid.UUID)
+		}
+
+		if author == nil && userUuid == nil {
+			return c.Render(viewPath, fiber.Map{"error": "Author or user uuid not supplied", "form": form, "Statuses": statuses, "Boards": boards})
+
+		}
+
+		savedPost, err = a.RoadmapService.InsertPost(c.Context(), *form, &author.ID, userUuid, curUser.Project.ID, loc, false)
+		if err != nil {
+			form.Content = template.HTMLEscapeString(form.Content)
+			return c.Render(viewPath, fiber.Map{"error": err.Error(), "form": form, "Statuses": statuses, "Boards": boards})
+		}
+	}
+
+	savedPost.Body = template.HTMLEscapeString(form.Content)
+	return c.Render(viewPath, fiber.Map{"Post": savedPost, "Statuses": statuses, "Boards": boards, "Success": true, "Message": "Post saved successfully.", "Close": true})
 }
 
 func (a *AppHandler) GetUserAnalytics(c *fiber.Ctx) error {

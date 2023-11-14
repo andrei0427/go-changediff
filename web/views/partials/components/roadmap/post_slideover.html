@@ -1,0 +1,87 @@
+<div
+  id="slideover-container"
+  class="relative z-10"
+  aria-labelledby="slide-over-title"
+  role="dialog"
+  aria-modal="true"
+>
+  <div
+    id="slideover-backdrop"
+    class="fixed hidden inset-0"
+    onclick="closeSlideOver()"
+  ></div>
+
+  <div
+    class="pointer-events-none fixed inset-y-0 right-0 flex max-w-full pl-10 sm:pl-16"
+  >
+    <div
+      id="slideover"
+      class="transform transition translate-x-full ease-in-out duration-500 sm:duration-700 pointer-events-auto w-screen max-w-4xl"
+    >
+      <div
+        class="flex h-full justify-between flex-col overflow-y-scroll bg-white pt-6 shadow-xl"
+      >
+        {% include "partials/components/roadmap/post_slideover_form.html" %}
+
+        <div class="flex flex-shrink-0 justify-end px-4 py-4">
+          <button
+            type="button"
+            onclick="closeSlideOver()"
+            class="rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:ring-gray-400"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            form="post-form"
+            class="ml-4 inline-flex justify-center rounded-md bg-emerald px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald"
+          >
+            Save
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function openSlideOver() {
+      const containerElm = document.getElementById("slideover-container");
+      const backdropElm = document.getElementById("slideover-backdrop");
+      const slideOverElm = document.getElementById("slideover");
+
+      if (!containerElm || !slideOverElm || !backdropElm) {
+        return;
+      }
+
+      backdropElm.classList.remove("hidden");
+
+      slideOverElm.classList.add("translate-x-0");
+      slideOverElm.classList.remove("translate-x-full");
+
+      return false;
+    }
+
+    function closeSlideOver() {
+      const containerElm = document.getElementById("slideover-container");
+      const backdropElm = document.getElementById("slideover-backdrop");
+      const slideOverElm = document.getElementById("slideover");
+
+      if (!containerElm || !slideOverElm) {
+        return;
+      }
+
+      backdropElm.classList.add("hidden");
+
+      slideOverElm.classList.remove("translate-x-0");
+      slideOverElm.classList.add("translate-x-full");
+
+      setTimeout(() => {
+        containerElm.remove();
+      }, 500);
+
+      return false;
+    }
+
+    openSlideOver();
+  </script>
+</div>

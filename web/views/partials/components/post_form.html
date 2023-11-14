@@ -169,10 +169,14 @@
 		</div>
 </form>
 
-<link rel="stylesheet" href="/static/lexical/main.78c774c4.css">
-<script type="module" src="/static/lexical/main.240d9b7b.js"></script>
+<link rel="stylesheet" href="/static/lexical/main.8197594a.css">
+<script type="module" src="/static/lexical/main.9d8dd8ca.js"></script>
 
 <script>
+	window.addEventListener('load', () => {
+	window.dispatchEvent(new Event('initlexical'));
+	});
+
 	function toggleLabelDDL() {
 		document.getElementById('ddlLabel').classList.toggle('hidden');
 	}

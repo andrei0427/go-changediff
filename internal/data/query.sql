@@ -218,11 +218,22 @@ UPDATE roadmap_statuses SET sort_order = $1 WHERE id = $2 AND project_id = $3 RE
 -- name: DeleteStatus :one
 DELETE FROM roadmap_statuses WHERE id = $1 and project_id = $2 RETURNING id;
 
--- name: GetPostsForBoard :many
-SELECT id, title, due_date, status_id, created_by, created_on, board_id from roadmap_posts WHERE project_id = $1 AND (board_id IS NULL OR board_id = $2) ORDER BY due_date ASC; 
-
 -- name: HasPostsForBoard :one
 SELECT COUNT(*) FROM roadmap_posts WHERE board_id = $1;
 
 -- name: HasPostsForStatus :one
 SELECT COUNT(*) FROM roadmap_posts WHERE status_id = $1;
+
+-- name: GetPostsForBoard :many
+SELECT *
+from roadmap_posts rp 
+  left join authors a on a.id = rp.author_id
+  left join post_reactions u on u.user_uuid = rp.user_uuid
+where rp.board_id = $1 and rp.project_id = $2
+order by due_date;
+
+-- name: InsertRoadmapPost :one
+INSERT INTO roadmap_posts (title, body, due_date, is_private, author_id, is_idea, user_uuid, board_id, status_id, project_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *;
+
+-- name: UpdateRoadmapPost :one
+UPDATE roadmap_posts SET title = $1, body = $2, due_date = $3, is_private = $4, board_id = $5, status_id = $6 WHERE id = $7 AND project_id = $8 RETURNING *;

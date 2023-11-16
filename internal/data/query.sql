@@ -237,3 +237,6 @@ INSERT INTO roadmap_posts (title, body, due_date, is_private, author_id, is_idea
 
 -- name: UpdateRoadmapPost :one
 UPDATE roadmap_posts SET title = $1, body = $2, due_date = $3, is_private = $4, board_id = $5, status_id = $6 WHERE id = $7 AND project_id = $8 RETURNING *;
+
+-- name: GetRoadmapPost :one
+SELECT * FROM roadmap_posts WHERE id = $1 AND project_id = $2;

@@ -905,6 +905,35 @@ func (q *Queries) GetReaction(ctx context.Context, arg GetReactionParams) ([]sql
 	return items, nil
 }
 
+const getRoadmapPost = `-- name: GetRoadmapPost :one
+SELECT id, title, body, due_date, board_id, project_id, status_id, created_on, is_private, author_id, user_uuid, is_idea FROM roadmap_posts WHERE id = $1 AND project_id = $2
+`
+
+type GetRoadmapPostParams struct {
+	ID        int32
+	ProjectID int32
+}
+
+func (q *Queries) GetRoadmapPost(ctx context.Context, arg GetRoadmapPostParams) (RoadmapPost, error) {
+	row := q.db.QueryRowContext(ctx, getRoadmapPost, arg.ID, arg.ProjectID)
+	var i RoadmapPost
+	err := row.Scan(
+		&i.ID,
+		&i.Title,
+		&i.Body,
+		&i.DueDate,
+		&i.BoardID,
+		&i.ProjectID,
+		&i.StatusID,
+		&i.CreatedOn,
+		&i.IsPrivate,
+		&i.AuthorID,
+		&i.UserUuid,
+		&i.IsIdea,
+	)
+	return i, err
+}
+
 const getStatus = `-- name: GetStatus :one
 SELECT id, status, description, sort_order, color FROM roadmap_statuses WHERE id = $1 AND project_id = $2
 `

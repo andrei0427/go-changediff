@@ -174,6 +174,10 @@ func (s *RoadmapService) GetPostsForBoard(ctx context.Context, boardId int32, pr
 	return s.db.GetPostsForBoard(ctx, data.GetPostsForBoardParams{BoardID: sql.NullInt32{Int32: boardId, Valid: true}, ProjectID: projectId})
 }
 
+func (s *RoadmapService) GetPostById(ctx context.Context, postId int32, projectId int32) (data.RoadmapPost, error) {
+	return s.db.GetRoadmapPost(ctx, data.GetRoadmapPostParams{ID: postId, ProjectID: projectId})
+}
+
 func (s *RoadmapService) InsertPost(ctx context.Context, post models.RoadmapPostModel, authorId *int32, userUuid *uuid.UUID, projectId int32, userLocation *time.Location, isIdea bool) (data.RoadmapPost, error) {
 	toInsert := data.InsertRoadmapPostParams{
 		Title:     post.Title,

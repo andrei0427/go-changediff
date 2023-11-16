@@ -112,9 +112,25 @@
 ></div>
 
 <script type="module" src="/static/lexical/main.9d8dd8ca.js"></script>
-<link rel="stylesheet" href="/static/lexical/main.8197594a.css">
+<link rel="stylesheet" href="/static/lexical/main.8197594a.css" />
 
 <script>
+  window.addEventListener("load", function () {
+    if (!window.location.hash && "{{FirstBoardID}}") {
+      window.location.hash = "{{FirstBoardID}}";
+    } else if (window.location.hash) {
+      document
+        .getElementById("board-content")
+        .dispatchEvent(new Event("boardchange"));
+    }
+  });
+
+  window.onhashchange = function () {
+    document
+      .getElementById("board-content")
+      .dispatchEvent(new Event("boardchange"));
+  };
+
   let ddlBoardOpen = false;
 
   function toggleDropdown(e) {
@@ -163,22 +179,6 @@
     }
 
     return toggleDropdown(event);
-  }
-
-  window.onhashchange = function () {
-    document
-      .getElementById("board-content")
-      .dispatchEvent(new Event("boardchange"));
-  };
-
-  if (!window.location.hash && "{{FirstBoardID}}") {
-    window.location.hash = "{{FirstBoardID}}";
-  } else if (window.location.hash) {
-    setTimeout(() => {
-      document
-        .getElementById("board-content")
-        .dispatchEvent(new Event("boardchange"));
-    }, 500);
   }
 </script>
 

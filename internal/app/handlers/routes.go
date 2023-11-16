@@ -769,8 +769,7 @@ func (a *AppHandler) ComposePost(c *fiber.Ctx) error {
 		form.IsPublished = post.IsPublished.Bool
 
 		if post.ExpiresOn.Valid {
-			expiresOn := post.ExpiresOn.Time.Format(time.DateTime)
-			form.ExpiresOn = expiresOn
+			form.ExpiresOn = post.ExpiresOn.Time.Format(time.DateTime)
 		}
 
 		if post.LabelID.Valid {
@@ -1034,10 +1033,6 @@ func (a *AppHandler) GetBoard(c *fiber.Ctx) error {
 	curUser := c.Locals("user").(*models.SessionUser)
 	boardId := c.QueryInt("id")
 
-	if boardId <= 0 {
-		return fiber.NewError(fiber.StatusBadRequest, "bad id")
-	}
-
 	board, err := a.RoadmapService.GetBoard(c.Context(), int32(boardId), curUser.Project.ID)
 	if err != nil {
 		return fiber.NewError(fiber.StatusNotFound, "board not found")
@@ -1121,6 +1116,27 @@ func (a *AppHandler) GetRoadmapComposeForm(c *fiber.Ctx) error {
 				form.BoardID = &boardID
 			}
 		}
+	} else {
+		post, err := a.RoadmapService.GetPostById(c.Context(), int32(id), curUser.Project.ID)
+		if err != nil {
+			return fiber.NewError(fiber.StatusInternalServerError, "error fetching post")
+		}
+
+		if post.BoardID.Valid {
+			form.BoardID = &post.BoardID.Int32
+		}
+
+		if post.StatusID.Valid {
+			form.StatusID = post.StatusID.Int32
+		}
+
+		if post.DueDate.Valid {
+			form.DueDate = post.DueDate.Time.Format(time.DateTime)
+		}
+
+		form.Content = template.HTMLEscapeString(post.Body)
+		form.Title = post.Title
+		form.IsPrivate = post.IsPrivate
 	}
 
 	statuses = append([]data.GetStatusesRow{{ID: 0, Status: "Unassigned", SortOrder: -1, Color: "#DDDDDD"}}, statuses...)
@@ -1214,6 +1230,7 @@ func (a *AppHandler) SaveRoadmapPost(c *fiber.Ctx) error {
 	}
 
 	savedPost.Body = template.HTMLEscapeString(form.Content)
+	fmt.Println("saved ok")
 	return c.Render(viewPath, fiber.Map{"Post": savedPost, "Statuses": statuses, "Boards": boards, "Success": true, "Message": "Post saved successfully.", "Close": true})
 }
 

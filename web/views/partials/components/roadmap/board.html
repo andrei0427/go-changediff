@@ -1,12 +1,8 @@
-<div class="pt-12" hx-disinherit="hx-vals">
+<div hx-disinherit="hx-vals">
   <div
     class="border-b border-gray-200 pb-5 mb-5 sm:flex sm:items-center sm:justify-between"
   >
     <div>
-      <h3 class="text-base font-semibold leading-6 text-gray-900">
-        {{Board.Name}}
-      </h3>
-
       <p class="mt-2 max-w-4xl text-sm text-gray-500">{{Board.Description}}</p>
     </div>
     <div class="mt-4 flex gap-x-2 md:ml-4 md:mt-0">
@@ -107,7 +103,7 @@
   >
     {%for s in StatusesWithPosts%}
     <li
-      class=" overflow-hidden flex-shrink-0 w-full lg:w-1/2 xl:w-1/5 p-4 min-w-[450px]"
+      class="overflow-hidden flex-shrink-0 w-full lg:w-1/2 xl:w-1/5 p-4 min-w-[450px]"
       style="scroll-snap-align: start"
     >
       <div class="rounded-xl border overflow-hidden border-gray-200">
@@ -151,9 +147,7 @@
           id="status-{{s.Status.ID}}"
           class="draggable-container divide-y space-y-4 divide-gray-100 px-6 py-4 text-sm leading-6 overflow-y-auto h-[60vh]"
         >
-          {%for p in s.Posts%}
-            {%include 'partials/components/roadmap/board_post.html'%}
-          {%endfor%}
+          {%for p in s.Posts%} {%include 'partials/components/roadmap/board_post.html'%} {%endfor%}
         </div>
       </div>
     </li>
@@ -162,6 +156,8 @@
 </div>
 
 <script>
-    hookDraggablePosts();
-    hookDraggableContainerStatuses();
+  hookDraggablePosts();
+  hookDraggableContainerStatuses();
+
+  document.getElementById("selected-board-name").innerHTML = "{{Board.Name}}";
 </script>

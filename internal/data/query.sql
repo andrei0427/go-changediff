@@ -235,7 +235,7 @@ SELECT *
 from roadmap_posts rp 
   left join authors a on a.id = rp.author_id
   left join post_reactions u on u.user_uuid = rp.user_uuid
-where rp.board_id = $1 and rp.project_id = $2
+where (rp.board_id IS NULL OR rp.board_id = $1) and rp.project_id = $2
 order by due_date;
 
 -- name: InsertRoadmapPost :one
@@ -246,6 +246,9 @@ UPDATE roadmap_posts SET title = $1, body = $2, due_date = $3, is_private = $4, 
 
 -- name: GetRoadmapPost :one
 SELECT * FROM roadmap_posts WHERE id = $1 AND project_id = $2;
+
+-- name: UpdateRoadmapPostStatus :one
+UPDATE roadmap_posts SET status_id = $1, board_id = $2 WHERE id = $3 AND project_id = $4 RETURNING *;
 
 -- name: DeleteRoadmapPost :one
 DELETE FROM roadmap_posts WHERE id = $1 AND project_id = $2 RETURNING id;

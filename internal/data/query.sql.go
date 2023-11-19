@@ -729,7 +729,7 @@ SELECT rp.id, title, body, due_date, board_id, rp.project_id, status_id, rp.crea
 from roadmap_posts rp 
   left join authors a on a.id = rp.author_id
   left join post_reactions u on u.user_uuid = rp.user_uuid
-where rp.board_id = $1 and rp.project_id = $2
+where (rp.board_id IS NULL OR rp.board_id = $1) and rp.project_id = $2
 order by due_date
 `
 
@@ -1721,6 +1721,42 @@ func (q *Queries) UpdateRoadmapPost(ctx context.Context, arg UpdateRoadmapPostPa
 		arg.IsPrivate,
 		arg.BoardID,
 		arg.StatusID,
+		arg.ID,
+		arg.ProjectID,
+	)
+	var i RoadmapPost
+	err := row.Scan(
+		&i.ID,
+		&i.Title,
+		&i.Body,
+		&i.DueDate,
+		&i.BoardID,
+		&i.ProjectID,
+		&i.StatusID,
+		&i.CreatedOn,
+		&i.IsPrivate,
+		&i.AuthorID,
+		&i.UserUuid,
+		&i.IsIdea,
+	)
+	return i, err
+}
+
+const updateRoadmapPostStatus = `-- name: UpdateRoadmapPostStatus :one
+UPDATE roadmap_posts SET status_id = $1, board_id = $2 WHERE id = $3 AND project_id = $4 RETURNING id, title, body, due_date, board_id, project_id, status_id, created_on, is_private, author_id, user_uuid, is_idea
+`
+
+type UpdateRoadmapPostStatusParams struct {
+	StatusID  sql.NullInt32
+	BoardID   sql.NullInt32
+	ID        int32
+	ProjectID int32
+}
+
+func (q *Queries) UpdateRoadmapPostStatus(ctx context.Context, arg UpdateRoadmapPostStatusParams) (RoadmapPost, error) {
+	row := q.db.QueryRowContext(ctx, updateRoadmapPostStatus,
+		arg.StatusID,
+		arg.BoardID,
 		arg.ID,
 		arg.ProjectID,
 	)

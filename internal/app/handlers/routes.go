@@ -108,6 +108,7 @@ func InitRoutes(app *app.App) {
 	roadmapPost.Post("/save", appHandler.SaveRoadmapPost)
 	roadmapPost.Delete("/delete/:id", appHandler.DeleteRoadmapPost)
 	roadmapPost.Delete("/confirm-delete/:id", appHandler.ConfirmDeleteRoadmapPost)
+	roadmapPost.Post("/save-status/:boardId/:id/:statusId", appHandler.SaveRoadmapPostStatus)
 
 	settings := admin.Group("/settings")
 	settings.Get("/", appHandler.Settings)
@@ -1054,7 +1055,7 @@ func (a *AppHandler) GetBoard(c *fiber.Ctx) error {
 
 	var unassignedPosts []data.GetPostsForBoardRow
 	for _, p := range posts {
-		if !p.BoardID.Valid {
+		if !p.BoardID.Valid || !p.StatusID.Valid {
 			unassignedPosts = append(unassignedPosts, p)
 		}
 	}
@@ -1148,6 +1149,63 @@ func (a *AppHandler) GetRoadmapComposeForm(c *fiber.Ctx) error {
 
 	return c.Render("partials/components/roadmap/post_slideover", fiber.Map{"form": form, "Statuses": statuses, "Boards": boards})
 
+}
+
+func (a *AppHandler) SaveRoadmapPostStatus(c *fiber.Ctx) error {
+	curUser := c.Locals("user").(*models.SessionUser)
+
+	postId, err := c.ParamsInt("id")
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "could not read post id")
+	}
+
+	post, err := a.RoadmapService.GetPostById(c.Context(), int32(postId), curUser.Project.ID)
+	if err != nil {
+		return fiber.NewError(fiber.StatusForbidden, "post id does not belong to this user")
+	}
+
+	statusId, err := c.ParamsInt("statusId")
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "could not read status id")
+	}
+
+	statuses, err := a.RoadmapService.GetStatuses(c.Context(), curUser.Project.ID)
+	if err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, "error when validating status")
+	}
+	hasStatus := slices.ContainsFunc[data.GetStatusesRow](statuses, func(row data.GetStatusesRow) bool {
+		return row.ID == int32(statusId)
+	})
+	if !hasStatus && statusId > 0 {
+		return fiber.NewError(fiber.StatusForbidden, "status does not belong to this user")
+	}
+
+	boardId, err := c.ParamsInt("boardId")
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "could not read board id")
+	}
+
+	var BoardID *int32
+	isSettingToUnassigned := post.StatusID.Valid && statusId == -1
+	isSettingToAssigned := !post.StatusID.Valid && statusId > -1
+
+	if !isSettingToAssigned && !isSettingToUnassigned && post.BoardID.Valid {
+		BoardID = &post.BoardID.Int32
+	} else if isSettingToAssigned {
+		i32BoardId := int32(boardId)
+		_, err := a.RoadmapService.GetBoard(c.Context(), i32BoardId, curUser.Project.ID)
+		if err != nil {
+			return fiber.NewError(fiber.StatusForbidden, "board does not belong to this user")
+		}
+		BoardID = &i32BoardId
+	}
+
+	saved, err := a.RoadmapService.UpdatePostStatus(c.Context(), int32(max(0, statusId)), BoardID, int32(postId), curUser.Project.ID)
+	if err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, "error saving status")
+	}
+
+	return c.Render("partials/components/roadmap/board_post", fiber.Map{"p": saved, "StatusUpdated": true})
 }
 
 func (a *AppHandler) SaveRoadmapPost(c *fiber.Ctx) error {

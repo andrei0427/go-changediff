@@ -232,6 +232,15 @@ func (s *RoadmapService) DeletePost(ctx context.Context, postId int32, projectId
 	return true, err
 }
 
+func (s *RoadmapService) UpdatePostStatus(ctx context.Context, statusId int32, boardId *int32, postId int32, projectId int32) (data.RoadmapPost, error) {
+	BoardID := sql.NullInt32{Valid: false}
+	if boardId != nil {
+		BoardID = sql.NullInt32{Int32: *boardId, Valid: true}
+	}
+
+	return s.db.UpdateRoadmapPostStatus(ctx, data.UpdateRoadmapPostStatusParams{StatusID: sql.NullInt32{Int32: statusId, Valid: statusId > 0}, BoardID: BoardID, ID: postId, ProjectID: projectId})
+}
+
 func (s *RoadmapService) UpdatePost(ctx context.Context, post models.RoadmapPostModel, projectId int32, userLocation *time.Location) (data.RoadmapPost, error) {
 	if post.ID == nil {
 		return data.RoadmapPost{}, errors.New("ID is required when updating")

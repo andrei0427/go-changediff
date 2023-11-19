@@ -103,8 +103,11 @@ func InitRoutes(app *app.App) {
 	roadmap := admin.Group("/roadmap")
 	roadmap.Get("/", appHandler.GetRoadmap)
 	roadmap.Get("/board", appHandler.GetBoard)
-	roadmap.Get("/compose", appHandler.GetRoadmapComposeForm)
-	roadmap.Post("/save-post", appHandler.SaveRoadmapPost)
+	roadmapPost := roadmap.Group("/post")
+	roadmapPost.Get("/compose", appHandler.GetRoadmapComposeForm)
+	roadmapPost.Post("/save", appHandler.SaveRoadmapPost)
+	roadmapPost.Delete("/delete/:id", appHandler.DeleteRoadmapPost)
+	roadmapPost.Delete("/confirm-delete/:id", appHandler.ConfirmDeleteRoadmapPost)
 
 	settings := admin.Group("/settings")
 	settings.Get("/", appHandler.Settings)
@@ -832,6 +835,7 @@ func (a *AppHandler) DeletePost(c *fiber.Ctx) error {
 	}
 
 	if _, err := a.PostService.DeletePost(c.Context(), int32(id), curUser.Project.ID); err != nil {
+		fmt.Println(err.Error())
 		return c.Render("partials/components/banner", fiber.Map{"Message": "An error occured when deleting the post"})
 	}
 
@@ -1137,6 +1141,7 @@ func (a *AppHandler) GetRoadmapComposeForm(c *fiber.Ctx) error {
 		form.Content = template.HTMLEscapeString(post.Body)
 		form.Title = post.Title
 		form.IsPrivate = post.IsPrivate
+		form.ID = &post.ID
 	}
 
 	statuses = append([]data.GetStatusesRow{{ID: 0, Status: "Unassigned", SortOrder: -1, Color: "#DDDDDD"}}, statuses...)
@@ -1230,8 +1235,37 @@ func (a *AppHandler) SaveRoadmapPost(c *fiber.Ctx) error {
 	}
 
 	savedPost.Body = template.HTMLEscapeString(form.Content)
-	fmt.Println("saved ok")
 	return c.Render(viewPath, fiber.Map{"Post": savedPost, "Statuses": statuses, "Boards": boards, "Success": true, "Message": "Post saved successfully.", "Close": true})
+}
+
+func (a *AppHandler) DeleteRoadmapPost(c *fiber.Ctx) error {
+	curUser := c.Locals("user").(*models.SessionUser)
+
+	id, err := c.ParamsInt("id")
+	if err != nil {
+		return c.Render("partials/components/banner", fiber.Map{"Message": "Invalid id parameter supplied"})
+	}
+
+	if _, err := a.RoadmapService.DeletePost(c.Context(), int32(id), curUser.Project.ID); err != nil {
+		return c.Render("partials/components/banner", fiber.Map{"Message": "An error occured when deleting the post"})
+	}
+
+	return c.Render("partials/components/banner", fiber.Map{"Message": "Post successfully deleted", "Success": true})
+}
+
+func (a *AppHandler) ConfirmDeleteRoadmapPost(c *fiber.Ctx) error {
+	id, err := c.ParamsInt("id")
+	if err != nil {
+		return fiber.NewError(400, "Invalid id parameter supplied")
+	}
+
+	return c.Render("partials/components/delete_confirm_modal", fiber.Map{"Title": "Confirm deletion",
+		"Body":        "Are you sure you want to delete this post",
+		"EndpointUri": "/admin/roadmap/post/delete/" + fmt.Sprint(id),
+		"ElementType": "table",
+		"ElementId":   "post-" + fmt.Sprint(id),
+		"IsSlideOver": true,
+	})
 }
 
 func (a *AppHandler) GetUserAnalytics(c *fiber.Ctx) error {

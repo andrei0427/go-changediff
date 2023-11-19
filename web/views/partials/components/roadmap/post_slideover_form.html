@@ -1,12 +1,12 @@
 <form
-  hx-post="/admin/roadmap/save-post"
+  hx-post="/admin/roadmap/post/save"
   hx-trigger="submit"
   hx-swap="outerHTML"
   hx-encoding="multipart/form-data"
   id="post-form"
 >
-  {%if Post.ID%}
-  <input type="hidden" name="id" value="{{Post.ID}}" />
+  {%if form.ID%}
+  <input type="hidden" name="id" value="{{form.ID}}" />
   {%endif%}
   <div class="px-4 sm:px-6">
     <div class="flex items-start justify-between">
@@ -14,7 +14,7 @@
         class="text-base font-semibold leading-6 text-gray-900"
         id="slide-over-title"
       >
-        {%if Post.ID%}Edit{%else%}Create{%endif%} Post
+        {%if form.ID%}Edit{%else%}Create{%endif%} Post
       </h2>
       <div class="ml-3 flex h-7 items-center">
         <button
@@ -228,7 +228,7 @@
               />
             </div>
 
-            <div class="col-span-2">
+            {% comment %} <div class="col-span-2">
               <label
                 for="expires_on"
                 class="block text-sm font-medium leading-6 text-gray-900"
@@ -250,7 +250,7 @@
                 </p>
                 {% endif %}
               </div>
-            </div>
+            </div> {% endcomment %}
 
             <div class="col-span-2">
               <div class="flex items-start">

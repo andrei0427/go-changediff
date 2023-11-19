@@ -37,7 +37,7 @@
         Settings
       </a>
       <button
-        hx-get="/admin/roadmap/compose?boardId={{Board.ID}}"
+        hx-get="/admin/roadmap/post/compose?boardId={{Board.ID}}"
         hx-swap="beforeend"
         hx-target="body"
         hx-params="not id"
@@ -125,7 +125,7 @@
           </div>
 
           <button
-            hx-get="/admin/roadmap/compose?boardId={{Board.ID}}&statusId={{s.Status.ID}}"
+            hx-get="/admin/roadmap/post/compose?boardId={{Board.ID}}&statusId={{s.Status.ID}}"
             hx-swap="beforeend"
             hx-target="body"
             class="inline-flex items-center text-sm font-semibold text-emerald focus-visible:outline-emerald"
@@ -150,7 +150,7 @@
           class="divide-y space-y-4 divide-gray-100 px-6 py-4 text-sm leading-6 overflow-y-auto h-[60vh]"
         >
           {%for p in s.Posts%}
-          <div>
+          <div id="post-{{p.ID}}">
             <div
               class="relative flex space-x-3 rounded-lg border border-gray-300 bg-white px-6 py-5 shadow-sm focus-within:ring-2 focus-within:ring-emerald focus-within:ring-offset-2 hover:border-gray-400"
             >
@@ -162,7 +162,7 @@
                 />
               </div>
               <div
-                hx-get="/admin/roadmap/compose?id={{p.ID}}"
+                hx-get="/admin/roadmap/post/compose?id={{p.ID}}"
                 hx-params="not id"
                 hx-swap="beforeend"
                 hx-target="body"
@@ -199,27 +199,6 @@
               <h3 class="mt-2 text-sm font-semibold text-gray-900">
                 Nothing here yet.
               </h3>
-              <div class="mt-6">
-                <button
-                  hx-get="/admin/roadmap/compose?id=0&boardId={{Board.ID}}&statusId={{s.Status.ID}}"
-                  hx-swap="beforeend"
-                  hx-target="body"
-                  hx-params="not id"
-                  class="inline-flex items-center rounded-md bg-emerald px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald"
-                >
-                  <svg
-                    class="-ml-0.5 mr-1.5 h-5 w-5"
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
-                    aria-hidden="true"
-                  >
-                    <path
-                      d="M10.75 4.75a.75.75 0 00-1.5 0v4.5h-4.5a.75.75 0 000 1.5h4.5v4.5a.75.75 0 001.5 0v-4.5h4.5a.75.75 0 000-1.5h-4.5v-4.5z"
-                    />
-                  </svg>
-                  New
-                </button>
-              </div>
             </div>
           </div>
           {%endfor%}

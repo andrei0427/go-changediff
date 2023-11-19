@@ -216,6 +216,22 @@ func (s *RoadmapService) InsertPost(ctx context.Context, post models.RoadmapPost
 	return s.db.InsertRoadmapPost(ctx, toInsert)
 }
 
+func (s *RoadmapService) DeletePost(ctx context.Context, postId int32, projectId int32) (bool, error) {
+	tx, err := s.sql.Begin()
+	if err != nil {
+		return false, err
+	}
+
+	defer tx.Rollback()
+
+	qtx := s.db.WithTx(tx)
+	qtx.DeleteRoadmapPostCategoriesByPost(ctx, data.DeleteRoadmapPostCategoriesByPostParams{RoadmapPostID: postId, ProjectID: projectId})
+	_, err = qtx.DeleteRoadmapPost(ctx, data.DeleteRoadmapPostParams{ID: postId, ProjectID: projectId})
+	tx.Commit()
+
+	return true, err
+}
+
 func (s *RoadmapService) UpdatePost(ctx context.Context, post models.RoadmapPostModel, projectId int32, userLocation *time.Location) (data.RoadmapPost, error) {
 	if post.ID == nil {
 		return data.RoadmapPost{}, errors.New("ID is required when updating")

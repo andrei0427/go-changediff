@@ -10,6 +10,12 @@
         document.getElementById("{{ElementId}}").remove();
       }
 
+      if (
+        Boolean("{{ IsSlideOver }}" && typeof closeSlideOver === "function")
+      ) {
+        closeSlideOver();
+      }
+
       hideModal();
     }
 
@@ -123,6 +129,7 @@
         </div>
         <div class="mt-5 sm:mt-4 sm:flex sm:flex-row-reverse">
           <button
+            autofocus
             type="button"
             hx-delete="{{EndpointUri}}"
             hx-on::after-request="confirmDelete()"

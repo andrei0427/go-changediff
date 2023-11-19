@@ -44,7 +44,7 @@ func NewApp() *App {
 
 	authorService := services.NewAuthorService(dbConn)
 	projectService := services.NewProjectService(dbConn)
-	postService := services.NewPostService(dbConn)
+	postService := services.NewPostService(dbConn, db)
 	labelService := services.NewLabelService(dbConn)
 	roadmapService := services.NewRoadmapService(dbConn, db)
 	cdnService := services.NewCDNService()

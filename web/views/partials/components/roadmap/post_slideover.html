@@ -23,7 +23,7 @@
       >
         {% include "partials/components/roadmap/post_slideover_form.html" %}
 
-        <div class="flex flex-shrink-0 justify-end px-4 py-4">
+        <div class="flex flex-shrink-0 gap-x-4 justify-end px-4 py-4">
           <button
             type="button"
             onclick="closeSlideOver()"
@@ -32,9 +32,18 @@
             Cancel
           </button>
           <button
+            type="button"
+            hx-delete="/admin/roadmap/post/confirm-delete/{{form.ID}}"
+            hx-target="body"
+            hx-swap="beforeend"
+            class="rounded-md bg-white px-3 py-2 text-sm font-semibold text-red-700 shadow-sm ring-1 ring-inset ring-red-700 hover:bg-red-700 hover:text-white"
+          >
+            Delete
+          </button>
+          <button
             type="submit"
             form="post-form"
-            class="ml-4 inline-flex justify-center rounded-md bg-emerald px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald"
+            class="inline-flex justify-center rounded-md bg-emerald px-3 py-2 text-sm font-semibold text-white shadow-sm hover:text-emerald hover:bg-white hover:outline-emerald hover:outline hover:outline-1 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald"
           >
             Save
           </button>

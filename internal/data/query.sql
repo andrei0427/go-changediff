@@ -144,11 +144,17 @@ DELETE FROM posts WHERE id = $1 AND project_id = $2 RETURNING id;
 -- name: InsertComment :one
 INSERT INTO post_comments (user_uuid, comment, post_id) VALUES ($1, $2, $3) RETURNING *;
 
+-- name: DeleteComments :many
+DELETE FROM post_comments pc USING posts p WHERE pc.post_id = p.id AND pc.post_id = $1 AND p.project_id = $2 RETURNING pc.id;
+
 -- name: InsertReaction :one
 INSERT INTO post_reactions (user_uuid, ip_addr, user_agent, locale, reaction, user_id, user_name, user_email, user_role, user_data, post_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *;
 
 -- name: UpdateReaction :one
 UPDATE post_reactions SET reaction = $1 WHERE user_uuid = $2 AND post_id = $3 AND reaction IS NOT NULL RETURNING *;
+
+-- name: DeleteReactions :many
+DELETE FROM post_reactions pr USING posts p WHERE p.id = pr.post_id AND pr.post_id = $1 AND p.project_id = $2 RETURNING pr.id;
 
 -- name: GetReaction :many
 SELECT reaction FROM post_reactions WHERE user_uuid = $1 AND post_id = $2 AND reaction IS NOT NULL;
@@ -240,3 +246,9 @@ UPDATE roadmap_posts SET title = $1, body = $2, due_date = $3, is_private = $4, 
 
 -- name: GetRoadmapPost :one
 SELECT * FROM roadmap_posts WHERE id = $1 AND project_id = $2;
+
+-- name: DeleteRoadmapPost :one
+DELETE FROM roadmap_posts WHERE id = $1 AND project_id = $2 RETURNING id;
+
+-- name: DeleteRoadmapPostCategoriesByPost :many
+DELETE FROM roadmap_post_categories where roadmap_post_id = $1 AND project_id = $2 RETURNING id;

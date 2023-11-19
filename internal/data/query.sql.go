@@ -133,6 +133,38 @@ func (q *Queries) DeleteBoard(ctx context.Context, arg DeleteBoardParams) (int32
 	return id, err
 }
 
+const deleteComments = `-- name: DeleteComments :many
+DELETE FROM post_comments pc USING posts p WHERE pc.post_id = p.id AND pc.post_id = $1 AND p.project_id = $2 RETURNING pc.id
+`
+
+type DeleteCommentsParams struct {
+	PostID    int32
+	ProjectID int32
+}
+
+func (q *Queries) DeleteComments(ctx context.Context, arg DeleteCommentsParams) ([]int32, error) {
+	rows, err := q.db.QueryContext(ctx, deleteComments, arg.PostID, arg.ProjectID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []int32
+	for rows.Next() {
+		var id int32
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		items = append(items, id)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const deleteLabel = `-- name: DeleteLabel :one
 DELETE FROM labels WHERE id = $1 AND project_id = $2 RETURNING id
 `
@@ -163,6 +195,86 @@ func (q *Queries) DeletePost(ctx context.Context, arg DeletePostParams) (int32, 
 	var id int32
 	err := row.Scan(&id)
 	return id, err
+}
+
+const deleteReactions = `-- name: DeleteReactions :many
+DELETE FROM post_reactions pr USING posts p WHERE p.id = pr.post_id AND pr.post_id = $1 AND p.project_id = $2 RETURNING pr.id
+`
+
+type DeleteReactionsParams struct {
+	PostID    int32
+	ProjectID int32
+}
+
+func (q *Queries) DeleteReactions(ctx context.Context, arg DeleteReactionsParams) ([]int32, error) {
+	rows, err := q.db.QueryContext(ctx, deleteReactions, arg.PostID, arg.ProjectID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []int32
+	for rows.Next() {
+		var id int32
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		items = append(items, id)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const deleteRoadmapPost = `-- name: DeleteRoadmapPost :one
+DELETE FROM roadmap_posts WHERE id = $1 AND project_id = $2 RETURNING id
+`
+
+type DeleteRoadmapPostParams struct {
+	ID        int32
+	ProjectID int32
+}
+
+func (q *Queries) DeleteRoadmapPost(ctx context.Context, arg DeleteRoadmapPostParams) (int32, error) {
+	row := q.db.QueryRowContext(ctx, deleteRoadmapPost, arg.ID, arg.ProjectID)
+	var id int32
+	err := row.Scan(&id)
+	return id, err
+}
+
+const deleteRoadmapPostCategoriesByPost = `-- name: DeleteRoadmapPostCategoriesByPost :many
+DELETE FROM roadmap_post_categories where roadmap_post_id = $1 AND project_id = $2 RETURNING id
+`
+
+type DeleteRoadmapPostCategoriesByPostParams struct {
+	RoadmapPostID int32
+	ProjectID     int32
+}
+
+func (q *Queries) DeleteRoadmapPostCategoriesByPost(ctx context.Context, arg DeleteRoadmapPostCategoriesByPostParams) ([]int32, error) {
+	rows, err := q.db.QueryContext(ctx, deleteRoadmapPostCategoriesByPost, arg.RoadmapPostID, arg.ProjectID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []int32
+	for rows.Next() {
+		var id int32
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		items = append(items, id)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const deleteStatus = `-- name: DeleteStatus :one

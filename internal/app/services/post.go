@@ -15,11 +15,12 @@ import (
 )
 
 type PostService struct {
-	db *data.Queries
+	db  *data.Queries
+	sql *sql.DB
 }
 
-func NewPostService(db *data.Queries) *PostService {
-	return &PostService{db: db}
+func NewPostService(db *data.Queries, sql *sql.DB) *PostService {
+	return &PostService{db: db, sql: sql}
 }
 
 func (s *PostService) GetPostCountForProject(ctx context.Context, projectId int32) (int64, error) {
@@ -137,8 +138,33 @@ func (s *PostService) InsertPost(ctx context.Context, post models.PostModel, aut
 	return s.db.InsertPost(ctx, toInsert)
 }
 
-func (s *PostService) DeletePost(ctx context.Context, postId int32, projectId int32) (int32, error) {
-	return s.db.DeletePost(ctx, data.DeletePostParams{ID: postId, ProjectID: projectId})
+func (s *PostService) DeletePost(ctx context.Context, postId int32, projectId int32) (bool, error) {
+
+	tx, err := s.sql.Begin()
+	if err != nil {
+		return false, err
+	}
+
+	defer tx.Rollback()
+
+	qtx := s.db.WithTx(tx)
+	_, err = qtx.DeleteComments(ctx, data.DeleteCommentsParams{PostID: postId, ProjectID: projectId})
+	if err != nil {
+		return false, err
+	}
+
+	_, err = qtx.DeleteReactions(ctx, data.DeleteReactionsParams{PostID: postId, ProjectID: projectId})
+	if err != nil {
+		return false, err
+	}
+
+	_, err = qtx.DeletePost(ctx, data.DeletePostParams{ID: postId, ProjectID: projectId})
+	if err != nil {
+		return false, err
+	}
+
+	tx.Commit()
+	return true, nil
 }
 
 func (s *PostService) UpdatePost(ctx context.Context, post models.PostModel, projectId int32, userLocation *time.Location) (data.Post, error) {

@@ -34,7 +34,7 @@ FROM post_reactions r
   left join post_reactions ri on r.user_uuid = ri.user_uuid and r.post_id = ri.post_id and ri.reaction is not null 
   WHERE p.project_id = $1 
     and ($2 = r.user_id or $2 = '' or $2 is null)
-    and ($3::varchar = r.user_uuid::varchar or $3 = '' or $3 is null)
+    and ($3::text = r.user_uuid::text or $3 = '' or $3 is null)
     and r.reaction is null 
 GROUP BY r.user_id, r.user_uuid, UserName, UserEmail, UserRole, r.locale, UserData
 `
@@ -539,7 +539,7 @@ SELECT p.id, p.title, c.comment, c.created_on, r.locale, ur.reaction, REPLACE(r.
 		LEFT JOIN post_reactions ur ON ur.user_uuid = c.user_uuid AND ur.post_id = p.id AND ur.reaction IS NOT NULL 
 WHERE p.project_id = $1
     and ($2 = r.user_id or $2 = '' or $2 is null)
-    and ($3::varchar = r.user_uuid::varchar or $3 = '' or $3 is null)
+    and ($3::text = r.user_uuid::text or $3 = '' or $3 is null)
     and (p.id = $4 OR $4 = 0)
 ORDER BY c.created_on DESC
 `
@@ -619,7 +619,7 @@ FROM posts p
   JOIN post_reactions r ON r.post_id = p.id 
 WHERE p.project_id = $1 
     and ($2 = r.user_id or $2 = '' or $2 is null)
-    and ($3::varchar = r.user_uuid::varchar or $3 = '' or $3 is null)
+    and ($3::text = r.user_uuid::text or $3 = '' or $3 is null)
     and (p.id = $4 OR $4 = 0)
 GROUP BY r.reaction 
 ORDER BY r.reaction NULLS FIRST

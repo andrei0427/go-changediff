@@ -1,7 +1,7 @@
 CREATE TABLE IF NOT EXISTS roadmap_boards (
     id SERIAL PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    is_private boolean not null default(false) ,
+    name text NOT NULL,
+    is_private boolean not null default(false),
     description text not null default '',
 
     created_on timestamp NOT NULL DEFAULT current_timestamp,
@@ -10,8 +10,8 @@ CREATE TABLE IF NOT EXISTS roadmap_boards (
 
 CREATE TABLE IF NOT EXISTS roadmap_statuses (
     id SERIAL PRIMARY KEY,
-    status VARCHAR(255) NOT NULL,
-    color VARCHAR(7) NOT NULL,
+    status text NOT NULL,
+    color text NOT NULL,
     description text not null default '',
 
     created_on timestamp NOT NULL DEFAULT current_timestamp,

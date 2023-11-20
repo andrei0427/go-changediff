@@ -1,8 +1,8 @@
 -- Create Labels table
 CREATE TABLE IF NOT EXISTS labels (
     id SERIAL PRIMARY KEY,
-    label VARCHAR(255) NOT NULL,
-	color VARCHAR(255) NOT NULL,
+    label text NOT NULL,
+	color text NOT NULL,
 
     project_id integer REFERENCES projects(id) NOT NULL,
     created_on timestamp NOT NULL DEFAULT current_timestamp,

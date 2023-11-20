@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS subscriptions (
 	price decimal not null,
 
 	tier int not null,	
-	session_id varchar(255) null,
+	session_id text null,
 	success boolean not null,
 	stopped boolean not null default(false),
 	message text null,

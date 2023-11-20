@@ -1,7 +1,7 @@
 CREATE TABLE IF NOT EXISTS roadmap_categories (
 	id SERIAL PRIMARY KEY,
-	name varchar(255) NOT NULL,
-	emoji varchar(1) NOT NULL,
+	name text NOT NULL,
+	emoji text NOT NULL,
 	is_private boolean not null default(false),
 
 	project_id INT REFERENCES projects(id) NOT NULL,
@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS roadmap_categories (
 ALTER TABLE roadmap_statuses ADD COLUMN is_private boolean not null default(false);
 ALTER TABLE roadmap_posts ADD COLUMN is_private boolean not null default(false);
 ALTER TABLE roadmap_posts ADD COLUMN author_id int references authors(id);
-ALTER TABLE roadmap_posts ADD COLUMN user_uuid uuid null;
+ALTER TABLE roadmap_posts ADD COLUMN viewer_id int references viewers(id) null;
 ALTER TABLE roadmap_posts ADD COLUMN is_idea boolean not null default(false);
 
 CREATE TABLE IF NOT EXISTS roadmap_post_categories (

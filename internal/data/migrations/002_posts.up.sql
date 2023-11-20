@@ -1,9 +1,9 @@
 -- Create Authors table
 CREATE TABLE IF NOT EXISTS authors (
     id SERIAL PRIMARY KEY,
-	first_name VARCHAR(255) NOT NULL,
-	last_name VARCHAR(255) NOT NULL,
-	picture_url VARCHAR(2048) NULL,
+	first_name text NOT NULL,
+	last_name text NOT NULL,
+	picture_url text NULL,
 
     user_id uuid REFERENCES auth.users(id) NOT NULL,
     project_id integer REFERENCES projects(id) NOT NULL,
@@ -15,7 +15,7 @@ CREATE TABLE IF NOT EXISTS authors (
 -- Create Posts table
 CREATE TABLE IF NOT EXISTS posts (
     id SERIAL PRIMARY KEY,
-    title VARCHAR(255) NOT NULL,
+    title text NOT NULL,
 	body TEXT NOT NULL,
     published_on timestamp NOT NULL,
 

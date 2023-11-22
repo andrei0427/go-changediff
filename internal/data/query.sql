@@ -12,10 +12,10 @@ INSERT INTO projects (name, description, accent_color, logo_url, app_key, user_i
 UPDATE projects SET name = $1, description = $2, accent_color = $3, logo_url = $4, updated_on = CURRENT_TIMESTAMP WHERE id = $5 AND user_id = $6 RETURNING *;
 
 -- name: DashboardQuery :one
-SELECT COUNT(p.id), COUNT(rv.id), COUNT(rc.id) 
+SELECT COUNT(p.id), COUNT(civ.id), COUNT(cic.id) 
   FROM posts p 
-    left join post_reactions rv on p.id = rv.id and rv.reaction is null 
-    left join post_reactions rc on p.id = rc.id and (rc.id is null or rc.reaction is not null) 
+    left join changelog_interactions civ on p.id = civ.post_id and (civ.id is null or civ.interaction_type_id = 1)
+    left join changelog_interactions cic on p.id = cic.post_id and (cic.id is null or cic.interaction_type_id = 3) 
   WHERE p.project_id = $1;
 
 -- LABELS --
@@ -35,7 +35,6 @@ UPDATE posts SET label_id = NULL WHERE id = $1 AND project_id = $2 RETURNING id;
 DELETE FROM labels WHERE id = $1 AND project_id = $2 RETURNING id;
 
 -- AUTHOR --
-
 -- name: GetAuthorByUser :many
 SELECT a.*, 
    s.id, s.subscription_start_date, s.is_annual, s.tier, 
@@ -69,6 +68,19 @@ INSERT INTO authors (first_name, last_name, picture_url, user_id, project_id) VA
 -- name: UpdateAuthor :one
 UPDATE authors SET first_name = $1, last_name = $2, picture_url = $3 WHERE user_id = $4 and project_id = $5 RETURNING *;
 
+-- VIEWER --
+-- name: InsertViewer :one
+INSERT INTO viewers (user_uuid, ip_addr, user_agent, locale, user_data, user_id, user_name, user_email, user_role, project_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *;
+
+-- name: GetViewer :many
+SELECT * FROM viewers WHERE user_uuid = $1 OR (user_id IS NULL OR user_id = $2) LIMIT 1;
+
+-- name: GetViewersByProject :many
+SELECT * FROM viewers WHERE project_id = $1 ORDER BY created_on DESC;
+
+-- name: UpdateViewer :one
+UPDATE viewers SET user_uuid = $1, ip_addr = $2, user_agent = $3, locale = $4, user_data = $5, user_id = $6, user_name = $7, user_email = $8, user_role = $9 WHERE id = $10 RETURNING *;
+
 -- POSTS --
 -- name: GetPostCount :one
 SELECT COUNT(id) total_posts FROM posts WHERE project_id = $1;
@@ -81,7 +93,7 @@ SELECT p.id, p.title, p.published_on, p.is_published, p.expires_on, l.label, l.c
       ELSE 0 END AS status, 
   COUNT(r.id) as ViewCount FROM posts p 
        left join labels l on p.label_id = l.id 
-       left join post_reactions r on (p.id = r.post_id and r.reaction is null) OR r.id is null 
+       left join changelog_interactions r on (p.id = r.post_id and r.interaction_type_id = 1) OR r.id is null 
   WHERE p.project_id = $1
   GROUP BY 1,2,3,4,5,6,7
   ORDER BY p.published_on DESC;
@@ -92,37 +104,42 @@ SELECT p.*, l.label as Label FROM posts p LEFT JOIN labels l on p.label_id = l.i
 
 -- name: GetPostReactions :many
 SELECT 
-  CASE WHEN r.reaction IS NULL THEN '' ELSE r.reaction END as Reaction, 
-  COUNT(r.*) 
-FROM posts p 
-  JOIN post_reactions r ON r.post_id = p.id 
-WHERE p.project_id = $1 
-    and ($2 = r.user_id or $2 = '' or $2 is null)
-    and ($3::text = r.user_uuid::text or $3 = '' or $3 is null)
-    and (p.id = $4 OR $4 = 0)
-GROUP BY r.reaction 
-ORDER BY r.reaction NULLS FIRST;
+  CASE WHEN ci.content IS NULL THEN '' ELSE ci.content END as Reaction, 
+  COUNT(ci.*) 
+FROM changelog_interactions ci 
+WHERE ci.project_id = $1 
+  AND ($2 = 0 OR ci.post_id = $2)
+  AND ($3 = 0 OR ci.viewer_id = $3)
+GROUP BY ci.content
+ORDER BY ci.content NULLS FIRST;
 
 -- name: GetPostComments :many
-SELECT p.id, p.title, c.comment, c.created_on, r.locale, ur.reaction, REPLACE(r.user_name, '"', '') as UserName, REPLACE(r.user_role, '"', '') as UserRole
+SELECT p.id, 
+       p.title, 
+       ci.content, 
+       ci.created_on, 
+       v.locale, 
+       r.content as Reaction, 
+       REPLACE(v.user_name, '"', '') as UserName, 
+       REPLACE(v.user_role, '"', '') as UserRole
 	FROM posts p 
-		JOIN post_comments c ON c.post_id = p.id 
-		JOIN post_reactions r ON r.user_uuid = c.user_uuid AND r.post_id = p.id AND r.reaction IS NULL 
-		LEFT JOIN post_reactions ur ON ur.user_uuid = c.user_uuid AND ur.post_id = p.id AND ur.reaction IS NOT NULL 
+		JOIN changelog_interactions ci ON ci.post_id = p.id AND ci.interaction_type_id = 3
+		JOIN viewers v ON v.id = ci.viewer_id 
+		LEFT JOIN changelog_interactions r ON (r.post_id = p.id AND r.viewer_id = v.id AND r.interaction_type_id = 2) OR r.id is null
 WHERE p.project_id = $1
-    and ($2 = r.user_id or $2 = '' or $2 is null)
-    and ($3::text = r.user_uuid::text or $3 = '' or $3 is null)
-    and (p.id = $4 OR $4 = 0)
-ORDER BY c.created_on DESC;
+    and ($2 = 0 OR v.id = $2)
+    and ($3 = 0 OR p.id = $3)
+ORDER BY ci.created_on DESC;
 
 -- name: GetPublishedPagedPosts :many
-SELECT post.*, l.label, l.color, a.first_name, a.last_name, a.picture_url, r.reaction, CASE WHEN v.id IS NULL THEN 0 ELSE 1 END as Viewed
+SELECT distinct post.*, l.label, l.color, a.first_name, a.last_name, a.picture_url, r.content as Reaction, 
+      CASE WHEN v.id IS NULL THEN 0 ELSE 1 END as Viewed
   FROM posts post 
     join projects proj on post.project_id = proj.id 
-	join authors a on a.id = post.author_id 
-	left join labels l on post.label_id = l.id or post.label_id is null 
-	left join post_reactions r on (r.post_id = post.id and r.user_uuid = $4 and r.reaction is not null) or r.id is null 
-	left join post_reactions v on (v.post_id = post.id and v.user_uuid = $4 and v.reaction is null) or v.id is null 
+	  join authors a on a.id = post.author_id 
+    left join labels l on post.label_id = l.id or post.label_id is null 
+    left join changelog_interactions r on (r.post_id = post.id and r.interaction_type_id = 2 and r.viewer_id = $4) or r.id is null
+    left join changelog_interactions v on (v.post_id = post.id and v.interaction_type_id = 1 and v.viewer_id = $4) or v.id is null 
 WHERE proj.app_key = $1 
    AND post.published_on <= CURRENT_TIMESTAMP 
    AND (post.expires_on IS NULL OR post.expires_on >= CURRENT_TIMESTAMP)
@@ -141,50 +158,41 @@ UPDATE posts SET title = $1, body = $2, published_on = $3, is_published = $4, la
 -- name: DeletePost :one
 DELETE FROM posts WHERE id = $1 AND project_id = $2 RETURNING id;
 
--- name: InsertComment :one
-INSERT INTO post_comments (user_uuid, comment, post_id) VALUES ($1, $2, $3) RETURNING *;
+-- name: DeleteInteractions :many
+DELETE FROM changelog_interactions WHERE post_id = $1 AND project_id = $2 RETURNING id;
 
--- name: DeleteComments :many
-DELETE FROM post_comments pc USING posts p WHERE pc.post_id = p.id AND pc.post_id = $1 AND p.project_id = $2 RETURNING pc.id;
+-- name: InsertInteraction :one
+INSERT INTO changelog_interactions (content, post_id, interaction_type_id, viewer_id, project_id) VALUES ($1, $2, $3, $4, $5) RETURNING *;
 
--- name: InsertReaction :one
-INSERT INTO post_reactions (user_uuid, ip_addr, user_agent, locale, reaction, user_id, user_name, user_email, user_role, user_data, post_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *;
-
--- name: UpdateReaction :one
-UPDATE post_reactions SET reaction = $1 WHERE user_uuid = $2 AND post_id = $3 AND reaction IS NOT NULL RETURNING *;
-
--- name: DeleteReactions :many
-DELETE FROM post_reactions pr USING posts p WHERE p.id = pr.post_id AND pr.post_id = $1 AND p.project_id = $2 RETURNING pr.id;
+-- name: UpdateInteraction :one
+UPDATE changelog_interactions SET content = $1 WHERE viewer_id = $2 AND post_id = $3 AND interaction_type_id = $4 RETURNING *;
 
 -- name: GetReaction :many
-SELECT reaction FROM post_reactions WHERE user_uuid = $1 AND post_id = $2 AND reaction IS NOT NULL;
+SELECT content FROM changelog_interactions WHERE post_id = $1 AND viewer_id = $2 AND project_id = $3 AND interaction_type_id = 2;
 
 -- name: UserViewed :one
-SELECT COUNT(id) FROM post_reactions WHERE user_uuid = $1 AND post_id = $2 AND reaction IS NULL;
+SELECT COUNT(id) FROM changelog_interactions WHERE post_id = $1 and viewer_id = $2 AND interaction_type_id = 1;
 
 -- name: AnalyticsUsers :many
 SELECT DISTINCT 
-   COALESCE(REPLACE(r.user_id, '"', ''), 'N/A') as UserID,
-   r.user_uuid,
-   COALESCE(REPLACE(r.user_name, '"', ''), 'User') as UserName, 
-   COALESCE(REPLACE(r.user_email, '"', ''), 'N/A') as UserEmail, 
-   COALESCE(REPLACE(r.user_role, '"', ''), 'N/A') as UserRole, 
-   r.locale,
-   CAST(STRING_AGG(distinct r.ip_addr, ',') as text) as IPAddress,
-   CAST(STRING_AGG(distinct r.user_agent, ',') as text) as UserAgent,
-   CASE WHEN r.user_data IS NOT NULL THEN CAST(r.user_data as text) ELSE NULL END as UserData,
-   COUNT(DISTINCT r.id) as ViewCount, 
-   COUNT(DISTINCT ri.id) as ImpressionCount, 
-   COUNT(DISTINCT rc.id) as CommentCount 
-FROM post_reactions r 
-  JOIN posts p on p.id = r.post_id 
-  left join post_comments rc ON r.user_uuid = rc.user_uuid 
-  left join post_reactions ri on r.user_uuid = ri.user_uuid and r.post_id = ri.post_id and ri.reaction is not null 
-  WHERE p.project_id = $1 
-    and ($2 = r.user_id or $2 = '' or $2 is null)
-    and ($3::text = r.user_uuid::text or $3 = '' or $3 is null)
-    and r.reaction is null 
-GROUP BY r.user_id, r.user_uuid, UserName, UserEmail, UserRole, r.locale, UserData;
+   COALESCE(REPLACE(v.user_id, '"', ''), 'N/A') as UserID,
+   v.user_uuid,
+   COALESCE(REPLACE(v.user_name, '"', ''), 'User') as UserName, 
+   COALESCE(REPLACE(v.user_email, '"', ''), 'N/A') as UserEmail, 
+   COALESCE(REPLACE(v.user_role, '"', ''), 'N/A') as UserRole, 
+   v.locale,
+   CAST(STRING_AGG(distinct v.ip_addr, ',') as text) as IPAddress,
+   CAST(STRING_AGG(distinct v.user_agent, ',') as text) as UserAgent,
+   CASE WHEN v.user_data IS NOT NULL THEN CAST(v.user_data as text) ELSE NULL END as UserData,
+   COUNT(DISTINCT civ.id) as ViewCount, 
+   COUNT(DISTINCT cir.id) as ImpressionCount, 
+   COUNT(DISTINCT cic.id) as CommentCount 
+FROM viewers v 
+  LEFT JOIN changelog_interactions civ on (civ.project_id = $1 and civ.viewer_id = v.id and civ.interaction_type_id = 1) or civ.id is null
+  LEFT JOIN changelog_interactions cir on (cir.project_id = $1 and cir.viewer_id = v.id and cir.interaction_type_id = 2) or cir.id is null
+  LEFT JOIN changelog_interactions cic on (cic.project_id = $1 and cic.viewer_id = v.id and cic.interaction_type_id = 3) or cic.id is null
+WHERE $2 IS NULL OR v.id = $2
+GROUP BY v.user_id, v.user_uuid, UserName, UserEmail, UserRole, v.locale, UserData;
 
 -- ROADMAP --
 
@@ -216,7 +224,7 @@ INSERT INTO roadmap_statuses (status, description, color, project_id, created_on
 UPDATE roadmap_statuses SET status = $1, description = $2, color = $3 WHERE id = $4 AND project_id = $5 RETURNING *;
 
 -- name: GetNextSortOrderForStatus :one
-SELECT MAX(sort_order) + 1 as NextSortOrder FROM roadmap_statuses WHERE project_id = $1;
+SELECT MAX(COALESCE(sort_order, 0)) + 1 as NextSortOrder FROM roadmap_statuses WHERE project_id = $1;
 
 -- name: UpdateStatusOrder :one
 UPDATE roadmap_statuses SET sort_order = $1 WHERE id = $2 AND project_id = $3 RETURNING id, status, sort_order, color;
@@ -234,12 +242,12 @@ SELECT COUNT(*) FROM roadmap_posts WHERE status_id = $1;
 SELECT *
 from roadmap_posts rp 
   left join authors a on a.id = rp.author_id
-  left join post_reactions u on u.user_uuid = rp.user_uuid
+  left join viewers v on v.id = rp.viewer_id
 where (rp.board_id IS NULL OR rp.board_id = $1) and rp.project_id = $2
 order by due_date;
 
 -- name: InsertRoadmapPost :one
-INSERT INTO roadmap_posts (title, body, due_date, is_private, author_id, is_idea, user_uuid, board_id, status_id, project_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *;
+INSERT INTO roadmap_posts (title, body, due_date, is_private, author_id, is_idea, viewer_id, board_id, status_id, project_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *;
 
 -- name: UpdateRoadmapPost :one
 UPDATE roadmap_posts SET title = $1, body = $2, due_date = $3, is_private = $4, board_id = $5, status_id = $6 WHERE id = $7 AND project_id = $8 RETURNING *;

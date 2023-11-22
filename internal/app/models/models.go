@@ -8,6 +8,14 @@ import (
 	"github.com/google/uuid"
 )
 
+type InteractionType int32
+
+const (
+	InteractionTypeView InteractionType = iota + 1
+	InteractionTypeReaction
+	InteractionTypeComment
+)
+
 type UserMetadata struct {
 	AvatarUrl string `json:"avatar_url"`
 	FullName  string `json:"full_name"`

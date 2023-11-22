@@ -8,7 +8,6 @@ import (
 
 	"github.com/andrei0427/go-changediff/internal/app/models"
 	"github.com/andrei0427/go-changediff/internal/data"
-	"github.com/google/uuid"
 )
 
 type RoadmapService struct {
@@ -141,7 +140,7 @@ func (s *RoadmapService) SaveStatus(ctx context.Context, model models.RoadmapSta
 
 	nextSortOrder, err := s.db.GetNextSortOrderForStatus(ctx, projectId)
 	if err != nil {
-		return nil, err
+		nextSortOrder = 0
 	}
 
 	toInsert := data.InsertStatusParams{
@@ -178,7 +177,7 @@ func (s *RoadmapService) GetPostById(ctx context.Context, postId int32, projectI
 	return s.db.GetRoadmapPost(ctx, data.GetRoadmapPostParams{ID: postId, ProjectID: projectId})
 }
 
-func (s *RoadmapService) InsertPost(ctx context.Context, post models.RoadmapPostModel, authorId *int32, userUuid *uuid.UUID, projectId int32, userLocation *time.Location, isIdea bool) (data.RoadmapPost, error) {
+func (s *RoadmapService) InsertPost(ctx context.Context, post models.RoadmapPostModel, authorId *int32, viewerId *int32, projectId int32, userLocation *time.Location, isIdea bool) (data.RoadmapPost, error) {
 	toInsert := data.InsertRoadmapPostParams{
 		Title:     post.Title,
 		Body:      post.Content,
@@ -207,8 +206,8 @@ func (s *RoadmapService) InsertPost(ctx context.Context, post models.RoadmapPost
 
 	if authorId != nil {
 		toInsert.AuthorID = sql.NullInt32{Int32: *authorId, Valid: true}
-	} else if userUuid != nil {
-		toInsert.UserUuid = uuid.NullUUID{UUID: *userUuid, Valid: true}
+	} else if viewerId != nil {
+		toInsert.ViewerID = sql.NullInt32{Int32: *viewerId, Valid: true}
 	} else {
 		return data.RoadmapPost{}, errors.New("eithor author id or user uuid are required")
 	}

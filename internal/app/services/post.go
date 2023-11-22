@@ -3,15 +3,12 @@ package services
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"errors"
 	"strings"
 	"time"
 
 	"github.com/andrei0427/go-changediff/internal/app/models"
 	"github.com/andrei0427/go-changediff/internal/data"
-	"github.com/google/uuid"
-	"github.com/sqlc-dev/pqtype"
 )
 
 type PostService struct {
@@ -34,67 +31,52 @@ func (s *PostService) GetPosts(ctx context.Context, projectId int32) ([]data.Get
 }
 
 func (s *PostService) GetPost(ctx context.Context, postId int32, projectId int32) (data.GetPostRow, error) {
-	post, err := s.db.GetPost(ctx, data.GetPostParams{ID: postId, ProjectID: projectId})
-	return post, err
+	return s.db.GetPost(ctx, data.GetPostParams{ID: postId, ProjectID: projectId})
 }
 
-func (s *PostService) GetPostReactions(ctx context.Context, postId *int32, projectId int32, userUuid *string, userId *string) ([]data.GetPostReactionsRow, error) {
+func (s *PostService) GetPostReactions(ctx context.Context, projectId int32, postId *int32, viewerId *int32) ([]data.GetPostReactionsRow, error) {
 	params := data.GetPostReactionsParams{
 		ProjectID: projectId,
 	}
 
 	if postId != nil {
-		params.ID = *postId
+		params.Column2 = sql.NullInt32{Int32: *postId, Valid: true}
 	}
 
-	if userId != nil && len(*userId) > 0 {
-		params.UserID = sql.NullString{String: *userId, Valid: true}
+	if viewerId != nil {
+		params.Column3 = sql.NullInt32{Int32: *viewerId, Valid: true}
 	}
 
-	if userUuid != nil && len(*userUuid) > 0 {
-		params.Column3 = *userUuid
-	}
-
-	reactions, err := s.db.GetPostReactions(ctx, params)
-	return reactions, err
+	return s.db.GetPostReactions(ctx, params)
 }
 
-func (s *PostService) GetPostComments(ctx context.Context, postId *int32, projectId int32, userUuid *string, userId *string) ([]data.GetPostCommentsRow, error) {
-	params := data.GetPostCommentsParams{ProjectID: projectId}
+func (s *PostService) GetPostComments(ctx context.Context, projectId int32, postId *int32, viewerId *int32) ([]data.GetPostCommentsRow, error) {
+	params := data.GetPostCommentsParams{ProjectID: projectId, Column2: 0, Column3: 0}
+
+	if viewerId != nil {
+		params.Column2 = *viewerId
+	}
 
 	if postId != nil {
-		params.ID = *postId
+		params.Column3 = *postId
 	}
 
-	if userId != nil && len(*userId) > 0 {
-		params.UserID = sql.NullString{String: *userId, Valid: true}
-	}
-
-	if userUuid != nil && len(*userUuid) > 0 {
-		params.Column3 = *userUuid
-	}
-
-	comments, err := s.db.GetPostComments(ctx, params)
-	return comments, err
+	return s.db.GetPostComments(ctx, params)
 }
 
-func (s *PostService) GetAnalytics(ctx context.Context, projectId int32, userUuid *string, userId *string) ([]data.AnalyticsUsersRow, error) {
+func (s *PostService) GetAnalytics(ctx context.Context, projectId int32, viewerId *int32) ([]data.AnalyticsUsersRow, error) {
 	params := data.AnalyticsUsersParams{
 		ProjectID: projectId,
 	}
 
-	if userUuid != nil && len(*userUuid) > 0 {
-		params.Column3 = *userUuid
-	}
-
-	if userId != nil && len(*userId) > 0 {
-		params.UserID = sql.NullString{String: *userId, Valid: true}
+	if viewerId != nil {
+		params.Column2 = sql.NullInt32{Int32: *viewerId, Valid: true}
 	}
 
 	return s.db.AnalyticsUsers(ctx, params)
 }
 
-func (s *PostService) GetPublishedPagedPosts(ctx context.Context, projectKey string, pageNo int32, search string, userId uuid.UUID) ([]data.GetPublishedPagedPostsRow, error) {
+func (s *PostService) GetPublishedPagedPosts(ctx context.Context, projectKey string, pageNo int32, search string, viewerId int32) ([]data.GetPublishedPagedPostsRow, error) {
 	var offset int32 = 0
 	if pageNo > 1 {
 		offset = pageNo - 1*5
@@ -105,13 +87,19 @@ func (s *PostService) GetPublishedPagedPosts(ctx context.Context, projectKey str
 		searchStr = "%" + strings.ToLower(search) + "%"
 	}
 
-	posts, err := s.db.GetPublishedPagedPosts(ctx, data.GetPublishedPagedPostsParams{AppKey: projectKey, Limit: 5, Offset: offset, UserUuid: userId, Column5: searchStr})
+	posts, err := s.db.GetPublishedPagedPosts(ctx, data.GetPublishedPagedPostsParams{AppKey: projectKey, Limit: 5, Offset: offset, ViewerID: viewerId, Column5: searchStr})
 
 	return posts, err
 }
 
-func (s *PostService) InsertPostComment(ctx context.Context, userId uuid.UUID, comment string, postId int32) (data.PostComment, error) {
-	return s.db.InsertComment(ctx, data.InsertCommentParams{UserUuid: userId, Comment: comment, PostID: postId})
+func (s *PostService) InsertPostComment(ctx context.Context, viewerId int32, postId int32, projectId int32, comment string) (data.ChangelogInteraction, error) {
+	return s.db.InsertInteraction(ctx, data.InsertInteractionParams{
+		ViewerID:          viewerId,
+		Content:           sql.NullString{String: comment, Valid: true},
+		PostID:            postId,
+		ProjectID:         projectId,
+		InteractionTypeID: int32(models.InteractionTypeComment),
+	})
 }
 
 func (s *PostService) InsertPost(ctx context.Context, post models.PostModel, authorId int32, projectId int32, userLocation *time.Location) (data.Post, error) {
@@ -148,12 +136,7 @@ func (s *PostService) DeletePost(ctx context.Context, postId int32, projectId in
 	defer tx.Rollback()
 
 	qtx := s.db.WithTx(tx)
-	_, err = qtx.DeleteComments(ctx, data.DeleteCommentsParams{PostID: postId, ProjectID: projectId})
-	if err != nil {
-		return false, err
-	}
-
-	_, err = qtx.DeleteReactions(ctx, data.DeleteReactionsParams{PostID: postId, ProjectID: projectId})
+	_, err = qtx.DeleteInteractions(ctx, data.DeleteInteractionsParams{PostID: postId, ProjectID: projectId})
 	if err != nil {
 		return false, err
 	}
@@ -206,8 +189,8 @@ func (s *PostService) UpdatePost(ctx context.Context, post models.PostModel, pro
 	return s.db.UpdatePost(ctx, toUpdate)
 }
 
-func (s *PostService) GetReaction(ctx context.Context, userId uuid.UUID, postId int32) (*string, error) {
-	result, err := s.db.GetReaction(ctx, data.GetReactionParams{UserUuid: userId, PostID: postId})
+func (s *PostService) GetReaction(ctx context.Context, viewerId int32, postId int32) (*string, error) {
+	result, err := s.db.GetReaction(ctx, data.GetReactionParams{ViewerID: viewerId, PostID: postId})
 
 	if err != nil {
 		return nil, err
@@ -220,65 +203,56 @@ func (s *PostService) GetReaction(ctx context.Context, userId uuid.UUID, postId 
 	return &result[0].String, nil
 }
 
-func (s *PostService) SaveReaction(ctx context.Context, params data.InsertReactionParams, userInfo *models.UserInfo) (*data.PostReaction, error) {
-	// Saving a 'view' reaction - only insert if one doesnt yet exist
-	if userInfo.ID != nil {
-		params.UserID = sql.NullString{String: string(*userInfo.ID), Valid: true}
-	}
+func (s *PostService) SaveInteraction(ctx context.Context, postId int32, viewerId int32, projectId int32, interactionType models.InteractionType, content *string) (*data.ChangelogInteraction, error) {
+	alreadyInteracted := false
 
-	if userInfo.Email != nil {
-		params.UserEmail = sql.NullString{String: string(*userInfo.Email), Valid: true}
-	}
-
-	if userInfo.Info != nil {
-		if marshalled, err := json.Marshal(userInfo.Info); err == nil {
-			params.UserData = pqtype.NullRawMessage{RawMessage: marshalled, Valid: true}
-		}
-	}
-
-	if userInfo.Name != nil {
-		params.UserName = sql.NullString{String: string(*userInfo.Name), Valid: true}
-	}
-
-	if userInfo.Role != nil {
-		params.UserRole = sql.NullString{String: string(*userInfo.Role), Valid: true}
-	}
-
-	if !params.Reaction.Valid {
-		alreadyViewed, err := s.db.UserViewed(ctx, data.UserViewedParams{UserUuid: params.UserUuid, PostID: params.PostID})
+	if interactionType == models.InteractionTypeView {
+		alreadyViewed, err := s.db.UserViewed(ctx, data.UserViewedParams{PostID: postId, ViewerID: viewerId})
 		if err != nil {
 			return nil, err
 		}
 
-		if alreadyViewed == 0 {
-			savedReaction, err := s.db.InsertReaction(ctx, params)
-			return &savedReaction, err
-		}
-	} else {
-		existingReaction, err := s.GetReaction(ctx, params.UserUuid, params.PostID)
+		alreadyInteracted = alreadyViewed > 0
+	} else if interactionType == models.InteractionTypeReaction {
+		alreadyReacted, err := s.db.GetReaction(ctx, data.GetReactionParams{PostID: postId, ViewerID: viewerId, ProjectID: projectId})
 		if err != nil {
 			return nil, err
 		}
 
-		if existingReaction == nil {
-			savedReaction, err := s.db.InsertReaction(ctx, params)
-			if err != nil {
-				return nil, err
-			}
-
-			return &savedReaction, err
-		} else {
-			updatedReaction, err := s.db.UpdateReaction(ctx, data.UpdateReactionParams{UserUuid: params.UserUuid,
-				PostID:   params.PostID,
-				Reaction: params.Reaction,
-			})
-			if err != nil {
-				return nil, err
-			}
-
-			return &updatedReaction, err
-		}
+		alreadyInteracted = len(alreadyReacted) > 0
 	}
 
-	return nil, nil
+	insertParams := data.InsertInteractionParams{
+		PostID:            postId,
+		ViewerID:          viewerId,
+		ProjectID:         projectId,
+		Content:           sql.NullString{Valid: false},
+		InteractionTypeID: int32(interactionType),
+	}
+
+	if content != nil {
+		insertParams.Content = sql.NullString{String: *content, Valid: true}
+	}
+
+	if alreadyInteracted {
+		updatedReaction, err := s.db.UpdateInteraction(ctx, data.UpdateInteractionParams{
+			Content:           insertParams.Content,
+			ViewerID:          viewerId,
+			PostID:            postId,
+			InteractionTypeID: int32(interactionType),
+		})
+
+		if err != nil {
+			return nil, err
+		}
+
+		return &updatedReaction, err
+	}
+
+	insertedReaction, err := s.db.InsertInteraction(ctx, insertParams)
+	if err != nil {
+		return nil, err
+	}
+
+	return &insertedReaction, err
 }

@@ -27,7 +27,7 @@
 
     <div
       class="mt-5 prose"
-      hx-put="/widget/changelog/posts/view/{{ProjectKey}}/{{post.ID}}"
+      hx-put="/widget/{{ProjectKey}}/changelog/posts/view/{{post.ID}}"
       hx-trigger="revealed delay:5000ms"
       hx-swap="none"
     >
@@ -60,7 +60,7 @@
     <div class="text-3xl text-right">
       <button
         class="{%if post.Reaction.String == '😡'%}bg-slate-200{%endif%} rounded-md p-1"
-        hx-put="/widget/changelog/posts/view/{{ProjectKey}}/{{post.ID}}/😡"
+        hx-put="/widget/{{ProjectKey}}/changelog/posts/view/{{post.ID}}/😡"
         hx-swap="none"
         hx-on::before-request="toggleReaction({{post.ID}}, '😡')"
       >
@@ -68,7 +68,7 @@
       </button>
       <button
         class="{%if post.Reaction.String == '😒'%}bg-slate-200{%endif%} rounded-md p-1"
-        hx-put="/widget/changelog/posts/view/{{ProjectKey}}/{{post.ID}}/😒"
+        hx-put="/widget/{{ProjectKey}}/changelog/posts/view/{{post.ID}}/😒"
         hx-swap="none"
         hx-on::before-request="toggleReaction({{post.ID}}, '😒')"
       >
@@ -76,7 +76,7 @@
       </button>
       <button
         class="{%if post.Reaction.String == '😍'%}bg-slate-200{%endif%} rounded-md p-1"
-        hx-put="/widget/changelog/posts/view/{{ProjectKey}}/{{post.ID}}/😍"
+        hx-put="/widget/{{ProjectKey}}/changelog/posts/view/{{post.ID}}/😍"
         hx-swap="none"
         hx-on::before-request="toggleReaction({{post.ID}}, '😍')"
       >
@@ -87,7 +87,7 @@
   <div class="flex justify-end w-full">
     <div class="px-1 py-2 input-comment">
       <form
-        hx-put="/widget/changelog/posts/comment/{{ProjectKey}}/{{post.ID}}"
+        hx-put="/widget/{{ProjectKey}}/changelog/posts/comment/{{post.ID}}"
         hx-swap="none"
         hx-trigger="submit once, submitComment{{post.ID}} from:body"
         hx-on::after-request="this.classList.add('hidden');this.nextElementSibling.classList.remove('hidden')"
@@ -178,6 +178,7 @@
       const height = a.offsetHeight;
 
       if (height < 500) {
+        a.parentNode.querySelector(".read-more")?.classList.add("hidden");
         return;
       }
 

@@ -114,6 +114,10 @@
         </div>
       </div>
     </div>
+
+    {% if errors['Error']%}
+    <p class="mt-2 text-sm text-red-600">{{errors['Error']}}</p>
+    {% endif %}
   </div>
 
   {% if Message %}

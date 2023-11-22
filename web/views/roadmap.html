@@ -40,7 +40,7 @@
         href="#{{b.ID}}">
         &nbsp;&nbsp;{{b.Name}}
       </a>
-      {%empty%} No public boards created! {%endfor%}
+      {%empty%} <span class="test-gray-700 block px-4 py-2 text-sm w-full text-left">No boards created.</span> {%endfor%}
     </div>
 
     {%if HasPrivateBoards%}
@@ -78,6 +78,7 @@
 
 <script>
   window.addEventListener("load", function () {
+    {%if FirstBoardID%}
     if (!window.location.hash && "{{FirstBoardID}}") {
       window.location.hash = "{{FirstBoardID}}";
     } else if (window.location.hash) {
@@ -85,6 +86,7 @@
         .getElementById("board-content")
         .dispatchEvent(new Event("boardchange"));
     }
+    {%endif%}
   });
 
   window.onhashchange = function () {

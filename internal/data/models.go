@@ -23,6 +23,22 @@ type Author struct {
 	UpdatedOn  sql.NullTime
 }
 
+type ChangelogInteraction struct {
+	ID                int32
+	Content           sql.NullString
+	InteractionTypeID int32
+	PostID            int32
+	ViewerID          int32
+	ProjectID         int32
+	CreatedOn         time.Time
+}
+
+type ChangelogInteractionType struct {
+	ID        int32
+	Type      string
+	CreatedOn time.Time
+}
+
 type Label struct {
 	ID        int32
 	Label     string
@@ -44,30 +60,6 @@ type Post struct {
 	LabelID     sql.NullInt32
 	IsPublished sql.NullBool
 	ExpiresOn   sql.NullTime
-}
-
-type PostComment struct {
-	ID        int32
-	UserUuid  uuid.UUID
-	Comment   string
-	PostID    int32
-	CreatedOn time.Time
-}
-
-type PostReaction struct {
-	ID        int32
-	UserUuid  uuid.UUID
-	IpAddr    string
-	UserAgent string
-	Locale    string
-	Reaction  sql.NullString
-	PostID    int32
-	CreatedOn time.Time
-	UserData  pqtype.NullRawMessage
-	UserID    sql.NullString
-	UserName  sql.NullString
-	UserEmail sql.NullString
-	UserRole  sql.NullString
 }
 
 type Project struct {
@@ -112,8 +104,19 @@ type RoadmapPost struct {
 	CreatedOn time.Time
 	IsPrivate bool
 	AuthorID  sql.NullInt32
-	UserUuid  uuid.NullUUID
+	ViewerID  sql.NullInt32
 	IsIdea    bool
+	IsPinned  bool
+	IsLocked  bool
+}
+
+type RoadmapPostActivity struct {
+	ID            int32
+	FromStatusID  sql.NullInt32
+	ToStatusID    sql.NullInt32
+	RoadmapPostID int32
+	AuthorID      int32
+	CreatedOn     time.Time
 }
 
 type RoadmapPostCategory struct {
@@ -122,6 +125,36 @@ type RoadmapPostCategory struct {
 	RoadmapCategoryID int32
 	ProjectID         int32
 	CreatedOn         time.Time
+}
+
+type RoadmapPostComment struct {
+	ID            int32
+	Content       string
+	IsPinned      bool
+	IsDeleted     bool
+	InReplyToID   sql.NullInt32
+	RoadmapPostID int32
+	AuthorID      sql.NullInt32
+	ViewerID      sql.NullInt32
+	CreatedOn     time.Time
+}
+
+type RoadmapPostReaction struct {
+	ID            int32
+	Emoji         string
+	CommentID     sql.NullInt32
+	RoadmapPostID int32
+	AuthorID      sql.NullInt32
+	ViewerID      sql.NullInt32
+	CreatedOn     time.Time
+}
+
+type RoadmapPostVote struct {
+	ID            int32
+	RoadmapPostID int32
+	AuthorID      sql.NullInt32
+	ViewerID      sql.NullInt32
+	CreatedOn     time.Time
 }
 
 type RoadmapStatus struct {
@@ -148,4 +181,19 @@ type Subscription struct {
 	SubscriberID          int32
 	ProjectID             int32
 	CreatedOn             time.Time
+}
+
+type Viewer struct {
+	ID        int32
+	UserUuid  uuid.UUID
+	IpAddr    string
+	UserAgent string
+	Locale    string
+	UserData  pqtype.NullRawMessage
+	UserID    sql.NullString
+	UserName  sql.NullString
+	UserEmail sql.NullString
+	UserRole  sql.NullString
+	ProjectID int32
+	CreatedOn time.Time
 }

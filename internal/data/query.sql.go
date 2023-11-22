@@ -16,33 +16,29 @@ import (
 
 const analyticsUsers = `-- name: AnalyticsUsers :many
 SELECT DISTINCT 
-   COALESCE(REPLACE(r.user_id, '"', ''), 'N/A') as UserID,
-   r.user_uuid,
-   COALESCE(REPLACE(r.user_name, '"', ''), 'User') as UserName, 
-   COALESCE(REPLACE(r.user_email, '"', ''), 'N/A') as UserEmail, 
-   COALESCE(REPLACE(r.user_role, '"', ''), 'N/A') as UserRole, 
-   r.locale,
-   CAST(STRING_AGG(distinct r.ip_addr, ',') as text) as IPAddress,
-   CAST(STRING_AGG(distinct r.user_agent, ',') as text) as UserAgent,
-   CASE WHEN r.user_data IS NOT NULL THEN CAST(r.user_data as text) ELSE NULL END as UserData,
-   COUNT(DISTINCT r.id) as ViewCount, 
-   COUNT(DISTINCT ri.id) as ImpressionCount, 
-   COUNT(DISTINCT rc.id) as CommentCount 
-FROM post_reactions r 
-  JOIN posts p on p.id = r.post_id 
-  left join post_comments rc ON r.user_uuid = rc.user_uuid 
-  left join post_reactions ri on r.user_uuid = ri.user_uuid and r.post_id = ri.post_id and ri.reaction is not null 
-  WHERE p.project_id = $1 
-    and ($2 = r.user_id or $2 = '' or $2 is null)
-    and ($3::text = r.user_uuid::text or $3 = '' or $3 is null)
-    and r.reaction is null 
-GROUP BY r.user_id, r.user_uuid, UserName, UserEmail, UserRole, r.locale, UserData
+   COALESCE(REPLACE(v.user_id, '"', ''), 'N/A') as UserID,
+   v.user_uuid,
+   COALESCE(REPLACE(v.user_name, '"', ''), 'User') as UserName, 
+   COALESCE(REPLACE(v.user_email, '"', ''), 'N/A') as UserEmail, 
+   COALESCE(REPLACE(v.user_role, '"', ''), 'N/A') as UserRole, 
+   v.locale,
+   CAST(STRING_AGG(distinct v.ip_addr, ',') as text) as IPAddress,
+   CAST(STRING_AGG(distinct v.user_agent, ',') as text) as UserAgent,
+   CASE WHEN v.user_data IS NOT NULL THEN CAST(v.user_data as text) ELSE NULL END as UserData,
+   COUNT(DISTINCT civ.id) as ViewCount, 
+   COUNT(DISTINCT cir.id) as ImpressionCount, 
+   COUNT(DISTINCT cic.id) as CommentCount 
+FROM viewers v 
+  LEFT JOIN changelog_interactions civ on (civ.project_id = $1 and civ.viewer_id = v.id and civ.interaction_type_id = 1) or civ.id is null
+  LEFT JOIN changelog_interactions cir on (cir.project_id = $1 and cir.viewer_id = v.id and cir.interaction_type_id = 2) or cir.id is null
+  LEFT JOIN changelog_interactions cic on (cic.project_id = $1 and cic.viewer_id = v.id and cic.interaction_type_id = 3) or cic.id is null
+WHERE $2 IS NULL OR v.id = $2
+GROUP BY v.user_id, v.user_uuid, UserName, UserEmail, UserRole, v.locale, UserData
 `
 
 type AnalyticsUsersParams struct {
 	ProjectID int32
-	UserID    sql.NullString
-	Column3   string
+	Column2   interface{}
 }
 
 type AnalyticsUsersRow struct {
@@ -61,7 +57,7 @@ type AnalyticsUsersRow struct {
 }
 
 func (q *Queries) AnalyticsUsers(ctx context.Context, arg AnalyticsUsersParams) ([]AnalyticsUsersRow, error) {
-	rows, err := q.db.QueryContext(ctx, analyticsUsers, arg.ProjectID, arg.UserID, arg.Column3)
+	rows, err := q.db.QueryContext(ctx, analyticsUsers, arg.ProjectID, arg.Column2)
 	if err != nil {
 		return nil, err
 	}
@@ -97,10 +93,10 @@ func (q *Queries) AnalyticsUsers(ctx context.Context, arg AnalyticsUsersParams) 
 }
 
 const dashboardQuery = `-- name: DashboardQuery :one
-SELECT COUNT(p.id), COUNT(rv.id), COUNT(rc.id) 
+SELECT COUNT(p.id), COUNT(civ.id), COUNT(cic.id) 
   FROM posts p 
-    left join post_reactions rv on p.id = rv.id and rv.reaction is null 
-    left join post_reactions rc on p.id = rc.id and (rc.id is null or rc.reaction is not null) 
+    left join changelog_interactions civ on p.id = civ.post_id and (civ.id is null or civ.interaction_type_id = 1)
+    left join changelog_interactions cic on p.id = cic.post_id and (cic.id is null or cic.interaction_type_id = 3) 
   WHERE p.project_id = $1
 `
 
@@ -133,17 +129,17 @@ func (q *Queries) DeleteBoard(ctx context.Context, arg DeleteBoardParams) (int32
 	return id, err
 }
 
-const deleteComments = `-- name: DeleteComments :many
-DELETE FROM post_comments pc USING posts p WHERE pc.post_id = p.id AND pc.post_id = $1 AND p.project_id = $2 RETURNING pc.id
+const deleteInteractions = `-- name: DeleteInteractions :many
+DELETE FROM changelog_interactions WHERE post_id = $1 AND project_id = $2 RETURNING id
 `
 
-type DeleteCommentsParams struct {
+type DeleteInteractionsParams struct {
 	PostID    int32
 	ProjectID int32
 }
 
-func (q *Queries) DeleteComments(ctx context.Context, arg DeleteCommentsParams) ([]int32, error) {
-	rows, err := q.db.QueryContext(ctx, deleteComments, arg.PostID, arg.ProjectID)
+func (q *Queries) DeleteInteractions(ctx context.Context, arg DeleteInteractionsParams) ([]int32, error) {
+	rows, err := q.db.QueryContext(ctx, deleteInteractions, arg.PostID, arg.ProjectID)
 	if err != nil {
 		return nil, err
 	}
@@ -195,38 +191,6 @@ func (q *Queries) DeletePost(ctx context.Context, arg DeletePostParams) (int32, 
 	var id int32
 	err := row.Scan(&id)
 	return id, err
-}
-
-const deleteReactions = `-- name: DeleteReactions :many
-DELETE FROM post_reactions pr USING posts p WHERE p.id = pr.post_id AND pr.post_id = $1 AND p.project_id = $2 RETURNING pr.id
-`
-
-type DeleteReactionsParams struct {
-	PostID    int32
-	ProjectID int32
-}
-
-func (q *Queries) DeleteReactions(ctx context.Context, arg DeleteReactionsParams) ([]int32, error) {
-	rows, err := q.db.QueryContext(ctx, deleteReactions, arg.PostID, arg.ProjectID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []int32
-	for rows.Next() {
-		var id int32
-		if err := rows.Scan(&id); err != nil {
-			return nil, err
-		}
-		items = append(items, id)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
 }
 
 const deleteRoadmapPost = `-- name: DeleteRoadmapPost :one
@@ -294,7 +258,6 @@ func (q *Queries) DeleteStatus(ctx context.Context, arg DeleteStatusParams) (int
 }
 
 const getAuthorByUser = `-- name: GetAuthorByUser :many
-
 SELECT a.id, a.first_name, a.last_name, a.picture_url, a.user_id, a.project_id, a.created_on, a.updated_on, 
    s.id, s.subscription_start_date, s.is_annual, s.tier, 
    CASE 
@@ -477,7 +440,7 @@ func (q *Queries) GetLabels(ctx context.Context, projectID int32) ([]Label, erro
 }
 
 const getNextSortOrderForStatus = `-- name: GetNextSortOrderForStatus :one
-SELECT MAX(sort_order) + 1 as NextSortOrder FROM roadmap_statuses WHERE project_id = $1
+SELECT MAX(COALESCE(sort_order, 0)) + 1 as NextSortOrder FROM roadmap_statuses WHERE project_id = $1
 `
 
 func (q *Queries) GetNextSortOrderForStatus(ctx context.Context, projectID int32) (int32, error) {
@@ -532,29 +495,34 @@ func (q *Queries) GetPost(ctx context.Context, arg GetPostParams) (GetPostRow, e
 }
 
 const getPostComments = `-- name: GetPostComments :many
-SELECT p.id, p.title, c.comment, c.created_on, r.locale, ur.reaction, REPLACE(r.user_name, '"', '') as UserName, REPLACE(r.user_role, '"', '') as UserRole
+SELECT p.id, 
+       p.title, 
+       ci.content, 
+       ci.created_on, 
+       v.locale, 
+       r.content as Reaction, 
+       REPLACE(v.user_name, '"', '') as UserName, 
+       REPLACE(v.user_role, '"', '') as UserRole
 	FROM posts p 
-		JOIN post_comments c ON c.post_id = p.id 
-		JOIN post_reactions r ON r.user_uuid = c.user_uuid AND r.post_id = p.id AND r.reaction IS NULL 
-		LEFT JOIN post_reactions ur ON ur.user_uuid = c.user_uuid AND ur.post_id = p.id AND ur.reaction IS NOT NULL 
+		JOIN changelog_interactions ci ON ci.post_id = p.id AND ci.interaction_type_id = 3
+		JOIN viewers v ON v.id = ci.viewer_id 
+		LEFT JOIN changelog_interactions r ON (r.post_id = p.id AND r.viewer_id = v.id AND r.interaction_type_id = 2) OR r.id is null
 WHERE p.project_id = $1
-    and ($2 = r.user_id or $2 = '' or $2 is null)
-    and ($3::text = r.user_uuid::text or $3 = '' or $3 is null)
-    and (p.id = $4 OR $4 = 0)
-ORDER BY c.created_on DESC
+    and ($2 = 0 OR v.id = $2)
+    and ($3 = 0 OR p.id = $3)
+ORDER BY ci.created_on DESC
 `
 
 type GetPostCommentsParams struct {
 	ProjectID int32
-	UserID    sql.NullString
-	Column3   string
-	ID        int32
+	Column2   interface{}
+	Column3   interface{}
 }
 
 type GetPostCommentsRow struct {
 	ID        int32
 	Title     string
-	Comment   string
+	Content   sql.NullString
 	CreatedOn time.Time
 	Locale    string
 	Reaction  sql.NullString
@@ -563,12 +531,7 @@ type GetPostCommentsRow struct {
 }
 
 func (q *Queries) GetPostComments(ctx context.Context, arg GetPostCommentsParams) ([]GetPostCommentsRow, error) {
-	rows, err := q.db.QueryContext(ctx, getPostComments,
-		arg.ProjectID,
-		arg.UserID,
-		arg.Column3,
-		arg.ID,
-	)
+	rows, err := q.db.QueryContext(ctx, getPostComments, arg.ProjectID, arg.Column2, arg.Column3)
 	if err != nil {
 		return nil, err
 	}
@@ -579,7 +542,7 @@ func (q *Queries) GetPostComments(ctx context.Context, arg GetPostCommentsParams
 		if err := rows.Scan(
 			&i.ID,
 			&i.Title,
-			&i.Comment,
+			&i.Content,
 			&i.CreatedOn,
 			&i.Locale,
 			&i.Reaction,
@@ -613,23 +576,20 @@ func (q *Queries) GetPostCount(ctx context.Context, projectID int32) (int64, err
 
 const getPostReactions = `-- name: GetPostReactions :many
 SELECT 
-  CASE WHEN r.reaction IS NULL THEN '' ELSE r.reaction END as Reaction, 
-  COUNT(r.*) 
-FROM posts p 
-  JOIN post_reactions r ON r.post_id = p.id 
-WHERE p.project_id = $1 
-    and ($2 = r.user_id or $2 = '' or $2 is null)
-    and ($3::text = r.user_uuid::text or $3 = '' or $3 is null)
-    and (p.id = $4 OR $4 = 0)
-GROUP BY r.reaction 
-ORDER BY r.reaction NULLS FIRST
+  CASE WHEN ci.content IS NULL THEN '' ELSE ci.content END as Reaction, 
+  COUNT(ci.*) 
+FROM changelog_interactions ci 
+WHERE ci.project_id = $1 
+  AND ($2 = 0 OR ci.post_id = $2)
+  AND ($3 = 0 OR ci.viewer_id = $3)
+GROUP BY ci.content
+ORDER BY ci.content NULLS FIRST
 `
 
 type GetPostReactionsParams struct {
 	ProjectID int32
-	UserID    sql.NullString
-	Column3   string
-	ID        int32
+	Column2   interface{}
+	Column3   interface{}
 }
 
 type GetPostReactionsRow struct {
@@ -638,12 +598,7 @@ type GetPostReactionsRow struct {
 }
 
 func (q *Queries) GetPostReactions(ctx context.Context, arg GetPostReactionsParams) ([]GetPostReactionsRow, error) {
-	rows, err := q.db.QueryContext(ctx, getPostReactions,
-		arg.ProjectID,
-		arg.UserID,
-		arg.Column3,
-		arg.ID,
-	)
+	rows, err := q.db.QueryContext(ctx, getPostReactions, arg.ProjectID, arg.Column2, arg.Column3)
 	if err != nil {
 		return nil, err
 	}
@@ -673,7 +628,7 @@ SELECT p.id, p.title, p.published_on, p.is_published, p.expires_on, l.label, l.c
       ELSE 0 END AS status, 
   COUNT(r.id) as ViewCount FROM posts p 
        left join labels l on p.label_id = l.id 
-       left join post_reactions r on (p.id = r.post_id and r.reaction is null) OR r.id is null 
+       left join changelog_interactions r on (p.id = r.post_id and r.interaction_type_id = 1) OR r.id is null 
   WHERE p.project_id = $1
   GROUP BY 1,2,3,4,5,6,7
   ORDER BY p.published_on DESC
@@ -725,10 +680,10 @@ func (q *Queries) GetPosts(ctx context.Context, projectID int32) ([]GetPostsRow,
 }
 
 const getPostsForBoard = `-- name: GetPostsForBoard :many
-SELECT rp.id, title, body, due_date, board_id, rp.project_id, status_id, rp.created_on, is_private, author_id, rp.user_uuid, is_idea, a.id, first_name, last_name, picture_url, a.user_id, a.project_id, a.created_on, updated_on, u.id, u.user_uuid, ip_addr, user_agent, locale, reaction, post_id, u.created_on, user_data, u.user_id, user_name, user_email, user_role
+SELECT rp.id, title, body, due_date, board_id, rp.project_id, status_id, rp.created_on, is_private, author_id, viewer_id, is_idea, is_pinned, is_locked, a.id, first_name, last_name, picture_url, a.user_id, a.project_id, a.created_on, updated_on, v.id, user_uuid, ip_addr, user_agent, locale, user_data, v.user_id, user_name, user_email, user_role, v.project_id, v.created_on
 from roadmap_posts rp 
   left join authors a on a.id = rp.author_id
-  left join post_reactions u on u.user_uuid = rp.user_uuid
+  left join viewers v on v.id = rp.viewer_id
 where (rp.board_id IS NULL OR rp.board_id = $1) and rp.project_id = $2
 order by due_date
 `
@@ -749,8 +704,10 @@ type GetPostsForBoardRow struct {
 	CreatedOn   time.Time
 	IsPrivate   bool
 	AuthorID    sql.NullInt32
-	UserUuid    uuid.NullUUID
+	ViewerID    sql.NullInt32
 	IsIdea      bool
+	IsPinned    bool
+	IsLocked    bool
 	ID_2        sql.NullInt32
 	FirstName   sql.NullString
 	LastName    sql.NullString
@@ -760,18 +717,17 @@ type GetPostsForBoardRow struct {
 	CreatedOn_2 sql.NullTime
 	UpdatedOn   sql.NullTime
 	ID_3        sql.NullInt32
-	UserUuid_2  uuid.NullUUID
+	UserUuid    uuid.NullUUID
 	IpAddr      sql.NullString
 	UserAgent   sql.NullString
 	Locale      sql.NullString
-	Reaction    sql.NullString
-	PostID      sql.NullInt32
-	CreatedOn_3 sql.NullTime
 	UserData    pqtype.NullRawMessage
 	UserID_2    sql.NullString
 	UserName    sql.NullString
 	UserEmail   sql.NullString
 	UserRole    sql.NullString
+	ProjectID_3 sql.NullInt32
+	CreatedOn_3 sql.NullTime
 }
 
 func (q *Queries) GetPostsForBoard(ctx context.Context, arg GetPostsForBoardParams) ([]GetPostsForBoardRow, error) {
@@ -794,8 +750,10 @@ func (q *Queries) GetPostsForBoard(ctx context.Context, arg GetPostsForBoardPara
 			&i.CreatedOn,
 			&i.IsPrivate,
 			&i.AuthorID,
-			&i.UserUuid,
+			&i.ViewerID,
 			&i.IsIdea,
+			&i.IsPinned,
+			&i.IsLocked,
 			&i.ID_2,
 			&i.FirstName,
 			&i.LastName,
@@ -805,18 +763,17 @@ func (q *Queries) GetPostsForBoard(ctx context.Context, arg GetPostsForBoardPara
 			&i.CreatedOn_2,
 			&i.UpdatedOn,
 			&i.ID_3,
-			&i.UserUuid_2,
+			&i.UserUuid,
 			&i.IpAddr,
 			&i.UserAgent,
 			&i.Locale,
-			&i.Reaction,
-			&i.PostID,
-			&i.CreatedOn_3,
 			&i.UserData,
 			&i.UserID_2,
 			&i.UserName,
 			&i.UserEmail,
 			&i.UserRole,
+			&i.ProjectID_3,
+			&i.CreatedOn_3,
 		); err != nil {
 			return nil, err
 		}
@@ -891,13 +848,14 @@ func (q *Queries) GetProjectByKey(ctx context.Context, appKey string) (Project, 
 }
 
 const getPublishedPagedPosts = `-- name: GetPublishedPagedPosts :many
-SELECT post.id, post.title, post.body, post.published_on, post.author_id, post.project_id, post.created_on, post.updated_on, post.label_id, post.is_published, post.expires_on, l.label, l.color, a.first_name, a.last_name, a.picture_url, r.reaction, CASE WHEN v.id IS NULL THEN 0 ELSE 1 END as Viewed
+SELECT distinct post.id, post.title, post.body, post.published_on, post.author_id, post.project_id, post.created_on, post.updated_on, post.label_id, post.is_published, post.expires_on, l.label, l.color, a.first_name, a.last_name, a.picture_url, r.content as Reaction, 
+      CASE WHEN v.id IS NULL THEN 0 ELSE 1 END as Viewed
   FROM posts post 
     join projects proj on post.project_id = proj.id 
-	join authors a on a.id = post.author_id 
-	left join labels l on post.label_id = l.id or post.label_id is null 
-	left join post_reactions r on (r.post_id = post.id and r.user_uuid = $4 and r.reaction is not null) or r.id is null 
-	left join post_reactions v on (v.post_id = post.id and v.user_uuid = $4 and v.reaction is null) or v.id is null 
+	  join authors a on a.id = post.author_id 
+    left join labels l on post.label_id = l.id or post.label_id is null 
+    left join changelog_interactions r on (r.post_id = post.id and r.interaction_type_id = 2 and r.viewer_id = $4) or r.id is null
+    left join changelog_interactions v on (v.post_id = post.id and v.interaction_type_id = 1 and v.viewer_id = $4) or v.id is null 
 WHERE proj.app_key = $1 
    AND post.published_on <= CURRENT_TIMESTAMP 
    AND (post.expires_on IS NULL OR post.expires_on >= CURRENT_TIMESTAMP)
@@ -912,7 +870,7 @@ type GetPublishedPagedPostsParams struct {
 	AppKey   string
 	Limit    int32
 	Offset   int32
-	UserUuid uuid.UUID
+	ViewerID int32
 	Column5  interface{}
 }
 
@@ -942,7 +900,7 @@ func (q *Queries) GetPublishedPagedPosts(ctx context.Context, arg GetPublishedPa
 		arg.AppKey,
 		arg.Limit,
 		arg.Offset,
-		arg.UserUuid,
+		arg.ViewerID,
 		arg.Column5,
 	)
 	if err != nil {
@@ -986,27 +944,28 @@ func (q *Queries) GetPublishedPagedPosts(ctx context.Context, arg GetPublishedPa
 }
 
 const getReaction = `-- name: GetReaction :many
-SELECT reaction FROM post_reactions WHERE user_uuid = $1 AND post_id = $2 AND reaction IS NOT NULL
+SELECT content FROM changelog_interactions WHERE post_id = $1 AND viewer_id = $2 AND project_id = $3 AND interaction_type_id = 2
 `
 
 type GetReactionParams struct {
-	UserUuid uuid.UUID
-	PostID   int32
+	PostID    int32
+	ViewerID  int32
+	ProjectID int32
 }
 
 func (q *Queries) GetReaction(ctx context.Context, arg GetReactionParams) ([]sql.NullString, error) {
-	rows, err := q.db.QueryContext(ctx, getReaction, arg.UserUuid, arg.PostID)
+	rows, err := q.db.QueryContext(ctx, getReaction, arg.PostID, arg.ViewerID, arg.ProjectID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 	var items []sql.NullString
 	for rows.Next() {
-		var reaction sql.NullString
-		if err := rows.Scan(&reaction); err != nil {
+		var content sql.NullString
+		if err := rows.Scan(&content); err != nil {
 			return nil, err
 		}
-		items = append(items, reaction)
+		items = append(items, content)
 	}
 	if err := rows.Close(); err != nil {
 		return nil, err
@@ -1018,7 +977,7 @@ func (q *Queries) GetReaction(ctx context.Context, arg GetReactionParams) ([]sql
 }
 
 const getRoadmapPost = `-- name: GetRoadmapPost :one
-SELECT id, title, body, due_date, board_id, project_id, status_id, created_on, is_private, author_id, user_uuid, is_idea FROM roadmap_posts WHERE id = $1 AND project_id = $2
+SELECT id, title, body, due_date, board_id, project_id, status_id, created_on, is_private, author_id, viewer_id, is_idea, is_pinned, is_locked FROM roadmap_posts WHERE id = $1 AND project_id = $2
 `
 
 type GetRoadmapPostParams struct {
@@ -1040,8 +999,10 @@ func (q *Queries) GetRoadmapPost(ctx context.Context, arg GetRoadmapPostParams) 
 		&i.CreatedOn,
 		&i.IsPrivate,
 		&i.AuthorID,
-		&i.UserUuid,
+		&i.ViewerID,
 		&i.IsIdea,
+		&i.IsPinned,
+		&i.IsLocked,
 	)
 	return i, err
 }
@@ -1101,6 +1062,91 @@ func (q *Queries) GetStatuses(ctx context.Context, projectID int32) ([]GetStatus
 			&i.Status,
 			&i.SortOrder,
 			&i.Color,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getViewer = `-- name: GetViewer :many
+SELECT id, user_uuid, ip_addr, user_agent, locale, user_data, user_id, user_name, user_email, user_role, project_id, created_on FROM viewers WHERE user_uuid = $1 OR (user_id IS NULL OR user_id = $2) LIMIT 1
+`
+
+type GetViewerParams struct {
+	UserUuid uuid.UUID
+	UserID   sql.NullString
+}
+
+func (q *Queries) GetViewer(ctx context.Context, arg GetViewerParams) ([]Viewer, error) {
+	rows, err := q.db.QueryContext(ctx, getViewer, arg.UserUuid, arg.UserID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Viewer
+	for rows.Next() {
+		var i Viewer
+		if err := rows.Scan(
+			&i.ID,
+			&i.UserUuid,
+			&i.IpAddr,
+			&i.UserAgent,
+			&i.Locale,
+			&i.UserData,
+			&i.UserID,
+			&i.UserName,
+			&i.UserEmail,
+			&i.UserRole,
+			&i.ProjectID,
+			&i.CreatedOn,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getViewersByProject = `-- name: GetViewersByProject :many
+SELECT id, user_uuid, ip_addr, user_agent, locale, user_data, user_id, user_name, user_email, user_role, project_id, created_on FROM viewers WHERE project_id = $1 ORDER BY created_on DESC
+`
+
+func (q *Queries) GetViewersByProject(ctx context.Context, projectID int32) ([]Viewer, error) {
+	rows, err := q.db.QueryContext(ctx, getViewersByProject, projectID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Viewer
+	for rows.Next() {
+		var i Viewer
+		if err := rows.Scan(
+			&i.ID,
+			&i.UserUuid,
+			&i.IpAddr,
+			&i.UserAgent,
+			&i.Locale,
+			&i.UserData,
+			&i.UserID,
+			&i.UserName,
+			&i.UserEmail,
+			&i.UserRole,
+			&i.ProjectID,
+			&i.CreatedOn,
 		); err != nil {
 			return nil, err
 		}
@@ -1201,24 +1247,34 @@ func (q *Queries) InsertBoard(ctx context.Context, arg InsertBoardParams) (Roadm
 	return i, err
 }
 
-const insertComment = `-- name: InsertComment :one
-INSERT INTO post_comments (user_uuid, comment, post_id) VALUES ($1, $2, $3) RETURNING id, user_uuid, comment, post_id, created_on
+const insertInteraction = `-- name: InsertInteraction :one
+INSERT INTO changelog_interactions (content, post_id, interaction_type_id, viewer_id, project_id) VALUES ($1, $2, $3, $4, $5) RETURNING id, content, interaction_type_id, post_id, viewer_id, project_id, created_on
 `
 
-type InsertCommentParams struct {
-	UserUuid uuid.UUID
-	Comment  string
-	PostID   int32
+type InsertInteractionParams struct {
+	Content           sql.NullString
+	PostID            int32
+	InteractionTypeID int32
+	ViewerID          int32
+	ProjectID         int32
 }
 
-func (q *Queries) InsertComment(ctx context.Context, arg InsertCommentParams) (PostComment, error) {
-	row := q.db.QueryRowContext(ctx, insertComment, arg.UserUuid, arg.Comment, arg.PostID)
-	var i PostComment
+func (q *Queries) InsertInteraction(ctx context.Context, arg InsertInteractionParams) (ChangelogInteraction, error) {
+	row := q.db.QueryRowContext(ctx, insertInteraction,
+		arg.Content,
+		arg.PostID,
+		arg.InteractionTypeID,
+		arg.ViewerID,
+		arg.ProjectID,
+	)
+	var i ChangelogInteraction
 	err := row.Scan(
 		&i.ID,
-		&i.UserUuid,
-		&i.Comment,
+		&i.Content,
+		&i.InteractionTypeID,
 		&i.PostID,
+		&i.ViewerID,
+		&i.ProjectID,
 		&i.CreatedOn,
 	)
 	return i, err
@@ -1326,59 +1382,8 @@ func (q *Queries) InsertProject(ctx context.Context, arg InsertProjectParams) (P
 	return i, err
 }
 
-const insertReaction = `-- name: InsertReaction :one
-INSERT INTO post_reactions (user_uuid, ip_addr, user_agent, locale, reaction, user_id, user_name, user_email, user_role, user_data, post_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING id, user_uuid, ip_addr, user_agent, locale, reaction, post_id, created_on, user_data, user_id, user_name, user_email, user_role
-`
-
-type InsertReactionParams struct {
-	UserUuid  uuid.UUID
-	IpAddr    string
-	UserAgent string
-	Locale    string
-	Reaction  sql.NullString
-	UserID    sql.NullString
-	UserName  sql.NullString
-	UserEmail sql.NullString
-	UserRole  sql.NullString
-	UserData  pqtype.NullRawMessage
-	PostID    int32
-}
-
-func (q *Queries) InsertReaction(ctx context.Context, arg InsertReactionParams) (PostReaction, error) {
-	row := q.db.QueryRowContext(ctx, insertReaction,
-		arg.UserUuid,
-		arg.IpAddr,
-		arg.UserAgent,
-		arg.Locale,
-		arg.Reaction,
-		arg.UserID,
-		arg.UserName,
-		arg.UserEmail,
-		arg.UserRole,
-		arg.UserData,
-		arg.PostID,
-	)
-	var i PostReaction
-	err := row.Scan(
-		&i.ID,
-		&i.UserUuid,
-		&i.IpAddr,
-		&i.UserAgent,
-		&i.Locale,
-		&i.Reaction,
-		&i.PostID,
-		&i.CreatedOn,
-		&i.UserData,
-		&i.UserID,
-		&i.UserName,
-		&i.UserEmail,
-		&i.UserRole,
-	)
-	return i, err
-}
-
 const insertRoadmapPost = `-- name: InsertRoadmapPost :one
-INSERT INTO roadmap_posts (title, body, due_date, is_private, author_id, is_idea, user_uuid, board_id, status_id, project_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id, title, body, due_date, board_id, project_id, status_id, created_on, is_private, author_id, user_uuid, is_idea
+INSERT INTO roadmap_posts (title, body, due_date, is_private, author_id, is_idea, viewer_id, board_id, status_id, project_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id, title, body, due_date, board_id, project_id, status_id, created_on, is_private, author_id, viewer_id, is_idea, is_pinned, is_locked
 `
 
 type InsertRoadmapPostParams struct {
@@ -1388,7 +1393,7 @@ type InsertRoadmapPostParams struct {
 	IsPrivate bool
 	AuthorID  sql.NullInt32
 	IsIdea    bool
-	UserUuid  uuid.NullUUID
+	ViewerID  sql.NullInt32
 	BoardID   sql.NullInt32
 	StatusID  sql.NullInt32
 	ProjectID int32
@@ -1402,7 +1407,7 @@ func (q *Queries) InsertRoadmapPost(ctx context.Context, arg InsertRoadmapPostPa
 		arg.IsPrivate,
 		arg.AuthorID,
 		arg.IsIdea,
-		arg.UserUuid,
+		arg.ViewerID,
 		arg.BoardID,
 		arg.StatusID,
 		arg.ProjectID,
@@ -1419,8 +1424,10 @@ func (q *Queries) InsertRoadmapPost(ctx context.Context, arg InsertRoadmapPostPa
 		&i.CreatedOn,
 		&i.IsPrivate,
 		&i.AuthorID,
-		&i.UserUuid,
+		&i.ViewerID,
 		&i.IsIdea,
+		&i.IsPinned,
+		&i.IsLocked,
 	)
 	return i, err
 }
@@ -1455,6 +1462,55 @@ func (q *Queries) InsertStatus(ctx context.Context, arg InsertStatusParams) (Roa
 		&i.ProjectID,
 		&i.IsPrivate,
 		&i.SortOrder,
+	)
+	return i, err
+}
+
+const insertViewer = `-- name: InsertViewer :one
+INSERT INTO viewers (user_uuid, ip_addr, user_agent, locale, user_data, user_id, user_name, user_email, user_role, project_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id, user_uuid, ip_addr, user_agent, locale, user_data, user_id, user_name, user_email, user_role, project_id, created_on
+`
+
+type InsertViewerParams struct {
+	UserUuid  uuid.UUID
+	IpAddr    string
+	UserAgent string
+	Locale    string
+	UserData  pqtype.NullRawMessage
+	UserID    sql.NullString
+	UserName  sql.NullString
+	UserEmail sql.NullString
+	UserRole  sql.NullString
+	ProjectID int32
+}
+
+// VIEWER --
+func (q *Queries) InsertViewer(ctx context.Context, arg InsertViewerParams) (Viewer, error) {
+	row := q.db.QueryRowContext(ctx, insertViewer,
+		arg.UserUuid,
+		arg.IpAddr,
+		arg.UserAgent,
+		arg.Locale,
+		arg.UserData,
+		arg.UserID,
+		arg.UserName,
+		arg.UserEmail,
+		arg.UserRole,
+		arg.ProjectID,
+	)
+	var i Viewer
+	err := row.Scan(
+		&i.ID,
+		&i.UserUuid,
+		&i.IpAddr,
+		&i.UserAgent,
+		&i.Locale,
+		&i.UserData,
+		&i.UserID,
+		&i.UserName,
+		&i.UserEmail,
+		&i.UserRole,
+		&i.ProjectID,
+		&i.CreatedOn,
 	)
 	return i, err
 }
@@ -1553,6 +1609,37 @@ func (q *Queries) UpdateBoard(ctx context.Context, arg UpdateBoardParams) (Roadm
 		&i.Description,
 		&i.CreatedOn,
 		&i.ProjectID,
+	)
+	return i, err
+}
+
+const updateInteraction = `-- name: UpdateInteraction :one
+UPDATE changelog_interactions SET content = $1 WHERE viewer_id = $2 AND post_id = $3 AND interaction_type_id = $4 RETURNING id, content, interaction_type_id, post_id, viewer_id, project_id, created_on
+`
+
+type UpdateInteractionParams struct {
+	Content           sql.NullString
+	ViewerID          int32
+	PostID            int32
+	InteractionTypeID int32
+}
+
+func (q *Queries) UpdateInteraction(ctx context.Context, arg UpdateInteractionParams) (ChangelogInteraction, error) {
+	row := q.db.QueryRowContext(ctx, updateInteraction,
+		arg.Content,
+		arg.ViewerID,
+		arg.PostID,
+		arg.InteractionTypeID,
+	)
+	var i ChangelogInteraction
+	err := row.Scan(
+		&i.ID,
+		&i.Content,
+		&i.InteractionTypeID,
+		&i.PostID,
+		&i.ViewerID,
+		&i.ProjectID,
+		&i.CreatedOn,
 	)
 	return i, err
 }
@@ -1667,39 +1754,8 @@ func (q *Queries) UpdateProject(ctx context.Context, arg UpdateProjectParams) (P
 	return i, err
 }
 
-const updateReaction = `-- name: UpdateReaction :one
-UPDATE post_reactions SET reaction = $1 WHERE user_uuid = $2 AND post_id = $3 AND reaction IS NOT NULL RETURNING id, user_uuid, ip_addr, user_agent, locale, reaction, post_id, created_on, user_data, user_id, user_name, user_email, user_role
-`
-
-type UpdateReactionParams struct {
-	Reaction sql.NullString
-	UserUuid uuid.UUID
-	PostID   int32
-}
-
-func (q *Queries) UpdateReaction(ctx context.Context, arg UpdateReactionParams) (PostReaction, error) {
-	row := q.db.QueryRowContext(ctx, updateReaction, arg.Reaction, arg.UserUuid, arg.PostID)
-	var i PostReaction
-	err := row.Scan(
-		&i.ID,
-		&i.UserUuid,
-		&i.IpAddr,
-		&i.UserAgent,
-		&i.Locale,
-		&i.Reaction,
-		&i.PostID,
-		&i.CreatedOn,
-		&i.UserData,
-		&i.UserID,
-		&i.UserName,
-		&i.UserEmail,
-		&i.UserRole,
-	)
-	return i, err
-}
-
 const updateRoadmapPost = `-- name: UpdateRoadmapPost :one
-UPDATE roadmap_posts SET title = $1, body = $2, due_date = $3, is_private = $4, board_id = $5, status_id = $6 WHERE id = $7 AND project_id = $8 RETURNING id, title, body, due_date, board_id, project_id, status_id, created_on, is_private, author_id, user_uuid, is_idea
+UPDATE roadmap_posts SET title = $1, body = $2, due_date = $3, is_private = $4, board_id = $5, status_id = $6 WHERE id = $7 AND project_id = $8 RETURNING id, title, body, due_date, board_id, project_id, status_id, created_on, is_private, author_id, viewer_id, is_idea, is_pinned, is_locked
 `
 
 type UpdateRoadmapPostParams struct {
@@ -1736,14 +1792,16 @@ func (q *Queries) UpdateRoadmapPost(ctx context.Context, arg UpdateRoadmapPostPa
 		&i.CreatedOn,
 		&i.IsPrivate,
 		&i.AuthorID,
-		&i.UserUuid,
+		&i.ViewerID,
 		&i.IsIdea,
+		&i.IsPinned,
+		&i.IsLocked,
 	)
 	return i, err
 }
 
 const updateRoadmapPostStatus = `-- name: UpdateRoadmapPostStatus :one
-UPDATE roadmap_posts SET status_id = $1, board_id = $2 WHERE id = $3 AND project_id = $4 RETURNING id, title, body, due_date, board_id, project_id, status_id, created_on, is_private, author_id, user_uuid, is_idea
+UPDATE roadmap_posts SET status_id = $1, board_id = $2 WHERE id = $3 AND project_id = $4 RETURNING id, title, body, due_date, board_id, project_id, status_id, created_on, is_private, author_id, viewer_id, is_idea, is_pinned, is_locked
 `
 
 type UpdateRoadmapPostStatusParams struct {
@@ -1772,8 +1830,10 @@ func (q *Queries) UpdateRoadmapPostStatus(ctx context.Context, arg UpdateRoadmap
 		&i.CreatedOn,
 		&i.IsPrivate,
 		&i.AuthorID,
-		&i.UserUuid,
+		&i.ViewerID,
 		&i.IsIdea,
+		&i.IsPinned,
+		&i.IsLocked,
 	)
 	return i, err
 }
@@ -1841,17 +1901,65 @@ func (q *Queries) UpdateStatusOrder(ctx context.Context, arg UpdateStatusOrderPa
 	return i, err
 }
 
+const updateViewer = `-- name: UpdateViewer :one
+UPDATE viewers SET user_uuid = $1, ip_addr = $2, user_agent = $3, locale = $4, user_data = $5, user_id = $6, user_name = $7, user_email = $8, user_role = $9 WHERE id = $10 RETURNING id, user_uuid, ip_addr, user_agent, locale, user_data, user_id, user_name, user_email, user_role, project_id, created_on
+`
+
+type UpdateViewerParams struct {
+	UserUuid  uuid.UUID
+	IpAddr    string
+	UserAgent string
+	Locale    string
+	UserData  pqtype.NullRawMessage
+	UserID    sql.NullString
+	UserName  sql.NullString
+	UserEmail sql.NullString
+	UserRole  sql.NullString
+	ID        int32
+}
+
+func (q *Queries) UpdateViewer(ctx context.Context, arg UpdateViewerParams) (Viewer, error) {
+	row := q.db.QueryRowContext(ctx, updateViewer,
+		arg.UserUuid,
+		arg.IpAddr,
+		arg.UserAgent,
+		arg.Locale,
+		arg.UserData,
+		arg.UserID,
+		arg.UserName,
+		arg.UserEmail,
+		arg.UserRole,
+		arg.ID,
+	)
+	var i Viewer
+	err := row.Scan(
+		&i.ID,
+		&i.UserUuid,
+		&i.IpAddr,
+		&i.UserAgent,
+		&i.Locale,
+		&i.UserData,
+		&i.UserID,
+		&i.UserName,
+		&i.UserEmail,
+		&i.UserRole,
+		&i.ProjectID,
+		&i.CreatedOn,
+	)
+	return i, err
+}
+
 const userViewed = `-- name: UserViewed :one
-SELECT COUNT(id) FROM post_reactions WHERE user_uuid = $1 AND post_id = $2 AND reaction IS NULL
+SELECT COUNT(id) FROM changelog_interactions WHERE post_id = $1 and viewer_id = $2 AND interaction_type_id = 1
 `
 
 type UserViewedParams struct {
-	UserUuid uuid.UUID
 	PostID   int32
+	ViewerID int32
 }
 
 func (q *Queries) UserViewed(ctx context.Context, arg UserViewedParams) (int64, error) {
-	row := q.db.QueryRowContext(ctx, userViewed, arg.UserUuid, arg.PostID)
+	row := q.db.QueryRowContext(ctx, userViewed, arg.PostID, arg.ViewerID)
 	var count int64
 	err := row.Scan(&count)
 	return count, err

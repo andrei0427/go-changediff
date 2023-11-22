@@ -16,6 +16,7 @@ type App struct {
 	Fiber *fiber.App
 
 	AuthorService  *services.AuthorService
+	ViewerService  *services.ViewerService
 	CDNService     *services.CDNService
 	ProjectService *services.ProjectService
 	PostService    *services.PostService
@@ -43,6 +44,7 @@ func NewApp() *App {
 	fiber.Static("/static", "web/static")
 
 	authorService := services.NewAuthorService(dbConn)
+	viewerService := services.NewViewerService(dbConn)
 	projectService := services.NewProjectService(dbConn)
 	postService := services.NewPostService(dbConn, db)
 	labelService := services.NewLabelService(dbConn)
@@ -54,6 +56,7 @@ func NewApp() *App {
 		DB:             dbConn,
 		Fiber:          fiber,
 		AuthorService:  authorService,
+		ViewerService:  viewerService,
 		ProjectService: projectService,
 		PostService:    postService,
 		CDNService:     cdnService,

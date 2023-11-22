@@ -1,207 +1,312 @@
-<form id="post-form" hx-encoding="multipart/form-data" hx-post="/admin/posts/save" hx-swap="outerHTML"
-	hx-target="#post-form">
-	{%if firstPost %}
-	<div class="bg-white px-6 py-12 sm:py-16 lg:px-8">
-		<div class="mx-auto max-w-2xl text-center">
-			<p class="text-base font-semibold leading-7 text-emerald">Write your first post</p>
-			<h2 class="mt-2 text-4xl font-bold tracking-tight text-gray-900 sm:text-6xl">Almost there!</h2>
-			<p class="mt-6 text-lg leading-8 text-gray-600">Now it's time to write and publish your first post.</p>
-		</div>
-		<input type="hidden" name="first" value="true" />
-	</div>
-	{% else %}
-	<div class="md:flex md:items-center md:justify-between">
-		<div class="min-w-0 flex-1">
-			<h2 class="text-2xl font-bold leading-7 text-gray-900 sm:truncate sm:text-3xl sm:tracking-tight">
-				{% if Id%}Edit{% else %}Create{% endif %} a
-				post
-			</h2>
-		</div>
-		<div class="mt-4 flex md:ml-4 md:mt-0">
-			<a href="/admin/posts"
-				class="inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50">Back</a>
-		</div>
-	</div>
+<form
+  id="post-form"
+  hx-encoding="multipart/form-data"
+  hx-post="/admin/posts/save"
+  hx-swap="outerHTML"
+  hx-target="#post-form"
+>
+  {%if firstPost %}
+  <div class="bg-white px-6 py-12 sm:py-16 lg:px-8">
+    <div class="mx-auto max-w-2xl text-center">
+      <p class="text-base font-semibold leading-7 text-emerald">
+        Write your first post
+      </p>
+      <h2
+        class="mt-2 text-4xl font-bold tracking-tight text-gray-900 sm:text-6xl"
+      >
+        Almost there!
+      </h2>
+      <p class="mt-6 text-lg leading-8 text-gray-600">
+        Now it's time to write and publish your first post.
+      </p>
+    </div>
+    <input type="hidden" name="first" value="true" />
+  </div>
+  {% else %}
+  <div class="md:flex md:items-center md:justify-between">
+    <div class="min-w-0 flex-1">
+      <h2
+        class="text-2xl font-bold leading-7 text-gray-900 sm:truncate sm:text-3xl sm:tracking-tight"
+      >
+        {% if Id%}Edit{% else %}Create{% endif %} a post
+      </h2>
+    </div>
+    <div class="mt-4 flex md:ml-4 md:mt-0">
+      <a
+        href="/admin/posts"
+        class="inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
+        >Back</a
+      >
+    </div>
+  </div>
 
-	<input type="hidden" name="id" value="{{Id}}" />
-	{% endif %}
+  <input type="hidden" name="id" value="{{Id}}" />
+  {% endif %}
 
-	<div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-		<div class="mx-auto">
-			<div class="space-y-12">
-				<div class="border-b border-gray-900/10 pb-12">
-					<div class="mt-10 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
-						<div class="sm:col-span-4">
-							<label for="title" class="block text-sm font-medium leading-6 text-gray-900">Title</label>
-							<div class="mt-2">
-								<input type="text" name="title" id="title" value="{{form.Title}}"
-									aria-describedby="title-error" placeholder="Announcement: HUGE Update Incoming!"
-									class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-emerald">
+  <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+    <div class="mx-auto">
+      <div class="space-y-12">
+        <div class="border-b border-gray-900/10 pb-12">
+          <div class="mt-10 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
+            <div class="sm:col-span-4">
+              <label
+                for="title"
+                class="block text-sm font-medium leading-6 text-gray-900"
+                >Title</label
+              >
+              <div class="mt-2">
+                <input
+                  type="text"
+                  name="title"
+                  id="title"
+                  value="{{form.Title}}"
+                  aria-describedby="title-error"
+                  placeholder="Announcement: HUGE Update Incoming!"
+                  class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-emerald"
+                />
 
-								{% if errors['Title']%}
-								<p class="mt-2 text-sm text-red-600" id="title-error">
-									{{errors['Title']}}</p>
-								{% endif %}
-							</div>
-						</div>
+                {% if errors['Title']%}
+                <p class="mt-2 text-sm text-red-600" id="title-error">
+                  {{errors['Title']}}
+                </p>
+                {% endif %}
+              </div>
+            </div>
 
+            <div class="col-span-2">
+              <label
+                for="labelId"
+                class="block text-sm font-medium leading-6 text-gray-900"
+                >Label</label
+              >
+              <div class="relative inline-block text-left mt-2">
+                <div>
+                  <button
+                    type="button"
+                    onclick="toggleLabelDDL()"
+                    class="inline-flex w-full justify-center gap-x-1.5 rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
+                    id="label-ddl-button"
+                    aria-expanded="true"
+                    aria-haspopup="true"
+                  >
+                    {% if form.LabelId %} {% for label in Labels %}
+					{% if label.ID == form.LabelId %}
+                    <div
+                      class="w-5 h-5 rounded-md"
+                      id="selected-label-color"
+                      style="background-color: {{label.Color}};"
+                    ></div>
+                    <span id="selected-label">{{label.Label}}</span>
+                    {% endif %} {% endfor %} {% else %}
+                    <div
+                      id="selected-label-color"
+                      class="w-5 h-5"
+                      style="background-color: white"
+                    ></div>
+                    <span id="selected-label">Choose one</span>
+                    {% endif %}
+                    <svg
+                      class="-mr-1 h-5 w-5 text-gray-400"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                      aria-hidden="true"
+                    >
+                      <path
+                        fill-rule="evenodd"
+                        d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"
+                        clip-rule="evenodd"
+                      />
+                    </svg>
+                  </button>
+                </div>
 
-						<div class="col-span-2">
-							<label for="labelId" class="block text-sm font-medium leading-6 text-gray-900">Label</label>
-							<div class="relative inline-block text-left mt-2">
-								<div>
-									<button type="button" onclick="toggleLabelDDL()"
-										class="inline-flex w-full justify-center gap-x-1.5 rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
-										id="label-ddl-button" aria-expanded="true" aria-haspopup="true">
-										{% if form.LabelId %}
-										{% for label in Labels %}
-										{% if label.ID == form.LabelId %}
-										<div class="w-5 h-5 rounded-md" id="selected-label-color"
-											style="background-color: {{label.Color}};"></div>
-										<span id="selected-label">{{label.Label}}</span>
-										{% endif %}
-										{% endfor %}
-										{% else %}
-										<div id="selected-label-color" class="w-5 h-5" style="background-color: white;">
-										</div>
-										<span id="selected-label">Choose one</span>
-										{% endif %}
-										<svg class="-mr-1 h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor"
-											aria-hidden="true">
-											<path fill-rule="evenodd"
-												d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"
-												clip-rule="evenodd" />
-										</svg>
-									</button>
-								</div>
+                <div
+                  id="ddlLabel"
+                  class="hidden ddl absolute right-0 z-10 mt-2 max-w-56 origin-top-right divide-y divide-gray-100 rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
+                  role="menu"
+                  aria-orientation="vertical"
+                  aria-labelledby="menu-button"
+                  tabindex="-1"
+                >
+                  <div class="py-1" role="none">
+                    {% for label in Labels%}
+                    <button
+                      onclick="handleLabelSelected({{label.ID}}, '{{label.Color}}', '{{label.Label}}'); return false;"
+                      aria-valuetext="{{label.ID}}"
+                      class="w-full gap-x-1.5 hover:bg-gray-50 {%if form.LabelId == label.ID%}bg-gray-100 text-gray-900{%else%}text-gray-700{%endif%} group font-semibold flex items-center px-4 py-2 text-sm"
+                      role="menuitem"
+                      tabindex="-1"
+                      id="menu-item-{{label.ID}}"
+                    >
+                      <div
+                        class="w-5 h-5 rounded-md"
+                        style="background-color: {{label.Color}};"
+                      ></div>
+                      {{label.Label}}
+                    </button>
+                    {% endfor %}
+                  </div>
+                </div>
+              </div>
 
+              <input
+                id="labelId"
+                type="hidden"
+                name="label_id"
+                value="{{form.LabelId}}"
+              />
+            </div>
 
-								<div id="ddlLabel"
-									class="hidden ddl absolute right-0 z-10 mt-2 max-w-56 origin-top-right divide-y divide-gray-100 rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
-									role="menu" aria-orientation="vertical" aria-labelledby="menu-button" tabindex="-1">
-									<div class="py-1" role="none">
-										{% for label in Labels%}
-										<button
-											onclick="handleLabelSelected({{label.ID}}, '{{label.Color}}', '{{label.Label}}'); return false;"
-											aria-valuetext="{{label.ID}}"
-											class="w-full gap-x-1.5 hover:bg-gray-50 {%if form.LabelId == label.ID%}bg-gray-100 text-gray-900{%else%}text-gray-700{%endif%} group font-semibold flex items-center px-4 py-2 text-sm"
-											role="menuitem" tabindex="-1" id="menu-item-{{label.ID}}">
-											<div class="w-5 h-5 rounded-md" style="background-color: {{label.Color}};">
-											</div>
-											{{label.Label}}
-										</button>
-										{% endfor %}
-									</div>
-								</div>
-							</div>
+            <div class="col-span-2">
+              <label
+                for="published_on"
+                class="block text-sm font-medium leading-6 text-gray-900"
+                >Publish Date</label
+              >
+              <div class="mt-2">
+                <input
+                  type="datetime-local"
+                  name="published_on"
+                  id="published_on"
+                  value="{%if form.PublishedOn %}{{formatHTMLInputDateTime(convertDate(parseDateTime(form.PublishedOn), user.Timezone))}}{%endif%}"
+                  aria-describedby="published-on-error"
+                  required
+                  class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-emerald"
+                />
 
-							<input id="labelId" type="hidden" name="label_id" value="{{form.LabelId}}" />
-						</div>
+                {% if errors['PublishedOn']%}
+                <p class="mt-2 text-sm text-red-600" id="published-on-error">
+                  {{errors['PublishedOn']}}
+                </p>
+                {% endif %}
+              </div>
+            </div>
 
-						<div class="col-span-2">
-							<label for="published_on" class="block text-sm font-medium leading-6 text-gray-900">Publish
-								Date</label>
-							<div class="mt-2">
-								<input type="datetime-local" name="published_on" id="published_on"
-									value="{%if form.PublishedOn %}{{formatHTMLInputDateTime(convertDate(parseDateTime(form.PublishedOn), user.Timezone))}}{%endif%}"
-									aria-describedby="published-on-error" required
-									class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-emerald">
+            <div class="col-span-2">
+              <label
+                for="expires_on"
+                class="block text-sm font-medium leading-6 text-gray-900"
+                >Expiry date</label
+              >
+              <div class="mt-2">
+                <input
+                  type="datetime-local"
+                  name="expires_on"
+                  id="expires_on"
+                  value="{%if form.ExpiresOn%}{{formatHTMLInputDateTime(convertDate(parseDateTime(form.ExpiresOn), user.Timezone))}}{%endif%}"
+                  aria-describedby="published-on-error"
+                  class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-emerald"
+                />
 
-								{% if errors['PublishedOn']%}
-								<p class="mt-2 text-sm text-red-600" id="published-on-error">
-									{{errors['PublishedOn']}}</p>
-								{% endif %}
-							</div>
-						</div>
+                {% if errors['ExpiresOn']%}
+                <p class="mt-2 text-sm text-red-600" id="published-on-error">
+                  {{errors['ExpiresOn']}}
+                </p>
+                {% endif %}
+              </div>
+            </div>
 
-						<div class="col-span-2">
-							<label for="expires_on" class="block text-sm font-medium leading-6 text-gray-900">Expiry date</label>
-							<div class="mt-2">
-								<input type="datetime-local" name="expires_on" id="expires_on"
-									value="{%if form.ExpiresOn%}{{formatHTMLInputDateTime(convertDate(parseDateTime(form.ExpiresOn), user.Timezone))}}{%endif%}"
-									aria-describedby="published-on-error" 
-									class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-emerald">
+            <div class="col-span-2">
+              <div class="flex items-start">
+                <div class="flex h-6 items-center">
+                  <input
+                    id="is_published"
+                    aria-describedby="is_published-description"
+                    name="is_published"
+                    type="checkbox"
+                    class="h-4 w-4 rounded border-gray-300 text-emerald focus:ring-emerald"
+                    style="position: unset"
+                    {%if form.IsPublished%}checked{%endif%}
+                  />
+                </div>
+                <div class="ml-3 text-sm leading-6">
+                  <label for="is_published" class="font-medium text-gray-900"
+                    >Published</label
+                  >
+                  <p id="is_published-description" class="text-gray-500">
+                    Unticking this will hide the post publically and put it in a
+                    draft state.
+                  </p>
+                </div>
+              </div>
+            </div>
 
-								{% if errors['ExpiresOn']%}
-								<p class="mt-2 text-sm text-red-600" id="published-on-error">
-									{{errors['ExpiresOn']}}</p>
-								{% endif %}
-							</div>
-						</div>
+            <div class="col-span-full">
+              <label class="block text-sm font-medium leading-6 text-gray-900"
+                >Body</label
+              >
+              <div class="mt-2">
+                <div
+                  id="root"
+                  class="block w-full rounded-md border-0 p-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-emerald"
+                ></div>
+                <input
+                  type="hidden"
+                  name="content"
+                  value="{{form.Content}}"
+                  id="editor-content"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
 
+        <div class="mt-6 flex items-center justify-end gap-x-6">
+          <p class="mt-2 text-sm text-red-600">{{error}}</p>
 
-						<div class="col-span-2">
-							<div class="flex items-start">
-								<div class="flex h-6 items-center">
-									<input id="is_published" aria-describedby="is_published-description"
-										name="is_published" type="checkbox"
-										class="h-4 w-4 rounded border-gray-300 text-emerald focus:ring-emerald" 
-										style="position: unset;"
-										{%if form.IsPublished%}checked{%endif%} />
-								</div>
-								<div class="ml-3 text-sm leading-6">
-									<label for="is_published" class="font-medium text-gray-900">Published</label>
-									<p id="is_published-description" class="text-gray-500">
-										Unticking this will hide the post publically and put it in a draft state.
-									</p>
-								</div>
-							</div>
-						</div>
-
-						<div class="col-span-full">
-							<label class="block text-sm font-medium leading-6 text-gray-900">Body</label>
-							<div class="mt-2">
-								<div id="root" class="block w-full rounded-md border-0 p-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-emerald"></div>
-								<input type="hidden" name="content" value="{{form.Content}}" id="editor-content" />
-							</div>
-						</div>
-
-					</div>
-				</div>
-
-				<div class="mt-6 flex items-center justify-end gap-x-6">
-					<p class="mt-2 text-sm text-red-600">{{error}}</p>
-
-					<button type="submit" id="btn-submit"
-						class="rounded-md bg-emerald px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald">Save</button>
-				</div>
-			</div>
-		</div>
+          <button
+            type="submit"
+            id="btn-submit"
+            class="rounded-md bg-emerald px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald"
+          >
+            Save
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
 </form>
 
-<link rel="stylesheet" href="/static/lexical/main.8197594a.css"/>
+<link rel="stylesheet" href="/static/lexical/main.8197594a.css" />
 <script type="module" src="/static/lexical/main.9d8dd8ca.js"></script>
 
 <script>
-	window.addEventListener('load', () => {
-	window.dispatchEvent(new Event('initlexical'));
-	});
+	window.addEventListener("load", () => {
+    window.dispatchEvent(new Event("initlexical"));
+  });
 
-	function toggleLabelDDL() {
-		document.getElementById('ddlLabel').classList.toggle('hidden');
+  setTimeout(() => {
+	if(!document.querySelector('.editor')){
+		window.dispatchEvent(new Event("initlexical"));
 	}
+  }, 500);
 
-	function handleLabelSelected(labelId, labelColor, label) {
-		document.getElementById('labelId').setAttribute('value', labelId);
+  function toggleLabelDDL() {
+    document.getElementById("ddlLabel").classList.toggle("hidden");
+  }
 
-		document.getElementById('selected-label-color').setAttribute('style', 'background-color: '.concat(labelColor));
-		document.getElementById('selected-label').innerText = label;
+  function handleLabelSelected(labelId, labelColor, label) {
+    document.getElementById("labelId").setAttribute("value", labelId);
 
-		const ddlElms = document.querySelectorAll('.ddl button');
+    document
+      .getElementById("selected-label-color")
+      .setAttribute("style", "background-color: ".concat(labelColor));
+    document.getElementById("selected-label").innerText = label;
 
-		ddlElms.forEach(elm => {
-			elm.classList.remove('bg-gray-100', 'text-gray-900', 'text-gray-700');
+    const ddlElms = document.querySelectorAll(".ddl button");
 
-			if (elm.getAttribute('aria-valuetext') == labelId) {
-				elm.classList.add('bg-gray-100', 'text-gray-900');
-			} else {
-				elm.classList.add('text-gray-700');
-			}
-		});
+    ddlElms.forEach((elm) => {
+      elm.classList.remove("bg-gray-100", "text-gray-900", "text-gray-700");
 
+      if (elm.getAttribute("aria-valuetext") == labelId) {
+        elm.classList.add("bg-gray-100", "text-gray-900");
+      } else {
+        elm.classList.add("text-gray-700");
+      }
+    });
 
-		toggleLabelDDL();
+    toggleLabelDDL();
 
-		return false;
-	}
+    return false;
+  }
 </script>

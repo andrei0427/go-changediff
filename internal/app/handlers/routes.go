@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"database/sql"
 	"fmt"
 	"html/template"
 	"net/url"
@@ -20,6 +19,7 @@ import (
 
 type AppHandler struct {
 	AuthorService  *services.AuthorService
+	ViewerService  *services.ViewerService
 	ProjectService *services.ProjectService
 	PostService    *services.PostService
 	CDNService     *services.CDNService
@@ -30,6 +30,7 @@ type AppHandler struct {
 
 func NewAppHandler(
 	authorService *services.AuthorService,
+	viewerService *services.ViewerService,
 	projectService *services.ProjectService,
 	postService *services.PostService,
 	cdnService *services.CDNService,
@@ -39,6 +40,7 @@ func NewAppHandler(
 ) *AppHandler {
 	return &AppHandler{
 		AuthorService:  authorService,
+		ViewerService:  viewerService,
 		ProjectService: projectService,
 		PostService:    postService,
 		CDNService:     cdnService,
@@ -49,7 +51,9 @@ func NewAppHandler(
 }
 
 func InitRoutes(app *app.App) {
-	appHandler := NewAppHandler(app.AuthorService,
+	appHandler := NewAppHandler(
+		app.AuthorService,
+		app.ViewerService,
 		app.ProjectService,
 		app.PostService,
 		app.CDNService,
@@ -58,19 +62,21 @@ func InitRoutes(app *app.App) {
 		app.RoadmapService)
 	// app.Fiber.Get("/", appHandler.Home)
 
-	widget := app.Fiber.Group("/widget", middleware.UseLocale, middleware.UseUserId, middleware.UseUserInfo)
-	widget.Get("/:key", appHandler.WidgetHome)
+	widget := app.Fiber.Group("/widget/:key", middleware.UseLocale, middleware.UseUserId, middleware.UseUserInfo)
+	widget.Get("/", appHandler.WidgetHome)
 
-	widget.Use(middleware.UseWithUserId)
+	widget.Use(func(c *fiber.Ctx) error {
+		return middleware.UseWithViewer(c, appHandler.CacheService, appHandler.ProjectService, appHandler.ViewerService)
+	})
+
 	changelog := widget.Group("/changelog")
-	changelog.Get("/:key", appHandler.WidgetChangelog)
-	changelog.Get("/posts/:key/:pageNo?", appHandler.WidgetChangelogPosts)
-	changelog.Post("/posts/:key/:pageNo?", appHandler.WidgetChangelogPosts)
-	changelog.Put("/posts/view/:key/:postId/:reaction?", appHandler.WidgetChangelogReaction)
-	changelog.Put("/posts/comment/:key/:postId", appHandler.WidgetChangelogComment)
+	changelog.Get("/", appHandler.WidgetChangelog)
+	changelog.Get("/posts/:pageNo?", appHandler.WidgetChangelogPosts)
+	changelog.Put("/posts/view/:postId/:reaction?", appHandler.WidgetChangelogReaction)
+	changelog.Put("/posts/comment/:postId", appHandler.WidgetChangelogComment)
 
-	widget.Get("/roadmap/:key", appHandler.WidgetRoadmap)
-	widget.Get("/ideas/:key", appHandler.WidgetFeedback)
+	widget.Get("/roadmap", appHandler.WidgetRoadmap)
+	widget.Get("/ideas", appHandler.WidgetFeedback)
 
 	admin := app.Fiber.Group("/admin", middleware.UseAuth)
 	admin.Get("/dashboard", appHandler.Dashboard)
@@ -183,15 +189,10 @@ func (a *AppHandler) WidgetChangelogPosts(c *fiber.Ctx) error {
 	model := new(models.Search)
 	c.BodyParser(model)
 
-	userUuid := c.Locals("userUuid").(*uuid.UUID)
+	viewer := c.Locals("viewer").(data.Viewer)
 	pageNo := 1
 	if paramPageNo > 0 {
 		pageNo = paramPageNo
-	}
-
-	posts, err := a.PostService.GetPublishedPagedPosts(c.Context(), key, int32(pageNo), model.Search, *userUuid)
-	if err != nil {
-		return fiber.NewError(503, "Error fetching posts")
 	}
 
 	project, err := a.ProjectService.GetProjectByKey(c.Context(), a.CacheService, key)
@@ -199,15 +200,16 @@ func (a *AppHandler) WidgetChangelogPosts(c *fiber.Ctx) error {
 		return fiber.NewError(503, "Error fetching project")
 	}
 
+	posts, err := a.PostService.GetPublishedPagedPosts(c.Context(), key, int32(pageNo), model.Search, viewer.ID)
+	if err != nil {
+		return fiber.NewError(503, "Error fetching posts")
+	}
+
 	return c.Render("widget/components/posts", fiber.Map{"Posts": posts, "ProjectKey": key, "Project": project})
 }
 
 func (a *AppHandler) WidgetChangelogReaction(c *fiber.Ctx) error {
-	userUuid := c.Locals("userUuid").(*uuid.UUID)
-	userLocale := c.Locals("timezone").(string)
-	userInfo := c.Locals("userInfo").(*models.UserInfo)
-
-	projectKey := c.Params("key")
+	viewer := c.Locals("viewer").(data.Viewer)
 	reaction := c.Params("reaction")
 	postId, err := c.ParamsInt("postId")
 
@@ -215,37 +217,26 @@ func (a *AppHandler) WidgetChangelogReaction(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusBadRequest, "Post ID is required")
 	}
 
-	if projectKey == "" {
-		return fiber.NewError(fiber.StatusBadRequest, "Project key is required")
-	}
-
-	project, err := a.ProjectService.GetProjectByKey(c.Context(), a.CacheService, projectKey)
-	if err != nil {
-		return fiber.NewError(fiber.StatusBadRequest, "Project not found")
-	}
-
-	post, err := a.PostService.GetPost(c.Context(), int32(postId), project.ID)
+	post, err := a.PostService.GetPost(c.Context(), int32(postId), viewer.ProjectID)
 	if err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, "Post not found")
 	}
 
-	var Reaction = sql.NullString{String: "", Valid: false}
+	var Reaction *string
 	if reaction != "" {
 		parsed, err := url.QueryUnescape(reaction)
 
 		if err == nil {
-			Reaction = sql.NullString{String: parsed, Valid: true}
+			Reaction = &parsed
 		}
 	}
 
-	_, err = a.PostService.SaveReaction(c.Context(), data.InsertReactionParams{
-		UserUuid:  *userUuid,
-		PostID:    post.ID,
-		IpAddr:    c.IP(),
-		UserAgent: c.Get("User-Agent"),
-		Locale:    userLocale,
-		Reaction:  Reaction,
-	}, userInfo)
+	interactionType := models.InteractionTypeView
+	if Reaction != nil && len(*Reaction) > 0 {
+		interactionType = models.InteractionTypeReaction
+	}
+
+	_, err = a.PostService.SaveInteraction(c.Context(), post.ID, viewer.ID, viewer.ProjectID, interactionType, Reaction)
 
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, "Something went wrong")
@@ -255,8 +246,7 @@ func (a *AppHandler) WidgetChangelogReaction(c *fiber.Ctx) error {
 }
 
 func (a *AppHandler) WidgetChangelogComment(c *fiber.Ctx) error {
-	userUuid := c.Locals("userUuid").(*uuid.UUID)
-	projectKey := c.Params("key")
+	viewer := c.Locals("viewer").(data.Viewer)
 	postId, err := c.ParamsInt("postId")
 	body := new(models.ChangelogComment)
 
@@ -268,21 +258,12 @@ func (a *AppHandler) WidgetChangelogComment(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusBadRequest, "Post ID is required")
 	}
 
-	if projectKey == "" {
-		return fiber.NewError(fiber.StatusBadRequest, "Project key is required")
-	}
-
-	project, err := a.ProjectService.GetProjectByKey(c.Context(), a.CacheService, projectKey)
-	if err != nil {
-		return fiber.NewError(fiber.StatusBadRequest, "Project not found")
-	}
-
-	_, err = a.PostService.GetPost(c.Context(), int32(postId), project.ID)
+	post, err := a.PostService.GetPost(c.Context(), int32(postId), viewer.ProjectID)
 	if err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, "Post not found")
 	}
 
-	_, err = a.PostService.InsertPostComment(c.Context(), *userUuid, body.Comment, int32(postId))
+	_, err = a.PostService.InsertPostComment(c.Context(), viewer.ID, post.ID, viewer.ProjectID, body.Comment)
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, "Something went wrong")
 	}
@@ -801,12 +782,12 @@ func (a *AppHandler) LoadPostReactions(c *fiber.Ctx) error {
 
 	postId := int32(iPostId)
 
-	reactions, err := a.PostService.GetPostReactions(c.Context(), &postId, curUser.Project.ID, nil, nil)
+	reactions, err := a.PostService.GetPostReactions(c.Context(), curUser.Project.ID, &postId, nil)
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, "something went wrong")
 	}
 
-	comments, err := a.PostService.GetPostComments(c.Context(), &postId, curUser.Project.ID, nil, nil)
+	comments, err := a.PostService.GetPostComments(c.Context(), curUser.Project.ID, &postId, nil)
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, "something went wrong")
 	}
@@ -1285,7 +1266,7 @@ func (a *AppHandler) SaveRoadmapPost(c *fiber.Ctx) error {
 
 		}
 
-		savedPost, err = a.RoadmapService.InsertPost(c.Context(), *form, &author.ID, userUuid, curUser.Project.ID, loc, false)
+		savedPost, err = a.RoadmapService.InsertPost(c.Context(), *form, &author.ID, nil, curUser.Project.ID, loc, false)
 		if err != nil {
 			form.Content = template.HTMLEscapeString(form.Content)
 			return c.Render(viewPath, fiber.Map{"error": err.Error(), "form": form, "Statuses": statuses, "Boards": boards})
@@ -1329,7 +1310,7 @@ func (a *AppHandler) ConfirmDeleteRoadmapPost(c *fiber.Ctx) error {
 func (a *AppHandler) GetUserAnalytics(c *fiber.Ctx) error {
 	curUser := c.Locals("user").(*models.SessionUser)
 
-	data, err := a.PostService.GetAnalytics(c.Context(), curUser.Project.ID, nil, nil)
+	data, err := a.PostService.GetAnalytics(c.Context(), curUser.Project.ID, nil)
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, "error when fetching analytics")
 	}
@@ -1339,23 +1320,20 @@ func (a *AppHandler) GetUserAnalytics(c *fiber.Ctx) error {
 
 func (a *AppHandler) GetAnalyticsByUser(c *fiber.Ctx) error {
 	curUser := c.Locals("user").(*models.SessionUser)
-	qUserUuid := c.Query("uuid")
-	qUserId := c.Query("userId")
+	qViewerId := c.QueryInt("userId")
+	i32ViewerId := int32(qViewerId)
 
-	userUuid := string(qUserUuid)
-	userId := string(qUserId)
-
-	data, err := a.PostService.GetAnalytics(c.Context(), curUser.Project.ID, &userUuid, &userId)
+	data, err := a.PostService.GetAnalytics(c.Context(), curUser.Project.ID, &i32ViewerId)
 	if err != nil || len(data) == 0 {
 		return fiber.NewError(fiber.StatusInternalServerError, "error when fetching analytics")
 	}
 
-	comments, err := a.PostService.GetPostComments(c.Context(), nil, curUser.Project.ID, &userUuid, &userId)
+	comments, err := a.PostService.GetPostComments(c.Context(), curUser.Project.ID, nil, &i32ViewerId)
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, "error when fetching analytics comments")
 	}
 
-	reactions, err := a.PostService.GetPostReactions(c.Context(), nil, curUser.Project.ID, &userUuid, &userId)
+	reactions, err := a.PostService.GetPostReactions(c.Context(), curUser.Project.ID, nil, &i32ViewerId)
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, "error when fetching analytics reactons")
 	}

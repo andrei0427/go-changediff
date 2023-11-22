@@ -25,7 +25,7 @@
         placeholder="Search"
         type="search"
         autocomplete="off"
-        hx-post="/widget/changelog/posts/{{Project.AppKey}}"
+        hx-post="/widget/{{Project.AppKey}}/changelog/posts"
         hx-trigger="keyup changed delay:500ms, search"
         hx-target="#changelog-content"
         hx-swap="innerHtml"
@@ -70,7 +70,7 @@
 
 <div
   id="changelog-content"
-  hx-get="/widget/changelog/posts/{{Project.AppKey}}"
+  hx-get="/widget/{{Project.AppKey}}/changelog/posts"
   hx-trigger="load"
   hx-swap="innerHtml"
 ></div>

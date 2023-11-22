@@ -29,7 +29,7 @@
             </div>
             <div class="ml-6 flex space-x-4">
               <button
-                hx-get="/widget/changelog/{{Project.AppKey}}"
+                hx-get="/widget/{{Project.AppKey}}/changelog"
                 hx-target="#content"
                 hx-on::before-request="updateNav('tabChangelog')"
                 id="tabChangelog"
@@ -38,7 +38,7 @@
                 Changelog
               </button>
               <button
-                hx-get="/widget/roadmap/{{Project.AppKey}}"
+                hx-get="/widget/{{Project.AppKey}}/roadmap"
                 hx-target="#content"
                 hx-on::before-request="updateNav('tabRoadmap')"
                 id="tabRoadmap"
@@ -47,7 +47,7 @@
                 Roadmap
               </button>
               <button
-                hx-get="/widget/ideas/{{Project.AppKey}}"
+                hx-get="/widget/{{Project.AppKey}}/ideas"
                 hx-target="#content"
                 hx-on::before-request="updateNav('tabFeedback')"
                 id="tabFeedback"
@@ -92,7 +92,7 @@
     <main
       id="content"
       class="h-screen mx-auto max-w-7xl p-2 sm:p-4 lg:p-8"
-      hx-get="/widget/changelog/{{Project.AppKey}}"
+      hx-get="/widget/{{Project.AppKey}}/changelog"
       hx-swap="innerHtml"
       hx-trigger="load"
     ></main>

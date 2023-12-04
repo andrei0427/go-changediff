@@ -2,6 +2,7 @@ package models
 
 import (
 	"encoding/json"
+	"time"
 
 	"github.com/andrei0427/go-changediff/internal/data"
 	"github.com/golang-jwt/jwt"
@@ -108,6 +109,51 @@ type RoadmapPostModel struct {
 	Content   string `form:"content"`
 	IsPrivate bool   `form:"is_private"`
 	DueDate   string `form:"due_date"`
+
+	Reactions []RoadmapPostReactionActivityModel
+}
+
+type ActivityType int
+
+const (
+	ActivityTypeCreation ActivityType = iota + 1
+	ActivityTypeStatusUpdate
+	ActivityTypeComment
+)
+
+type RoadmapPostActivityModel struct {
+	ID            int32
+	CreatedOn     time.Time
+	Who           string
+	WhoPictureUrl string
+	Type          ActivityType
+
+	CommentActivity      *RoadmapPostCommentModel
+	StatusUpdateActivity *RoadmapPostStatusActivityModel
+}
+
+type RoadmapPostCommentFormModel struct {
+	Comment string `form:"comment"`
+}
+
+type RoadmapPostCommentModel struct {
+	Comment         *string
+	IsPinned        bool
+	ReplyCount      int64
+	ParentCommentID *int32
+	Reactions       []RoadmapPostReactionActivityModel
+}
+
+type RoadmapPostStatusActivityModel struct {
+	FromStatus *RoadmapStatusModel
+	ToStatus   *RoadmapStatusModel
+}
+
+type RoadmapPostReactionActivityModel struct {
+	Who             string
+	WhoPictureUrl   *string
+	Reaction        string
+	ParentCommentID *int32
 }
 
 type RoadmapBoardStatusWithPosts struct {

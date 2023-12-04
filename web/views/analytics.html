@@ -103,7 +103,7 @@
           </td>
           <td class="py-4 pl-3 pr-4 text-right text-sm font-medium">
             <button
-              hx-get="/admin/analytics/user?{%if r.UserID.String%}userId={{r.UserID.String}}{%else%}uuid={{r.UserUuid.String}}{%endif%}"
+              hx-get="/admin/analytics/user/{{r.ID}}"
               hx-target="body" hx-swap="beforeend" class="text-emerald">View<span class="sr-only">
                 {{r.Username}}'s interactions</span></a>
           </td>

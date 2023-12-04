@@ -173,7 +173,7 @@ func (s *RoadmapService) GetPostsForBoard(ctx context.Context, boardId int32, pr
 	return s.db.GetPostsForBoard(ctx, data.GetPostsForBoardParams{BoardID: sql.NullInt32{Int32: boardId, Valid: true}, ProjectID: projectId})
 }
 
-func (s *RoadmapService) GetPostById(ctx context.Context, postId int32, projectId int32) (data.RoadmapPost, error) {
+func (s *RoadmapService) GetPostById(ctx context.Context, postId int32, projectId int32) (data.GetRoadmapPostRow, error) {
 	return s.db.GetRoadmapPost(ctx, data.GetRoadmapPostParams{ID: postId, ProjectID: projectId})
 }
 
@@ -221,14 +221,58 @@ func (s *RoadmapService) DeletePost(ctx context.Context, postId int32, projectId
 		return false, err
 	}
 
-	defer tx.Rollback()
-
 	qtx := s.db.WithTx(tx)
-	qtx.DeleteRoadmapPostCategoriesByPost(ctx, data.DeleteRoadmapPostCategoriesByPostParams{RoadmapPostID: postId, ProjectID: projectId})
+
+	_, err = qtx.DeleteRoadmapPostCategoriesByPost(ctx, data.DeleteRoadmapPostCategoriesByPostParams{RoadmapPostID: postId, ProjectID: projectId})
+	if err != nil {
+		tx.Rollback()
+		return false, err
+	}
+
+	_, err = s.DeleteRoadmapPostVote(ctx, nil, postId, projectId, nil, nil, qtx)
+	if err != nil {
+		tx.Rollback()
+		return false, err
+	}
+
+	_, err = s.DeleteRoadmapPostActivity(ctx, postId, projectId, nil, nil, qtx)
+	if err != nil {
+		tx.Rollback()
+		return false, err
+	}
+
+	_, err = s.DeleteRoadmapPostComments(ctx, postId, projectId, qtx)
+	if err != nil {
+		tx.Rollback()
+		return false, err
+	}
+
 	_, err = qtx.DeleteRoadmapPost(ctx, data.DeleteRoadmapPostParams{ID: postId, ProjectID: projectId})
+	if err != nil {
+		tx.Rollback()
+		return false, err
+	}
+
 	tx.Commit()
 
 	return true, err
+}
+
+func (s *RoadmapService) InsertPostActivity(ctx context.Context, fromStatusId *int32, toStatusId *int32, postId int32, authorId int32) (data.RoadmapPostActivity, error) {
+	params := data.InsertRoadmapPostActivityParams{
+		RoadmapPostID: postId,
+		AuthorID:      authorId,
+	}
+
+	if fromStatusId != nil {
+		params.FromStatusID = sql.NullInt32{Int32: *fromStatusId, Valid: true}
+	}
+
+	if toStatusId != nil {
+		params.ToStatusID = sql.NullInt32{Int32: *toStatusId, Valid: true}
+	}
+
+	return s.db.InsertRoadmapPostActivity(ctx, params)
 }
 
 func (s *RoadmapService) UpdatePostStatus(ctx context.Context, statusId int32, boardId *int32, postId int32, projectId int32) (data.RoadmapPost, error) {
@@ -272,4 +316,231 @@ func (s *RoadmapService) UpdatePost(ctx context.Context, post models.RoadmapPost
 	}
 
 	return s.db.UpdateRoadmapPost(ctx, toUpdate)
+}
+
+func (s *RoadmapService) GetRoadmapPostActivity(ctx context.Context, postId int32, projectId int32) (data.GetRoadmapPostActivityRow, error) {
+	return s.db.GetRoadmapPostActivity(ctx, data.GetRoadmapPostActivityParams{ID: postId, ProjectID: projectId})
+}
+
+func (s *RoadmapService) GetRoadmapPostStatusActivity(ctx context.Context, postId int32, projectId int32) ([]data.GetRoadmapPostStatusActivityRow, error) {
+	return s.db.GetRoadmapPostStatusActivity(ctx, data.GetRoadmapPostStatusActivityParams{RoadmapPostID: postId, ProjectID: projectId})
+}
+
+func (s *RoadmapService) GetRoadmapPostComments(ctx context.Context, postId int32, projectId int32, commentId *int32) ([]data.GetRoadmapPostCommentsRow, error) {
+	params := data.GetRoadmapPostCommentsParams{
+		RoadmapPostID: postId,
+		ProjectID:     projectId,
+		Column2:       0,
+	}
+
+	if commentId != nil {
+		params.Column2 = *commentId
+	}
+
+	return s.db.GetRoadmapPostComments(ctx, params)
+}
+
+func (s *RoadmapService) GetRoadmapPostReactions(ctx context.Context, postId int32, projectId int32, commentId *int32) ([]data.GetRoadmapPostReactionsRow, error) {
+	params := data.GetRoadmapPostReactionsParams{
+		RoadmapPostID: postId,
+		ProjectID:     projectId,
+		Column2:       0,
+	}
+
+	if commentId != nil {
+		params.Column2 = *commentId
+	}
+
+	return s.db.GetRoadmapPostReactions(ctx, params)
+}
+
+func (s *RoadmapService) DeleteRoadmapPostActivity(ctx context.Context, postId int32, projectId int32, authorId *int32, viewerId *int32, qtx *data.Queries) (*[]int32, error) {
+	params := data.DeleteRoadmapPostActivityParams{
+		ID:        postId,
+		ProjectID: projectId,
+
+		Column3: 0,
+		Column4: 0,
+	}
+
+	if authorId != nil {
+		params.Column3 = *authorId
+	}
+
+	if viewerId != nil {
+		params.Column4 = *viewerId
+	}
+
+	queries := qtx
+	if queries == nil {
+		queries = s.db
+	}
+
+	deleted, err := queries.DeleteRoadmapPostActivity(ctx, params)
+	if err != nil {
+		return nil, err
+	}
+
+	return &deleted, nil
+}
+
+func (s *RoadmapService) DeleteRoadmapPostVote(ctx context.Context, id *int32, postId int32, projectId int32, authorId *int32, viewerId *int32, qtx *data.Queries) (*[]int32, error) {
+	params := data.DeleteRoadmapPostVoteParams{
+		ID:        postId,
+		ProjectID: projectId,
+
+		Column4: 0,
+		Column5: 0,
+	}
+
+	if id != nil {
+		params.Column1 = *id
+	}
+
+	if authorId != nil {
+		params.Column4 = *authorId
+	}
+
+	if viewerId != nil {
+		params.Column5 = *viewerId
+	}
+
+	queries := qtx
+	if queries == nil {
+		queries = s.db
+	}
+
+	deleted, err := queries.DeleteRoadmapPostVote(ctx, params)
+	if err != nil {
+		return nil, err
+	}
+
+	return &deleted, nil
+}
+
+func (s *RoadmapService) DeleteRoadmapPostReaction(ctx context.Context, id *int32, postId int32, projectId int32, qtx *data.Queries) (*[]int32, error) {
+	params := data.DeleteRoadmapPostReactionParams{
+		ID:        postId,
+		ProjectID: projectId,
+	}
+
+	if id != nil {
+		params.Column1 = *id
+	}
+
+	queries := qtx
+	if queries == nil {
+		queries = s.db
+	}
+
+	deleted, err := queries.DeleteRoadmapPostReaction(ctx, params)
+	if err != nil {
+		return nil, err
+	}
+
+	return &deleted, nil
+}
+
+func (s *RoadmapService) InsertRoadmapPostVote(ctx context.Context, postId int32, projectId int32, authorId *int32, viewerId *int32) (*data.RoadmapPostVote, error) {
+	params := data.InsertRoadmapPostVoteParams{
+		RoadmapPostID: postId,
+		AuthorID:      sql.NullInt32{Valid: false},
+		ViewerID:      sql.NullInt32{Valid: false},
+		ProjectID:     projectId,
+	}
+
+	if authorId != nil {
+		params.AuthorID = sql.NullInt32{Int32: *authorId, Valid: true}
+	}
+
+	if viewerId != nil {
+		params.ViewerID = sql.NullInt32{Int32: *viewerId, Valid: true}
+	}
+
+	if !params.AuthorID.Valid && !params.ViewerID.Valid {
+		return nil, errors.New("author or viewer id required")
+	}
+
+	inserted, err := s.db.InsertRoadmapPostVote(ctx, params)
+	if err != nil {
+		return nil, err
+	}
+
+	return &inserted, err
+}
+
+func (s *RoadmapService) InsertRoadmapPostComment(ctx context.Context, postId int32, replyingToCommentId *int32, authorId *int32, viewerId *int32, content string) (*data.RoadmapPostComment, error) {
+	params := data.InsertRoadmapPostCommentParams{
+		RoadmapPostID: postId,
+		AuthorID:      sql.NullInt32{Valid: false},
+		ViewerID:      sql.NullInt32{Valid: false},
+		InReplyToID:   sql.NullInt32{Valid: false},
+		Content:       content,
+	}
+
+	if authorId != nil {
+		params.AuthorID = sql.NullInt32{Int32: *authorId, Valid: true}
+	}
+
+	if viewerId != nil {
+		params.ViewerID = sql.NullInt32{Int32: *viewerId, Valid: true}
+	}
+
+	if !params.AuthorID.Valid && !params.ViewerID.Valid {
+		return nil, errors.New("author or viewer id required")
+	}
+
+	if replyingToCommentId != nil {
+		params.InReplyToID = sql.NullInt32{Int32: *replyingToCommentId, Valid: true}
+	}
+
+	inserted, err := s.db.InsertRoadmapPostComment(ctx, params)
+	if err != nil {
+		return nil, err
+	}
+
+	return &inserted, err
+
+}
+
+func (s *RoadmapService) DeleteRoadmapPostComment(ctx context.Context, id int32, postId int32, projectId int32, authorId *int32, viewerId *int32, qtx *data.Queries) (int32, error) {
+	params := data.DeleteRoadmapPostCommentParams{
+		ID:        id,
+		ID_2:      postId,
+		ProjectID: projectId,
+
+		Column4: 0,
+		Column5: 0,
+	}
+
+	if authorId != nil {
+		params.Column4 = *authorId
+	}
+
+	if viewerId != nil {
+		params.Column5 = *viewerId
+	}
+
+	queries := qtx
+	if queries == nil {
+		queries = s.db
+
+	}
+
+	return queries.DeleteRoadmapPostComment(ctx, params)
+}
+
+func (s *RoadmapService) DeleteRoadmapPostComments(ctx context.Context, postId int32, projectId int32, qtx *data.Queries) ([]int32, error) {
+	params := data.DeleteAllRoadmapPostCommentsParams{
+		ID:        postId,
+		ProjectID: projectId,
+	}
+
+	queries := qtx
+	if queries == nil {
+		queries = s.db
+
+	}
+
+	return queries.DeleteAllRoadmapPostComments(ctx, params)
 }

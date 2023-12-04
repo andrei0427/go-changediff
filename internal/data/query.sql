@@ -177,6 +177,7 @@ SELECT COUNT(id) FROM changelog_interactions WHERE post_id = $1 and viewer_id = 
 SELECT DISTINCT 
    COALESCE(REPLACE(v.user_id, '"', ''), 'N/A') as UserID,
    v.user_uuid,
+   v.id,
    COALESCE(REPLACE(v.user_name, '"', ''), 'User') as UserName, 
    COALESCE(REPLACE(v.user_email, '"', ''), 'N/A') as UserEmail, 
    COALESCE(REPLACE(v.user_role, '"', ''), 'N/A') as UserRole, 
@@ -191,8 +192,8 @@ FROM viewers v
   LEFT JOIN changelog_interactions civ on (civ.project_id = $1 and civ.viewer_id = v.id and civ.interaction_type_id = 1) or civ.id is null
   LEFT JOIN changelog_interactions cir on (cir.project_id = $1 and cir.viewer_id = v.id and cir.interaction_type_id = 2) or cir.id is null
   LEFT JOIN changelog_interactions cic on (cic.project_id = $1 and cic.viewer_id = v.id and cic.interaction_type_id = 3) or cic.id is null
-WHERE $2 IS NULL OR v.id = $2
-GROUP BY v.user_id, v.user_uuid, UserName, UserEmail, UserRole, v.locale, UserData;
+WHERE $2 = 0 OR v.id = $2
+GROUP BY v.user_id, v.user_uuid, v.id, UserName, UserEmail, UserRole, v.locale, UserData;
 
 -- ROADMAP --
 
@@ -253,7 +254,7 @@ INSERT INTO roadmap_posts (title, body, due_date, is_private, author_id, is_idea
 UPDATE roadmap_posts SET title = $1, body = $2, due_date = $3, is_private = $4, board_id = $5, status_id = $6 WHERE id = $7 AND project_id = $8 RETURNING *;
 
 -- name: GetRoadmapPost :one
-SELECT * FROM roadmap_posts WHERE id = $1 AND project_id = $2;
+SELECT p.id, p.title, p.is_private, p.body, p.due_date, p.status_id, p.board_id, p.created_on, COUNT(v.id) as Votes FROM roadmap_posts p left join roadmap_post_votes v on p.id = v.roadmap_post_id WHERE p.id = $1 AND p.project_id = $2 GROUP BY p.id, p.title, p.is_private, p.body, p.due_date, p.status_id, p.board_id, p.created_on;
 
 -- name: UpdateRoadmapPostStatus :one
 UPDATE roadmap_posts SET status_id = $1, board_id = $2 WHERE id = $3 AND project_id = $4 RETURNING *;
@@ -263,3 +264,149 @@ DELETE FROM roadmap_posts WHERE id = $1 AND project_id = $2 RETURNING id;
 
 -- name: DeleteRoadmapPostCategoriesByPost :many
 DELETE FROM roadmap_post_categories where roadmap_post_id = $1 AND project_id = $2 RETURNING id;
+
+-- name: GetRoadmapPostActivity :one
+select
+  p.id as ID,
+  a.first_name as Who,
+  p.created_on as CreatedOn,
+  a.picture_url as WhoPictureUrl
+from roadmap_posts p 
+  join authors a on a.id = p.author_id
+where p.id = $1 and p.project_id = $2;
+
+-- name: GetRoadmapPostStatusActivity :many
+select 
+   t.id as ID,
+   a.first_name as Who,
+   a.picture_url as WhoPictureUrl,
+   sf.ID as StatusFromID,
+   sf.Status as StatusFrom,
+   sf.Color as StatusFromColor,
+   sf.Description as StatusFromDescription,
+   st.ID as StatusToID,
+   st.Status as StatusTo,
+   st.Color as StatusToColor,
+   st.Description as StatusToDescription,
+   t.created_on as CreatedOn
+from
+  roadmap_post_activity t 
+    join authors a on a.id = t.author_id
+    join roadmap_posts p on p.id = t.roadmap_post_id
+    left join roadmap_statuses sf on sf.id = t.from_status_id
+    left join roadmap_statuses st on st.id =  t.to_status_id
+where t.roadmap_post_id = $1 and p.project_id = $2;
+
+-- name: InsertRoadmapPostActivity :one
+insert into roadmap_post_activity (from_status_id, to_status_id, roadmap_post_id, author_id) VALUES ($1, $2, $3, $4) RETURNING *;
+
+-- name: DeleteRoadmapPostActivity :many
+delete from roadmap_post_activity rpa 
+   using roadmap_posts rp 
+   where rpa.roadmap_post_id = rp.id 
+     and rp.id = $1 
+     and rp.project_id = $2
+     and ($3 = 0 OR rp.author_id = $3)
+     and ($4 = 0 OR rp.viewer_id = $4)
+RETURNING rpa.id;
+
+-- name: GetRoadmapPostComments :many
+select 
+   c.id as ID,
+   COALESCE(a.first_name, v.user_name, 'Someone') as Who,
+   a.picture_url as WhoPictureUrl,
+   c.content as Comment,
+   c.created_on as CreatedOn,
+   c.is_pinned as IsPinned,
+   c.is_deleted as IsDeleted,
+   COUNT(rc.id) as ReplyCount
+from
+  roadmap_post_comments c
+    inner join roadmap_posts p on p.id = c.roadmap_post_id
+    left join authors a on a.id = c.author_id
+    left join viewers v on v.id = c.viewer_id
+    left join roadmap_post_comments rc on rc.in_reply_to_id = c.id
+where c.roadmap_post_id = $1 
+    and (($2 = 0 and c.in_reply_to_id is null) or $2 = c.in_reply_to_id)
+    and p.project_id = $3
+group by
+  c.id, Who, WhoPictureUrl, Comment, CreatedOn, IsPinned, IsDeleted;
+
+-- name: GetRoadmapPostReactions :many
+select 
+  r.id as ID,
+  COALESCE(a.first_name, v.user_name, 'Someone') as Who,
+  a.picture_url as WhoPictureUrl,
+  emoji as Reaction,
+  r.created_on as CreatedOn,
+  r.comment_id as CommentID
+from
+  roadmap_post_reactions r 
+    inner join roadmap_posts p on p.id = r.roadmap_post_id
+    left join authors a on r.author_id = a.id
+    left join viewers v on r.viewer_id = v.id
+where r.roadmap_post_id = $1
+    and (($2 = 0 and r.comment_id is null) or $2 = r.comment_id)
+    and p.project_id = $3;
+
+-- name: InsertRoadmapPostVote :one
+insert into roadmap_post_votes (roadmap_post_id, author_id, viewer_id) 
+  select $1, $2, $3 from roadmap_posts p where p.id = $1 and p.project_id = $4
+RETURNING *;
+
+-- name: GetRoadmapPostOwner :one
+select author_id, viewer_id from roadmap_post_votes where id = $1;
+
+-- name: DeleteRoadmapPostVote :many
+delete from roadmap_post_votes rpv 
+   using roadmap_posts rp 
+   where rpv.roadmap_post_id = rp.id 
+     and ($1 = 0 or rpv.id = $1)
+     and rp.id = $2 
+     and rp.project_id = $3 
+     and ($4 = 0 OR rp.author_id = $4)
+     and ($5 = 0 OR rp.viewer_id = $5)
+RETURNING rpv.id;
+
+
+-- name: InsertRoadmapPostComment :one
+insert into roadmap_post_comments (content, in_reply_to_id, roadmap_post_id, author_id, viewer_id) VALUES ($1, $2, $3, $4, $5) RETURNING *;
+
+-- name: DeleteRoadmapPostComment :one
+update roadmap_post_comments rpc 
+   set rpc.is_deleted = 1 
+   from roadmap_posts rp 
+   where rpc.roadmap_post_id = rp.id 
+     and rpc.id = $1
+     and rp.id = $2 
+     and rp.project_id = $3 
+     and ($4 = 0 OR rp.author_id = $4)
+     and ($5 = 0 OR rp.viewer_id = $5)
+RETURNING rpc.id;
+
+-- name: DeleteAllRoadmapPostComments :many
+delete from roadmap_post_comments rpc 
+  using roadmap_posts rp
+   where rpc.roadmap_post_id = rp.id 
+     and rp.id = $1 
+     and rp.project_id = $2 
+RETURNING rpc.id;
+
+-- name: TogglePinRoadmapPostComment :one
+update roadmap_post_comments set is_pinned = !is_pinned where id = $1 RETURNING id;
+
+-- name: InsertRoadmapPostReaction :one
+insert into roadmap_post_reactions (emoji, comment_id, roadmap_post_id, author_id, viewer_id) VALUES ($1, $2, $3, $4, $5) RETURNING *;
+
+-- name: DeleteRoadmapPostReaction :many
+delete from roadmap_post_reactions rpr 
+   using roadmap_posts rp 
+   where rpr.roadmap_post_id = rp.id 
+     and ($1 = 0 or rpr.id = $1)
+     and rp.id = $2 
+     and rp.project_id = $3 
+RETURNING rpr.id;
+
+-- name: ToggleLockRoadmapPost :one
+update roadmap_posts set is_locked = !is_locked where id = $1 RETURNING id;
+

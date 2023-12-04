@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"html/template"
 	"net/url"
+	"sort"
 	"strings"
 	"time"
 
@@ -92,7 +93,7 @@ func InitRoutes(app *app.App) {
 
 	analytics := admin.Group("/analytics")
 	analytics.Get("/", appHandler.GetUserAnalytics)
-	analytics.Get("/user", appHandler.GetAnalyticsByUser)
+	analytics.Get("/user/:viewerId", appHandler.GetAnalyticsByUser)
 
 	billing := admin.Group("/billing")
 	billing.Get("/", appHandler.GetBilling)
@@ -111,6 +112,8 @@ func InitRoutes(app *app.App) {
 	roadmap.Get("/board", appHandler.GetBoard)
 	roadmapPost := roadmap.Group("/post")
 	roadmapPost.Get("/compose", appHandler.GetRoadmapComposeForm)
+	roadmapPost.Get("/activity/:postId/:commentId?", appHandler.GetRoadmapPostActivity)
+	roadmapPost.Post("/activity/:postId/comment/:commentId?", appHandler.PostRoadmapPostComment)
 	roadmapPost.Post("/save", appHandler.SaveRoadmapPost)
 	roadmapPost.Delete("/delete/:id", appHandler.DeleteRoadmapPost)
 	roadmapPost.Delete("/confirm-delete/:id", appHandler.ConfirmDeleteRoadmapPost)
@@ -801,7 +804,6 @@ func (a *AppHandler) LoadPosts(c *fiber.Ctx) error {
 	posts, err := a.PostService.GetPosts(c.Context(), curUser.Project.ID)
 
 	if err != nil {
-		fmt.Println(err.Error())
 		return fiber.NewError(503, "Could not get posts for user")
 	}
 
@@ -817,7 +819,6 @@ func (a *AppHandler) DeletePost(c *fiber.Ctx) error {
 	}
 
 	if _, err := a.PostService.DeletePost(c.Context(), int32(id), curUser.Project.ID); err != nil {
-		fmt.Println(err.Error())
 		return c.Render("partials/components/banner", fiber.Map{"Message": "An error occured when deleting the post"})
 	}
 
@@ -1132,6 +1133,153 @@ func (a *AppHandler) GetRoadmapComposeForm(c *fiber.Ctx) error {
 
 }
 
+func (a *AppHandler) GetRoadmapPostActivity(c *fiber.Ctx) error {
+	curUser := c.Locals("user").(*models.SessionUser)
+	postId, err := c.ParamsInt("postId")
+	if err != nil || postId <= 0 {
+		return fiber.NewError(fiber.StatusBadRequest, "invalid post id provided")
+	}
+
+	var commentId *int32
+	paramCommentId, err := c.ParamsInt("commentId")
+	if err == nil {
+		if paramCommentId > 0 {
+			i32CommentId := int32(paramCommentId)
+			commentId = &i32CommentId
+		}
+	}
+
+	post, err := a.RoadmapService.GetRoadmapPostActivity(c.Context(), int32(postId), curUser.Project.ID)
+	if err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, "error retrieving post")
+	}
+
+	firstActivity := models.RoadmapPostActivityModel{
+		ID:        post.ID,
+		CreatedOn: post.Createdon,
+		Type:      models.ActivityTypeCreation,
+		Who:       post.Who,
+	}
+	if post.Whopictureurl.Valid {
+		firstActivity.WhoPictureUrl = post.Whopictureurl.String
+	}
+
+	activity := []models.RoadmapPostActivityModel{
+		firstActivity,
+	}
+
+	statusUpdates, err := a.RoadmapService.GetRoadmapPostStatusActivity(c.Context(), int32(postId), curUser.Project.ID)
+	if err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, "error retrieving status updates")
+	}
+	unassignedStatus := &models.RoadmapStatusModel{
+		Color:  "#DDDDDD",
+		Status: "Unassigned",
+	}
+
+	for _, u := range statusUpdates {
+		statusUpdateActivity := &models.RoadmapPostStatusActivityModel{
+			FromStatus: unassignedStatus,
+			ToStatus:   unassignedStatus,
+		}
+
+		if u.Statusfromid.Valid {
+			statusUpdateActivity.FromStatus = &models.RoadmapStatusModel{
+				ID:          &u.Statusfromid.Int32,
+				Status:      u.Statusfrom.String,
+				Color:       u.Statusfromcolor.String,
+				Description: u.Statusfromdescription.String,
+			}
+		}
+
+		if u.Statustoid.Valid {
+			statusUpdateActivity.ToStatus = &models.RoadmapStatusModel{
+				ID:          &u.Statustoid.Int32,
+				Status:      u.Statusto.String,
+				Color:       u.Statustocolor.String,
+				Description: u.Statustodescription.String,
+			}
+		}
+
+		newActivity := models.RoadmapPostActivityModel{
+			ID:                   u.ID,
+			CreatedOn:            u.Createdon,
+			Who:                  u.Who,
+			Type:                 models.ActivityTypeStatusUpdate,
+			StatusUpdateActivity: statusUpdateActivity,
+		}
+
+		if u.Whopictureurl.Valid {
+			newActivity.WhoPictureUrl = u.Whopictureurl.String
+		}
+
+		activity = append(activity, newActivity)
+	}
+
+	comments, err := a.RoadmapService.GetRoadmapPostComments(c.Context(), int32(postId), curUser.Project.ID, commentId)
+	if err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, "error retrieving comments")
+	}
+	reactions, err := a.RoadmapService.GetRoadmapPostReactions(c.Context(), int32(postId), curUser.Project.ID, commentId)
+	if err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, "error retrieving reactions")
+	}
+
+	var postComments []models.RoadmapPostActivityModel
+	for _, c := range comments {
+		newActivity := models.RoadmapPostActivityModel{
+			ID:        c.ID,
+			CreatedOn: c.Createdon,
+			Who:       c.Who,
+			Type:      models.ActivityTypeComment,
+			CommentActivity: &models.RoadmapPostCommentModel{
+				IsPinned:        c.Ispinned,
+				ReplyCount:      c.Replycount,
+				ParentCommentID: commentId,
+			},
+		}
+
+		if !c.Isdeleted {
+			comment := c.Comment
+			newActivity.CommentActivity.Comment = &comment
+		}
+
+		if c.Whopictureurl.Valid {
+			newActivity.WhoPictureUrl = c.Whopictureurl.String
+		}
+
+		var postReactions []models.RoadmapPostReactionActivityModel
+		for _, r := range reactions {
+			newReaction := models.RoadmapPostReactionActivityModel{
+				Who:             r.Who,
+				Reaction:        r.Reaction,
+				ParentCommentID: commentId,
+			}
+
+			if r.Whopictureurl.Valid {
+				newReaction.WhoPictureUrl = &r.Whopictureurl.String
+			}
+
+			postReactions = append(postReactions, newReaction)
+		}
+		newActivity.CommentActivity.Reactions = postReactions
+
+		activity = append(activity, newActivity)
+		postComments = append(postComments, newActivity)
+	}
+
+	sort.Slice(activity, func(i int, j int) bool {
+		return activity[i].CreatedOn.After(activity[j].CreatedOn)
+	})
+
+	if commentId != nil {
+		return c.Render("partials/components/roadmap/post_comment_list", fiber.Map{"postId": postId, "activity": activity, "comments": postComments})
+	}
+
+	return c.Render("partials/components/roadmap/post_slideover_timeline", fiber.Map{"postId": postId, "activity": activity})
+
+}
+
 func (a *AppHandler) SaveRoadmapPostStatus(c *fiber.Ctx) error {
 	curUser := c.Locals("user").(*models.SessionUser)
 
@@ -1148,6 +1296,10 @@ func (a *AppHandler) SaveRoadmapPostStatus(c *fiber.Ctx) error {
 	statusId, err := c.ParamsInt("statusId")
 	if err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, "could not read status id")
+	}
+
+	if (!post.StatusID.Valid && statusId <= 0) || (post.StatusID.Int32 == int32(statusId)) {
+		return c.Render("partials/components/roadmap/board_post", fiber.Map{"p": post, "StatusUpdated": true})
 	}
 
 	statuses, err := a.RoadmapService.GetStatuses(c.Context(), curUser.Project.ID)
@@ -1186,7 +1338,91 @@ func (a *AppHandler) SaveRoadmapPostStatus(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusInternalServerError, "error saving status")
 	}
 
+	var fromStatusId *int32
+	var toStatusId *int32
+
+	if post.StatusID.Valid {
+		fromStatusId = &post.StatusID.Int32
+	}
+
+	if statusId > 0 {
+		i32StatusId := int32(statusId)
+		toStatusId = &i32StatusId
+	}
+
+	a.RoadmapService.InsertPostActivity(c.Context(), fromStatusId, toStatusId, post.ID, curUser.Author.ID)
+
 	return c.Render("partials/components/roadmap/board_post", fiber.Map{"p": saved, "StatusUpdated": true})
+}
+
+func (a *AppHandler) PostRoadmapPostComment(c *fiber.Ctx) error {
+	viewPath := "partials/components/roadmap/post_comment"
+	curUser := c.Locals("user").(*models.SessionUser)
+	viewerAny := c.Locals("viewer")
+
+	postId, err := c.ParamsInt("postId")
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "bad post id given")
+	}
+
+	commentId, _ := c.ParamsInt("commentId")
+	var i32CommentId *int32
+	if commentId > 0 {
+		parsedCommentId := int32(commentId)
+		i32CommentId = &parsedCommentId
+	}
+
+	form := new(models.RoadmapPostCommentFormModel)
+	err = c.BodyParser(form)
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "invalid input")
+	}
+
+	var Who *string
+	var authorId *int32
+	var WhoPictureUrl *string
+	if curUser != nil {
+		authorId = &curUser.Author.ID
+		Who = &curUser.Author.FirstName
+		if curUser.Author.PictureUrl.Valid {
+			WhoPictureUrl = &curUser.Author.PictureUrl.String
+		}
+	}
+	var viewerId *int32
+	if viewerAny != nil {
+		viewer := viewerAny.(data.Viewer)
+		viewerId = &viewer.ID
+
+		if viewer.UserName.Valid {
+			Who = &viewer.UserName.String
+		}
+	}
+
+	if authorId == nil && viewerId == nil {
+		return fiber.NewError(fiber.StatusForbidden, "author or viewer id required")
+	}
+
+	comment, err := a.RoadmapService.InsertRoadmapPostComment(c.Context(), int32(postId), i32CommentId, authorId, viewerId, form.Comment)
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "error saving comment")
+	}
+
+	activity := models.RoadmapPostActivityModel{
+		ID:            comment.ID,
+		CreatedOn:     comment.CreatedOn,
+		Who:           *Who,
+		WhoPictureUrl: *WhoPictureUrl,
+		Type:          models.ActivityTypeComment,
+		CommentActivity: &models.RoadmapPostCommentModel{
+			Comment:         &comment.Content,
+			ReplyCount:      0,
+			ParentCommentID: i32CommentId,
+			IsPinned:        false,
+			Reactions:       []models.RoadmapPostReactionActivityModel{},
+		},
+	}
+
+	return c.Render(viewPath, fiber.Map{"a": activity, "postId": postId})
 }
 
 func (a *AppHandler) SaveRoadmapPost(c *fiber.Ctx) error {
@@ -1286,9 +1522,11 @@ func (a *AppHandler) DeleteRoadmapPost(c *fiber.Ctx) error {
 	}
 
 	if _, err := a.RoadmapService.DeletePost(c.Context(), int32(id), curUser.Project.ID); err != nil {
+		fmt.Println(err.Error())
 		return c.Render("partials/components/banner", fiber.Map{"Message": "An error occured when deleting the post"})
 	}
 
+	c.Append("HX-Trigger-After-Swap", fmt.Sprintf("{\"reset-counters\": \"post-%d\"}", id))
 	return c.Render("partials/components/banner", fiber.Map{"Message": "Post successfully deleted", "Success": true})
 }
 
@@ -1301,8 +1539,6 @@ func (a *AppHandler) ConfirmDeleteRoadmapPost(c *fiber.Ctx) error {
 	return c.Render("partials/components/delete_confirm_modal", fiber.Map{"Title": "Confirm deletion",
 		"Body":        "Are you sure you want to delete this post",
 		"EndpointUri": "/admin/roadmap/post/delete/" + fmt.Sprint(id),
-		"ElementType": "table",
-		"ElementId":   "post-" + fmt.Sprint(id),
 		"IsSlideOver": true,
 	})
 }
@@ -1320,7 +1556,11 @@ func (a *AppHandler) GetUserAnalytics(c *fiber.Ctx) error {
 
 func (a *AppHandler) GetAnalyticsByUser(c *fiber.Ctx) error {
 	curUser := c.Locals("user").(*models.SessionUser)
-	qViewerId := c.QueryInt("userId")
+	qViewerId, err := c.ParamsInt("viewerId")
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "invalid viewer id")
+	}
+
 	i32ViewerId := int32(qViewerId)
 
 	data, err := a.PostService.GetAnalytics(c.Context(), curUser.Project.ID, &i32ViewerId)

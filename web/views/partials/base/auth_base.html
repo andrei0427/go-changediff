@@ -129,7 +129,7 @@
 
                   <li>
                     <a
-                      href="#"
+                      href=""
                       class="hover:text-emerald hover:bg-gray-50 group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold"
                     >
                       <svg
@@ -157,7 +157,7 @@
 
                   <li>
                     <a
-                      href="#"
+                      href=""
                       class="hover:text-emerald hover:bg-gray-50 group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold"
                     >
                       <svg
@@ -190,7 +190,7 @@
 
                   <li>
                     <a
-                      href="#"
+                      href=""
                       class="hover:text-emerald hover:bg-gray-50 group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold"
                     >
                       <svg
@@ -378,7 +378,7 @@
 
                   <li>
                     <a
-                      href="#"
+                      href=""
                       class="hover:text-emerald hover:bg-gray-50 group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold"
                     >
                       <svg
@@ -406,7 +406,7 @@
 
                   <li>
                     <a
-                      href="#"
+                      href=""
                       class="hover:text-emerald hover:bg-gray-50 group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold"
                     >
                       <svg
@@ -439,7 +439,7 @@
 
                   <li>
                     <a
-                      href="#"
+                      href=""
                       class="hover:text-emerald hover:bg-gray-50 group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold"
                     >
                       <svg
@@ -670,7 +670,7 @@
           return;
         }
 
-        if (!url.includes(elm.href.split("/").pop())) {
+        if (elm.querySelector('span')?.innerHTML === 'Coming soon' || !url.includes(elm.href.split("/").pop())) {
           elm.children[0].classList.add("text-gray-400");
           elm.classList.add("text-gray-700");
           return;

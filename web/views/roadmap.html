@@ -3,7 +3,9 @@
 {% endblock %} {% block content %}
 
 <div class="min-w-0 flex-1">
-  <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:truncate sm:text-3xl sm:tracking-tight">
+  <h2
+    class="text-2xl font-bold leading-7 text-gray-900 sm:truncate sm:text-3xl sm:tracking-tight"
+  >
     Your Roadmap
   </h2>
 </div>
@@ -12,21 +14,43 @@
 
 <div class="relative pt-8 inline-block text-left">
   <div>
-    <button type="button"
+    <button
+      type="button"
       class="inline-flex w-full items-center gap-x-1.5 rounded-md font-semibold text-gray-900"
-      id="menu-button" aria-expanded="true" aria-haspopup="true" onclick="toggleDropdown(event)">
-      <h3 id="selected-board-name" class="text-base font-semibold leading-6 text-gray-900">Boards</h3>
-      <svg class="-mr-1 h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-        <path fill-rule="evenodd"
+      id="menu-button"
+      aria-expanded="true"
+      aria-haspopup="true"
+      onclick="toggleDropdown(event)"
+    >
+      <h3
+        id="selected-board-name"
+        class="text-base font-semibold leading-6 text-gray-900"
+      >
+        Boards
+      </h3>
+      <svg
+        class="-mr-1 h-5 w-5 text-gray-400"
+        viewBox="0 0 20 20"
+        fill="currentColor"
+        aria-hidden="true"
+      >
+        <path
+          fill-rule="evenodd"
           d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"
-          clip-rule="evenodd" />
+          clip-rule="evenodd"
+        />
       </svg>
     </button>
   </div>
 
   <div
     class="absolute hidden left-0 transform ease-out opacity-0 scale-95 right-0 z-10 mt-2 w-56 origin-top-right divide-y divide-gray-100 rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
-    role="menu" id="ddlBoards" aria-orientation="vertical" aria-labelledby="menu-button" tabindex="-1">
+    role="menu"
+    id="ddlBoards"
+    aria-orientation="vertical"
+    aria-labelledby="menu-button"
+    tabindex="-1"
+  >
     <div class="px-4 py-3" role="none">
       <p class="truncate text-sm font-medium text-gray-900" role="none">
         Public boards
@@ -36,11 +60,19 @@
       <!-- Active: "bg-gray-100 text-gray-900", Not Active: "text-gray-700" -->
 
       {%for b in PublicBoards%}
-      <a class="text-gray-700 block px-4 py-2 text-sm hover:bg-gray-100 w-full text-left" role="menuitem" tabindex="-1"
-        href="#{{b.ID}}">
+      <a
+        class="text-gray-700 block px-4 py-2 text-sm hover:bg-gray-100 w-full text-left"
+        role="menuitem"
+        tabindex="-1"
+        href="#{{b.ID}}"
+      >
         &nbsp;&nbsp;{{b.Name}}
       </a>
-      {%empty%} <span class="test-gray-700 block px-4 py-2 text-sm w-full text-left">No boards created.</span> {%endfor%}
+      {%empty%}
+      <span class="test-gray-700 block px-4 py-2 text-sm w-full text-left"
+        >No boards created.</span
+      >
+      {%endfor%}
     </div>
 
     {%if HasPrivateBoards%}
@@ -52,8 +84,12 @@
     <div class="py-1" role="none">
       <!-- Active: "bg-gray-100 text-gray-900", Not Active: "text-gray-700" -->
       {%for b in PrivateBoards%}
-      <a class="text-gray-700 block px-4 py-2 text-sm hover:bg-gray-100 w-full text-left" role="menuitem" tabindex="-1"
-        href="#{{b.ID}}">
+      <a
+        class="text-gray-700 block px-4 py-2 text-sm hover:bg-gray-100 w-full text-left"
+        role="menuitem"
+        tabindex="-1"
+        href="#{{b.ID}}"
+      >
         &nbsp;&nbsp;{{b.Name}}
       </a>
       {%endfor%}
@@ -62,16 +98,28 @@
     {%endif%}
 
     <div class="py-1" role="none">
-      <button class="text-gray-900 block px-4 py-2 text-sm font-medium hover:bg-gray-100 w-full text-left"
-        role="menuitem" tabindex="-1" hx-get="/admin/settings/roadmap/boards/open" hx-swap="beforeend" hx-target="body">
+      <button
+        class="text-gray-900 block px-4 py-2 text-sm font-medium hover:bg-gray-100 w-full text-left"
+        role="menuitem"
+        tabindex="-1"
+        hx-get="/admin/settings/roadmap/boards/open"
+        hx-swap="beforeend"
+        hx-target="body"
+      >
         Create a board
       </button>
     </div>
   </div>
 </div>
 
-<div id="board-content" hx-get="/admin/roadmap/board" hx-swap="innerHtml" hx-on::after-request="eventListenerElmIds.clear(); hookDraggableContainerStatuses(); hookDraggablePosts();"
-  hx-vals="js:{id: window.location.hash.replace('#', '')}" hx-trigger="boardchange"></div>
+<div
+  id="board-content"
+  hx-get="/admin/roadmap/board"
+  hx-swap="innerHtml"
+  hx-on::after-request="eventListenerElmIds.clear(); hookDraggableContainerStatuses(); hookDraggablePosts();"
+  hx-vals="js:{id: window.location.hash.replace('#', '')}"
+  hx-trigger="boardchange"
+></div>
 
 <script type="module" src="/static/lexical/main.9d8dd8ca.js"></script>
 <link rel="stylesheet" href="/static/lexical/main.8197594a.css" />
@@ -94,6 +142,14 @@
       .getElementById("board-content")
       .dispatchEvent(new Event("boardchange"));
   };
+
+  window.addEventListener("reset-counters", function(e){
+    document.querySelector('#'+e.detail.value).remove();
+
+    eventListenerElmIds.clear(e.detail.value); 
+    hookDraggableContainerStatuses(e.detail.value); 
+    hookDraggablePosts(e.detail.value);
+  });
 
   let ddlBoardOpen = false;
 
@@ -172,10 +228,10 @@
     const draggableElms = document.querySelectorAll(".draggable");
 
     if (idToReinit) {
-      eventListenerElmIds.delete(idToReinit)
+      eventListenerElmIds.delete(idToReinit);
     }
 
-    draggableElms.forEach(elm => {
+    draggableElms.forEach((elm) => {
       const inMap = eventListenerElmIds.has(elm.id);
 
       if (!inMap) {
@@ -185,43 +241,53 @@
 
         elm.addEventListener("dragend", () => {
           elm.classList.remove("dragging");
-          const container = elm.closest('.draggable-container');
+          const container = elm.closest(".draggable-container");
 
           if (container) {
-            const statusId = container.id.replace('status-', '');
-            const postId = elm.id.replace('post-', '');
+            const statusId = container.id.replace("status-", "");
+            const postId = elm.id.replace("post-", "");
 
-            elm.setAttribute('hx-post', `/admin/roadmap/post/save-status/${window.location.hash.replace('#', '')}/${postId}/${statusId}`);
+            if ((elm.getAttribute("status-id") || "-1") === statusId) {
+              return;
+            }
+
+            elm.setAttribute(
+              "hx-post",
+              `/admin/roadmap/post/save-status/${window.location.hash.replace(
+                "#",
+                ""
+              )}/${postId}/${statusId}`
+            );
             htmx.process(elm);
-            htmx.trigger(elm, 'statusUpdated');
+            htmx.trigger(elm, "statusUpdated");
           }
         });
 
         eventListenerElmIds.add(elm.id);
       }
-
     });
   }
 
   function hookDraggableContainerStatuses(idToReinit) {
-    const containerElms = document.querySelectorAll('.draggable-container');
+    const containerElms = document.querySelectorAll(".draggable-container");
 
     if (idToReinit) {
-      eventListenerElmIds.delete(idToReinit)
+      eventListenerElmIds.delete(idToReinit);
     }
 
-    containerElms.forEach(elm => {
+    containerElms.forEach((elm) => {
       const inMap = eventListenerElmIds.has(elm.id);
 
-      const postCounterElm =  elm.previousElementSibling.querySelector('.status-post-count');
-      if(postCounterElm){
-        postCounterElm.innerHTML = elm.querySelectorAll('.draggable').length;
+      const postCounterElm =
+        elm.previousElementSibling.querySelector(".status-post-count");
+      if (postCounterElm) {
+        postCounterElm.innerHTML = elm.querySelectorAll(".draggable").length;
       }
 
       if (!inMap) {
         elm.addEventListener("dragover", (e) => {
           e.preventDefault();
-          const item = document.querySelector('.dragging');
+          const item = document.querySelector(".dragging");
           elm.appendChild(item);
         });
 

@@ -5,6 +5,9 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/andrei0427/go-changediff/internal/app/models"
+	"github.com/dustin/go-humanize"
 )
 
 var HelperFuncMap = map[string]interface{}{
@@ -15,6 +18,26 @@ var HelperFuncMap = map[string]interface{}{
 	"convertDate":             convertDate,
 	"contrastColor":           contrastColor,
 	"CDNUrl":                  CDNUrl,
+	"isLast":                  isLast,
+	"formatDuration":          formatDuration,
+}
+
+func isLast(elm interface{}, slice ...any) bool {
+	last := slice[len(slice)-1]
+	if last == nil {
+		return false
+	}
+
+	if arr, ok := last.([]models.RoadmapPostActivityModel); ok {
+		return len(arr) > 0 && arr[len(arr)-1] == elm
+	}
+
+	arr := last.([]interface{})
+	return len(arr) > 0 && arr[len(arr)-1] == elm
+}
+
+func formatDuration(date time.Time) string {
+	return humanize.Time(date)
 }
 
 func formatDate(date time.Time) string {

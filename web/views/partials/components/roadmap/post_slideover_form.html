@@ -298,9 +298,11 @@
               </div>
             </div>
 
-            <div class="mt-6 flex items-center justify-end col-span-full">
-              <p class="mt-2 text-sm text-red-600">{{error}}</p>
-            </div>
+            {%if error %}
+              <div class="mt-6 flex items-center justify-end col-span-full">
+                <p class="mt-2 text-sm text-red-600">{{error}}</p>
+              </div>
+            {%endif%}
           </div>
         </div>
       </div>

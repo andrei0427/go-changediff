@@ -21,7 +21,16 @@
       <div
         class="flex h-full justify-between flex-col overflow-y-scroll bg-white pt-6 shadow-xl"
       >
-        {% include "partials/components/roadmap/post_slideover_form.html" %}
+        <div>
+          {% include "partials/components/roadmap/post_slideover_form.html" %}
+
+          {%if form.ID%}
+          <div
+            hx-get="/admin/roadmap/post/activity/{{form.ID}}"
+            hx-trigger="revealed once"
+          ></div>
+          {%endif%}
+        </div>
 
         <div class="flex flex-shrink-0 gap-x-4 justify-end px-4 py-4">
           <button

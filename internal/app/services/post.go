@@ -67,10 +67,11 @@ func (s *PostService) GetPostComments(ctx context.Context, projectId int32, post
 func (s *PostService) GetAnalytics(ctx context.Context, projectId int32, viewerId *int32) ([]data.AnalyticsUsersRow, error) {
 	params := data.AnalyticsUsersParams{
 		ProjectID: projectId,
+		Column2:   0,
 	}
 
 	if viewerId != nil {
-		params.Column2 = sql.NullInt32{Int32: *viewerId, Valid: true}
+		params.Column2 = *viewerId
 	}
 
 	return s.db.AnalyticsUsers(ctx, params)

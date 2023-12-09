@@ -1,8 +1,11 @@
 <div class="px-12">
+  <!-- reactions -->
+  {% include "partials/components/roadmap/reaction_container.html" %}
+
   <!-- New comment form -->
-    <label class="block text-sm font-medium leading-6 text-gray-900 pt-2 pb-4"
-      >Leave a comment</label
-    >
+  <label class="block text-sm font-medium leading-6 text-gray-900 pt-2 pb-4"
+    >Leave a comment</label
+  >
   <div class="mb-6 flex gap-x-3">
     <img
       alt=""
@@ -20,16 +23,15 @@
     <ul id="activity-list" role="list" class="-mb-8">
       {% for a in activity %} 
         {% if a.Type == 3 %} 
-          {% include "partials/components/roadmap/post_comment.html"%} 
-        {% elif a.Type == 1 %}
-        <li>
-          <div class="relative pb-8">
-            {% if !isLast(a, activity) %}
-            <span
-              class="absolute left-5 top-10 -ml-px h-full w-0.5 bg-gray-200"
-              aria-hidden="true"
-            ></span>
-            {%endif%}
+          {% include "partials/components/roadmap/post_comment.html"%} {% elif a.Type == 1 %}
+      <li>
+        <div class="relative pb-8">
+          {% if !isLast(a, activity) %}
+          <span
+            class="absolute left-5 top-10 -ml-px h-full w-0.5 bg-gray-200"
+            aria-hidden="true"
+          ></span>
+          {%endif%}
           <div class="relative flex items-start space-x-3">
             <div class="relative">
               <img
@@ -64,17 +66,17 @@
               </div>
             </div>
           </div>
-          </div>
-        </li>
-        {%elif a.Type == 2 %}
-        <li>
-          <div class="relative pb-8">
-            {% if !isLast(a, activity) %}
-            <span
-              class="absolute left-5 top-10 -ml-px h-full w-0.5 bg-gray-200"
-              aria-hidden="true"
-            ></span>
-            {%endif%}
+        </div>
+      </li>
+      {%elif a.Type == 2 %}
+      <li>
+        <div class="relative pb-8">
+          {% if !isLast(a, activity) %}
+          <span
+            class="absolute left-5 top-10 -ml-px h-full w-0.5 bg-gray-200"
+            aria-hidden="true"
+          ></span>
+          {%endif%}
           <div class="relative flex items-start space-x-3">
             <div class="relative">
               <img
@@ -144,10 +146,9 @@
               </div>
             </div>
           </div>
-          </div>
-        </li>
-        {%endif%}
-      {% endfor %}
+        </div>
+      </li>
+      {%endif%} {% endfor %}
     </ul>
   </div>
 </div>

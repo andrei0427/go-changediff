@@ -284,6 +284,12 @@ func (s *RoadmapService) UpdatePostStatus(ctx context.Context, statusId int32, b
 	return s.db.UpdateRoadmapPostStatus(ctx, data.UpdateRoadmapPostStatusParams{StatusID: sql.NullInt32{Int32: statusId, Valid: statusId > 0}, BoardID: BoardID, ID: postId, ProjectID: projectId})
 }
 
+func (s *RoadmapService) GetAvailableReactions() []string {
+	return []string{
+		"👍", "❤️", "🙁", "😡",
+	}
+}
+
 func (s *RoadmapService) UpdatePost(ctx context.Context, post models.RoadmapPostModel, projectId int32, userLocation *time.Location) (data.RoadmapPost, error) {
 	if post.ID == nil {
 		return data.RoadmapPost{}, errors.New("ID is required when updating")
@@ -340,15 +346,30 @@ func (s *RoadmapService) GetRoadmapPostComments(ctx context.Context, postId int3
 	return s.db.GetRoadmapPostComments(ctx, params)
 }
 
-func (s *RoadmapService) GetRoadmapPostReactions(ctx context.Context, postId int32, projectId int32, commentId *int32) ([]data.GetRoadmapPostReactionsRow, error) {
+func (s *RoadmapService) GetRoadmapPostReactions(ctx context.Context, postId int32, projectId int32, commentId *int32, authorId *int32, viewerId *int32, emoji *string) ([]data.GetRoadmapPostReactionsRow, error) {
 	params := data.GetRoadmapPostReactionsParams{
 		RoadmapPostID: postId,
 		ProjectID:     projectId,
 		Column2:       0,
+		ID:            0,
+		ID_2:          0,
+		Column6:       "",
 	}
 
 	if commentId != nil {
 		params.Column2 = *commentId
+	}
+
+	if authorId != nil {
+		params.ID = *authorId
+	}
+
+	if viewerId != nil {
+		params.ID_2 = *viewerId
+	}
+
+	if emoji != nil {
+		params.Column6 = *emoji
 	}
 
 	return s.db.GetRoadmapPostReactions(ctx, params)
@@ -418,14 +439,14 @@ func (s *RoadmapService) DeleteRoadmapPostVote(ctx context.Context, id *int32, p
 	return &deleted, nil
 }
 
-func (s *RoadmapService) DeleteRoadmapPostReaction(ctx context.Context, id *int32, postId int32, projectId int32, qtx *data.Queries) (*[]int32, error) {
+func (s *RoadmapService) DeleteRoadmapPostReaction(ctx context.Context, emoji *string, postId int32, projectId int32, qtx *data.Queries) (*[]int32, error) {
 	params := data.DeleteRoadmapPostReactionParams{
 		ID:        postId,
 		ProjectID: projectId,
 	}
 
-	if id != nil {
-		params.Column1 = *id
+	if emoji != nil {
+		params.Column1 = *emoji
 	}
 
 	queries := qtx
@@ -439,6 +460,39 @@ func (s *RoadmapService) DeleteRoadmapPostReaction(ctx context.Context, id *int3
 	}
 
 	return &deleted, nil
+}
+
+func (s *RoadmapService) InsertRoadmapPostReaction(ctx context.Context, postId int32, emoji string, parentCommentId *int32, authorId *int32, viewerId *int32) (*data.RoadmapPostReaction, error) {
+	params := data.InsertRoadmapPostReactionParams{
+		RoadmapPostID: postId,
+		Emoji:         emoji,
+		AuthorID:      sql.NullInt32{Valid: false},
+		ViewerID:      sql.NullInt32{Valid: false},
+		CommentID:     sql.NullInt32{Valid: false},
+	}
+
+	if authorId != nil {
+		params.AuthorID = sql.NullInt32{Int32: *authorId, Valid: true}
+	}
+
+	if viewerId != nil {
+		params.ViewerID = sql.NullInt32{Int32: *viewerId, Valid: true}
+	}
+
+	if !params.AuthorID.Valid && !params.ViewerID.Valid {
+		return nil, errors.New("author or viewer id required")
+	}
+
+	if parentCommentId != nil {
+		params.CommentID = sql.NullInt32{Int32: *parentCommentId, Valid: true}
+	}
+
+	inserted, err := s.db.InsertRoadmapPostReaction(ctx, params)
+	if err != nil {
+		return nil, err
+	}
+
+	return &inserted, err
 }
 
 func (s *RoadmapService) InsertRoadmapPostVote(ctx context.Context, postId int32, projectId int32, authorId *int32, viewerId *int32) (*data.RoadmapPostVote, error) {

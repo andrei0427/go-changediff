@@ -333,21 +333,28 @@ group by
   c.id, Who, WhoPictureUrl, Comment, CreatedOn, IsPinned, IsDeleted;
 
 -- name: GetRoadmapPostReactions :many
-select 
-  r.id as ID,
-  COALESCE(a.first_name, v.user_name, 'Someone') as Who,
-  a.picture_url as WhoPictureUrl,
+select
+  string_agg(distinct a.first_name, ',') as Authors,
+  string_agg(distinct v.user_name, ',') as Viewers,
   emoji as Reaction,
-  r.created_on as CreatedOn,
-  r.comment_id as CommentID
+  count(r.id) as count,
+  r.comment_id as CommentID,
+  $4 = any (array_agg(a.ID))
+  or $5 = any (array_agg(v.ID)) as Reacted
 from
-  roadmap_post_reactions r 
-    inner join roadmap_posts p on p.id = r.roadmap_post_id
-    left join authors a on r.author_id = a.id
-    left join viewers v on r.viewer_id = v.id
-where r.roadmap_post_id = $1
-    and (($2 = 0 and r.comment_id is null) or $2 = r.comment_id)
-    and p.project_id = $3;
+  roadmap_post_reactions r
+  inner join roadmap_posts p on p.id = r.roadmap_post_id
+  left join authors a on r.author_id = a.id
+  left join viewers v on r.viewer_id = v.id
+  left join roadmap_post_comments c on r.comment_id = c.id
+where
+  r.roadmap_post_id = $1
+  and (($2 = 0 and c.in_reply_to_id is null) or ($2 = r.comment_id and c.in_reply_to_id is not null))
+  and p.project_id = $3
+  and ($6 = '' OR emoji = $6)
+group by
+  r.comment_id,
+  emoji;
 
 -- name: InsertRoadmapPostVote :one
 insert into roadmap_post_votes (roadmap_post_id, author_id, viewer_id) 
@@ -402,7 +409,7 @@ insert into roadmap_post_reactions (emoji, comment_id, roadmap_post_id, author_i
 delete from roadmap_post_reactions rpr 
    using roadmap_posts rp 
    where rpr.roadmap_post_id = rp.id 
-     and ($1 = 0 or rpr.id = $1)
+     and ($1 = '' or rpr.emoji = $1)
      and rp.id = $2 
      and rp.project_id = $3 
 RETURNING rpr.id;

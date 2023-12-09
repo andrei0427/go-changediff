@@ -114,6 +114,7 @@ func InitRoutes(app *app.App) {
 	roadmapPost.Get("/compose", appHandler.GetRoadmapComposeForm)
 	roadmapPost.Get("/activity/:postId/:commentId?", appHandler.GetRoadmapPostActivity)
 	roadmapPost.Post("/activity/:postId/comment/:commentId?", appHandler.PostRoadmapPostComment)
+	roadmapPost.Put("/activity/:postId/reaction/:reaction/:commentId?", appHandler.ToggleRoadmapPostReaction)
 	roadmapPost.Post("/save", appHandler.SaveRoadmapPost)
 	roadmapPost.Delete("/delete/:id", appHandler.DeleteRoadmapPost)
 	roadmapPost.Delete("/confirm-delete/:id", appHandler.ConfirmDeleteRoadmapPost)
@@ -1135,6 +1136,27 @@ func (a *AppHandler) GetRoadmapComposeForm(c *fiber.Ctx) error {
 
 func (a *AppHandler) GetRoadmapPostActivity(c *fiber.Ctx) error {
 	curUser := c.Locals("user").(*models.SessionUser)
+	viewerAny := c.Locals("viewer")
+
+	var viewerId *int32
+	var projectId *int32
+	if viewerAny != nil {
+		if v, ok := viewerAny.(data.Viewer); ok {
+			viewerId = &v.ID
+			projectId = &v.ProjectID
+		}
+	}
+
+	var authorId *int32
+	if curUser != nil {
+		projectId = &curUser.Project.ID
+		authorId = &curUser.Author.ID
+	}
+
+	if projectId == nil {
+		return fiber.NewError(fiber.StatusBadRequest, "invalid project id provided")
+	}
+
 	postId, err := c.ParamsInt("postId")
 	if err != nil || postId <= 0 {
 		return fiber.NewError(fiber.StatusBadRequest, "invalid post id provided")
@@ -1149,7 +1171,7 @@ func (a *AppHandler) GetRoadmapPostActivity(c *fiber.Ctx) error {
 		}
 	}
 
-	post, err := a.RoadmapService.GetRoadmapPostActivity(c.Context(), int32(postId), curUser.Project.ID)
+	post, err := a.RoadmapService.GetRoadmapPostActivity(c.Context(), int32(postId), *projectId)
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, "error retrieving post")
 	}
@@ -1168,7 +1190,7 @@ func (a *AppHandler) GetRoadmapPostActivity(c *fiber.Ctx) error {
 		firstActivity,
 	}
 
-	statusUpdates, err := a.RoadmapService.GetRoadmapPostStatusActivity(c.Context(), int32(postId), curUser.Project.ID)
+	statusUpdates, err := a.RoadmapService.GetRoadmapPostStatusActivity(c.Context(), int32(postId), *projectId)
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, "error retrieving status updates")
 	}
@@ -1216,53 +1238,102 @@ func (a *AppHandler) GetRoadmapPostActivity(c *fiber.Ctx) error {
 		activity = append(activity, newActivity)
 	}
 
-	comments, err := a.RoadmapService.GetRoadmapPostComments(c.Context(), int32(postId), curUser.Project.ID, commentId)
+	comments, err := a.RoadmapService.GetRoadmapPostComments(c.Context(), int32(postId), *projectId, commentId)
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, "error retrieving comments")
 	}
-	reactions, err := a.RoadmapService.GetRoadmapPostReactions(c.Context(), int32(postId), curUser.Project.ID, commentId)
+
+	postReactions, err := a.RoadmapService.GetRoadmapPostReactions(c.Context(), int32(postId), *projectId, commentId, authorId, viewerId, nil)
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, "error retrieving reactions")
 	}
 
+	var Reactions []models.RoadmapPostReactionActivityModel
+	for _, r := range postReactions {
+		Authors := string(r.Authors)
+		Viewers := string(r.Viewers)
+
+		People := strings.Split(Authors, ",")
+		People = append(People, strings.Split(Viewers, ",")...)
+
+		Who := ""
+		if len(People) == 1 {
+			Who = People[0]
+		} else if len(People) == 2 {
+			Who = strings.Join(People, " and ")
+		} else {
+			Who = strings.Join(People[2:], ", ")
+		}
+
+		Reactions = append(Reactions, models.RoadmapPostReactionActivityModel{
+			Who:             Who,
+			Emoji:           r.Reaction,
+			ParentCommentID: commentId,
+			Count:           r.Count,
+			Reacted:         r.Reacted.Bool,
+		})
+	}
+
 	var postComments []models.RoadmapPostActivityModel
-	for _, c := range comments {
+	for _, cmt := range comments {
 		newActivity := models.RoadmapPostActivityModel{
-			ID:        c.ID,
-			CreatedOn: c.Createdon,
-			Who:       c.Who,
+			ID:        cmt.ID,
+			CreatedOn: cmt.Createdon,
+			Who:       cmt.Who,
 			Type:      models.ActivityTypeComment,
 			CommentActivity: &models.RoadmapPostCommentModel{
-				IsPinned:        c.Ispinned,
-				ReplyCount:      c.Replycount,
+				IsPinned:        cmt.Ispinned,
+				ReplyCount:      cmt.Replycount,
 				ParentCommentID: commentId,
+				Reactions:       []models.RoadmapPostReactionActivityModel{},
 			},
 		}
 
-		if !c.Isdeleted {
-			comment := c.Comment
+		if !cmt.Isdeleted {
+			comment := cmt.Comment
 			newActivity.CommentActivity.Comment = &comment
 		}
 
-		if c.Whopictureurl.Valid {
-			newActivity.WhoPictureUrl = c.Whopictureurl.String
+		if cmt.Whopictureurl.Valid {
+			newActivity.WhoPictureUrl = cmt.Whopictureurl.String
 		}
 
-		var postReactions []models.RoadmapPostReactionActivityModel
+		reactions, err := a.RoadmapService.GetRoadmapPostReactions(c.Context(), int32(postId), *projectId, &cmt.ID, authorId, viewerId, nil)
+		if err != nil {
+			return fiber.NewError(fiber.StatusInternalServerError, "error retrieving reactions")
+		}
+
+		var commentReactions []models.RoadmapPostReactionActivityModel
 		for _, r := range reactions {
-			newReaction := models.RoadmapPostReactionActivityModel{
-				Who:             r.Who,
-				Reaction:        r.Reaction,
-				ParentCommentID: commentId,
+			if r.Commentid.Int32 != cmt.ID {
+				continue
 			}
 
-			if r.Whopictureurl.Valid {
-				newReaction.WhoPictureUrl = &r.Whopictureurl.String
+			Authors := string(r.Authors)
+			Viewers := string(r.Viewers)
+
+			People := strings.Split(Authors, ",")
+			People = append(People, strings.Split(Viewers, ",")...)
+
+			Who := ""
+			if len(People) == 1 {
+				Who = People[0]
+			} else if len(People) == 2 {
+				Who = strings.Join(People, " and ")
+			} else {
+				Who = strings.Join(People[2:], ", ")
 			}
 
-			postReactions = append(postReactions, newReaction)
+			commentReactions = append(commentReactions, models.RoadmapPostReactionActivityModel{
+				Who:             Who,
+				Emoji:           r.Reaction,
+				ParentCommentID: &r.Commentid.Int32,
+				Count:           r.Count,
+				Reacted:         r.Reacted.Bool,
+			})
 		}
-		newActivity.CommentActivity.Reactions = postReactions
+
+		newActivity.CommentActivity.Reactions = append(newActivity.CommentActivity.Reactions, commentReactions...)
 
 		activity = append(activity, newActivity)
 		postComments = append(postComments, newActivity)
@@ -1273,11 +1344,10 @@ func (a *AppHandler) GetRoadmapPostActivity(c *fiber.Ctx) error {
 	})
 
 	if commentId != nil {
-		return c.Render("partials/components/roadmap/post_comment_list", fiber.Map{"postId": postId, "activity": activity, "comments": postComments})
+		return c.Render("partials/components/roadmap/post_comment_list", fiber.Map{"postId": postId, "activity": activity, "comments": postComments, "availableReactions": a.RoadmapService.GetAvailableReactions(), "Reactions": Reactions})
 	}
 
-	return c.Render("partials/components/roadmap/post_slideover_timeline", fiber.Map{"postId": postId, "activity": activity})
-
+	return c.Render("partials/components/roadmap/post_slideover_timeline", fiber.Map{"postId": postId, "activity": activity, "availableReactions": a.RoadmapService.GetAvailableReactions(), "Reactions": Reactions})
 }
 
 func (a *AppHandler) SaveRoadmapPostStatus(c *fiber.Ctx) error {
@@ -1355,6 +1425,114 @@ func (a *AppHandler) SaveRoadmapPostStatus(c *fiber.Ctx) error {
 	return c.Render("partials/components/roadmap/board_post", fiber.Map{"p": saved, "StatusUpdated": true})
 }
 
+func (a *AppHandler) ToggleRoadmapPostReaction(c *fiber.Ctx) error {
+	viewPath := "partials/components/roadmap/post_reaction"
+	reaction := c.Params("reaction")
+	curUser := c.Locals("user").(*models.SessionUser)
+	viewerAny := c.Locals("viewer")
+
+	postId, err := c.ParamsInt("postId")
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "bad post id given")
+	}
+
+	commentId, _ := c.ParamsInt("commentId")
+	var i32CommentId *int32
+	if commentId > 0 {
+		parsedCommentId := int32(commentId)
+		i32CommentId = &parsedCommentId
+	}
+
+	var Who *string
+	var authorId *int32
+	var projectId *int32
+	if curUser != nil {
+		authorId = &curUser.Author.ID
+		projectId = &curUser.Project.ID
+		Who = &curUser.Metadata.FullName
+	}
+	var viewerId *int32
+	if viewerAny != nil {
+		viewer := viewerAny.(data.Viewer)
+		viewerId = &viewer.ID
+		projectId = &viewer.ProjectID
+
+		if Who == nil && viewer.UserName.Valid {
+			Who = &viewer.UserName.String
+		}
+	}
+
+	if Who == nil {
+		fallback := string("Someone")
+		Who = &fallback
+	}
+
+	if authorId == nil && viewerId == nil {
+		return fiber.NewError(fiber.StatusForbidden, "author or viewer id required")
+	}
+
+	if projectId == nil {
+		return fiber.NewError(fiber.StatusForbidden, "could not determine project")
+	}
+
+	var Reaction *string
+	if len(strings.TrimSpace(reaction)) > 0 {
+		parsedReaction, err := url.QueryUnescape(reaction)
+		if err == nil {
+			Reaction = &parsedReaction
+		}
+	}
+
+	if Reaction == nil {
+		return fiber.NewError(fiber.StatusBadRequest, "invalid reaction specified")
+	}
+
+	existingReactions, err := a.RoadmapService.GetRoadmapPostReactions(c.Context(), int32(postId), *projectId, i32CommentId, authorId, viewerId, Reaction)
+	if err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, "error reading exiting reactions")
+	}
+
+	exists := false
+
+	for _, r := range existingReactions {
+		if r.Reaction == *Reaction {
+			exists = true
+			break
+		}
+	}
+
+	if exists {
+		_, err := a.RoadmapService.DeleteRoadmapPostReaction(c.Context(), Reaction, int32(postId), *projectId, nil)
+		if err != nil {
+			return fiber.NewError(fiber.StatusInternalServerError, "error when removing reaction")
+		}
+
+		return c.SendStatus(fiber.StatusOK)
+	}
+
+	savedReaction, err := a.RoadmapService.InsertRoadmapPostReaction(c.Context(), int32(postId), *Reaction, i32CommentId, authorId, viewerId)
+	if err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, "error saving reaction")
+	}
+
+	currentCount := 0
+	for _, r := range existingReactions {
+		if r.Reaction == *Reaction {
+			currentCount++
+		}
+	}
+
+	model := models.RoadmapPostReactionActivityModel{
+		Emoji:           savedReaction.Emoji,
+		Count:           int64(currentCount) + 1,
+		ParentCommentID: i32CommentId,
+		Reacted:         true,
+		Who:             *Who,
+	}
+
+	return c.Render(viewPath, fiber.Map{"r": model, "postId": postId})
+}
+
 func (a *AppHandler) PostRoadmapPostComment(c *fiber.Ctx) error {
 	viewPath := "partials/components/roadmap/post_comment"
 	curUser := c.Locals("user").(*models.SessionUser)
@@ -1422,7 +1600,7 @@ func (a *AppHandler) PostRoadmapPostComment(c *fiber.Ctx) error {
 		},
 	}
 
-	return c.Render(viewPath, fiber.Map{"a": activity, "postId": postId})
+	return c.Render(viewPath, fiber.Map{"a": activity, "postId": postId, "availableReactions": a.RoadmapService.GetAvailableReactions()})
 }
 
 func (a *AppHandler) SaveRoadmapPost(c *fiber.Ctx) error {
@@ -1522,7 +1700,6 @@ func (a *AppHandler) DeleteRoadmapPost(c *fiber.Ctx) error {
 	}
 
 	if _, err := a.RoadmapService.DeletePost(c.Context(), int32(id), curUser.Project.ID); err != nil {
-		fmt.Println(err.Error())
 		return c.Render("partials/components/banner", fiber.Map{"Message": "An error occured when deleting the post"})
 	}
 

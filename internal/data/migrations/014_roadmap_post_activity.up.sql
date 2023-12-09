@@ -26,7 +26,7 @@ CREATE TABLE IF NOT EXISTS roadmap_post_comments (
 
 CREATE TABLE IF NOT EXISTS roadmap_post_reactions (
 	id SERIAL PRIMARY KEY,
-	emoji varchar(1) not null,
+	emoji text not null,
 
 	comment_id int references roadmap_post_comments(id) NULL,
 

@@ -8,6 +8,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/credentials v1.13.33
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.38.3
 	github.com/disintegration/imaging v1.6.2
+	github.com/dustin/go-humanize v1.0.1
 	github.com/gofiber/fiber/v2 v2.48.0
 	github.com/gofiber/template/django/v3 v3.1.5
 	github.com/golang-jwt/jwt v3.2.2+incompatible
@@ -36,7 +37,6 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.15.3 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sts v1.21.3 // indirect
 	github.com/aws/smithy-go v1.14.1 // indirect
-	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/flosch/pongo2/v6 v6.0.0 // indirect
 	github.com/gofiber/template v1.8.2 // indirect
 	github.com/gofiber/utils v1.1.0 // indirect

@@ -365,7 +365,7 @@ const deleteRoadmapPostReaction = `-- name: DeleteRoadmapPostReaction :many
 delete from roadmap_post_reactions rpr 
    using roadmap_posts rp 
    where rpr.roadmap_post_id = rp.id 
-     and ($1 = 0 or rpr.id = $1)
+     and ($1 = '' or rpr.emoji = $1)
      and rp.id = $2 
      and rp.project_id = $3 
 RETURNING rpr.id
@@ -1346,40 +1346,57 @@ func (q *Queries) GetRoadmapPostOwner(ctx context.Context, id int32) (GetRoadmap
 }
 
 const getRoadmapPostReactions = `-- name: GetRoadmapPostReactions :many
-select 
-  r.id as ID,
-  COALESCE(a.first_name, v.user_name, 'Someone') as Who,
-  a.picture_url as WhoPictureUrl,
+select
+  string_agg(distinct a.first_name, ',') as Authors,
+  string_agg(distinct v.user_name, ',') as Viewers,
   emoji as Reaction,
-  r.created_on as CreatedOn,
-  r.comment_id as CommentID
+  count(r.id) as count,
+  r.comment_id as CommentID,
+  $4 = any (array_agg(a.ID))
+  or $5 = any (array_agg(v.ID)) as Reacted
 from
-  roadmap_post_reactions r 
-    inner join roadmap_posts p on p.id = r.roadmap_post_id
-    left join authors a on r.author_id = a.id
-    left join viewers v on r.viewer_id = v.id
-where r.roadmap_post_id = $1
-    and (($2 = 0 and r.comment_id is null) or $2 = r.comment_id)
-    and p.project_id = $3
+  roadmap_post_reactions r
+  inner join roadmap_posts p on p.id = r.roadmap_post_id
+  left join authors a on r.author_id = a.id
+  left join viewers v on r.viewer_id = v.id
+  left join roadmap_post_comments c on r.comment_id = c.id
+where
+  r.roadmap_post_id = $1
+  and (($2 = 0 and c.in_reply_to_id is null) or ($2 = r.comment_id and c.in_reply_to_id is not null))
+  and p.project_id = $3
+  and ($6 = '' OR emoji = $6)
+group by
+  r.comment_id,
+  emoji
 `
 
 type GetRoadmapPostReactionsParams struct {
 	RoadmapPostID int32
 	Column2       interface{}
 	ProjectID     int32
+	ID            int32
+	ID_2          int32
+	Column6       interface{}
 }
 
 type GetRoadmapPostReactionsRow struct {
-	ID            int32
-	Who           string
-	Whopictureurl sql.NullString
-	Reaction      string
-	Createdon     time.Time
-	Commentid     sql.NullInt32
+	Authors   []byte
+	Viewers   []byte
+	Reaction  string
+	Count     int64
+	Commentid sql.NullInt32
+	Reacted   sql.NullBool
 }
 
 func (q *Queries) GetRoadmapPostReactions(ctx context.Context, arg GetRoadmapPostReactionsParams) ([]GetRoadmapPostReactionsRow, error) {
-	rows, err := q.db.QueryContext(ctx, getRoadmapPostReactions, arg.RoadmapPostID, arg.Column2, arg.ProjectID)
+	rows, err := q.db.QueryContext(ctx, getRoadmapPostReactions,
+		arg.RoadmapPostID,
+		arg.Column2,
+		arg.ProjectID,
+		arg.ID,
+		arg.ID_2,
+		arg.Column6,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -1388,12 +1405,12 @@ func (q *Queries) GetRoadmapPostReactions(ctx context.Context, arg GetRoadmapPos
 	for rows.Next() {
 		var i GetRoadmapPostReactionsRow
 		if err := rows.Scan(
-			&i.ID,
-			&i.Who,
-			&i.Whopictureurl,
+			&i.Authors,
+			&i.Viewers,
 			&i.Reaction,
-			&i.Createdon,
+			&i.Count,
 			&i.Commentid,
+			&i.Reacted,
 		); err != nil {
 			return nil, err
 		}

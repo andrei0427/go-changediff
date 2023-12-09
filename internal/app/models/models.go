@@ -151,8 +151,9 @@ type RoadmapPostStatusActivityModel struct {
 
 type RoadmapPostReactionActivityModel struct {
 	Who             string
-	WhoPictureUrl   *string
-	Reaction        string
+	Emoji           string
+	Count           int64
+	Reacted         bool
 	ParentCommentID *int32
 }
 

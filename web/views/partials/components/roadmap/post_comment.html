@@ -52,15 +52,28 @@
             hx-get="/admin/roadmap/post/activity/{{postId}}/{{a.ID}}"
             hx-swap="afterbegin"
             hx-target="#reply-container-{{a.ID}}"
+            hx-trigger="click once"
             hx-on::after-request="document.querySelector('#comment-container-{{a.ID}}')?.classList.remove('hidden'); document.querySelector('#reply-{{a.ID}}').classList.add('hidden');"
             class="mt-0.5 text-sm italic text-emerald"
+            _="on click
+              if #toggle-label-{{a.ID}}.innerHTML does not match 'Hide' then
+                  show #reply-container-{{a.ID}}
+                  put 'Hide' into #toggle-label-{{a.ID}} 
+              else 
+                hide #reply-container-{{a.ID}}
+                then put 'Show' into #toggle-label-{{a.ID}}"
           >
-            View {{a.CommentActivity.ReplyCount}} replies
+            <span id="toggle-label-{{a.ID}}">Show</span>
+            {{a.CommentActivity.ReplyCount}} replies
           </button>
           {%endif%}
         </div>
         <div class="mt-2 text-sm text-gray-700">
           <p>{{a.CommentActivity.Comment}}</p>
+        </div>
+
+        <div class="mt-2">
+          {% include "partials/components/roadmap/reaction_container.html" %}
         </div>
       </div>
     </div>

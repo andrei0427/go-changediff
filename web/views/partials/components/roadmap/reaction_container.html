@@ -1,0 +1,90 @@
+    <div >
+    <label id="listbox-label" class="sr-only">Your reaction</label>
+    <div class="flex flex-row items-center gap-x-2">
+      <div class="relative">
+      <button
+        type="button"
+        class="relative flex items-center justify-center rounded-full text-gray-400 hover:text-gray-500"
+        aria-haspopup="listbox"
+        aria-expanded="true"
+        aria-labelledby="listbox-label"
+        _="on click transition .emoji-selector's opacity to 0 over 10ms then add .hidden to .emoji-selector then remove .hidden from #emoji-selector-{{a.ID}} then transition #emoji-selector-{{a.ID}}'s opacity to 100 over 50ms"
+      >
+        <span class="flex items-center justify-center">
+          <!-- Placeholder label, show/hide based on listbox state. -->
+          <span>
+            <svg
+              class="h-5 w-5 flex-shrink-0"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+              aria-hidden="true"
+            >
+              <path
+                fill-rule="evenodd"
+                d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.536-4.464a.75.75 0 10-1.061-1.061 3.5 3.5 0 01-4.95 0 .75.75 0 00-1.06 1.06 5 5 0 007.07 0zM9 8.5c0 .828-.448 1.5-1 1.5s-1-.672-1-1.5S7.448 7 8 7s1 .672 1 1.5zm3 1.5c.552 0 1-.672 1-1.5S12.552 7 12 7s-1 .672-1 1.5.448 1.5 1 1.5z"
+                clip-rule="evenodd"
+              />
+            </svg>
+            <span class="sr-only">Add your reaction</span>
+          </span>
+          <!-- Selected item label, show/hide based on listbox state. -->
+        </span>
+      </button>
+
+      <div
+        id="emoji-selector-{{a.ID}}"
+        class="emoji-selector ease-in opacity-0 hidden"
+      >
+        <div
+          class="fixed top-0 left-0 w-full h-full"
+          _="on click transition .emoji-selector's opacity to 0 over 50ms then add .hidden to .emoji-selector"
+        ></div>
+
+        <div class="absolute bottom-10 z-10 -ml-6">
+          <ul
+            class="flex flex-row gap-x-5 px-2 rounded-lg bg-white py-3 text-base shadow ring-1 ring-black ring-opacity-5 focus:outline-none sm:ml-auto sm:text-sm"
+            tabindex="-1"
+            role="listbox"
+            aria-labelledby="listbox-label"
+            aria-activedescendant="listbox-option-5"
+          >
+            <!--
+			Select option, manage highlight styles based on mouseenter/mouseleave and keyboard navigation.
+
+			Highlighted: "bg-gray-100", Not Highlighted: "bg-white"
+		  -->
+            {%for r in availableReactions%}
+            <li
+              class="bg-white relative select-none hover:bg-gray-100 p-2 cursor-pointer rounded-lg"
+              id="listbox-option-0"
+              role="option"
+            >
+              <button
+                class="text-3xl"
+                hx-put="/admin/roadmap/post/activity/{{postId}}/reaction/{{r}}/{{a.ID}}"
+                hx-swap="afterbegin"
+                hx-target="#reaction-container-{{a.ID}}"
+              >
+                {{r}}
+              </button>
+            </li>
+            {%endfor%}
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    
+    <div id="reaction-container-{{a.ID}}" class="flex flex-row items-center gap-x-2">
+      {% if a.ID %}
+      {% for r in a.CommentActivity.Reactions %}
+      {% include "partials/components/roadmap/post_reaction.html" %} 
+      {% endfor %}
+      {% else %}
+      {% for r in Reactions %}
+      {% include "partials/components/roadmap/post_reaction.html" %} 
+      {% endfor %}
+      {% endif %}
+    </div>
+    </div>
+</div>

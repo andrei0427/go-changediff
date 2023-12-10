@@ -381,14 +381,15 @@ insert into roadmap_post_comments (content, in_reply_to_id, roadmap_post_id, aut
 
 -- name: DeleteRoadmapPostComment :one
 update roadmap_post_comments rpc 
-   set rpc.is_deleted = 1 
+   set is_deleted = true 
    from roadmap_posts rp 
    where rpc.roadmap_post_id = rp.id 
      and rpc.id = $1
      and rp.id = $2 
      and rp.project_id = $3 
-     and ($4 = 0 OR rp.author_id = $4)
-     and ($5 = 0 OR rp.viewer_id = $5)
+     and (($4 = 0 OR rp.author_id = $4)
+        or ($4 = 0 OR rpc.author_id = $4)
+        or ($5 = 0 OR rpc.viewer_id = $5))
 RETURNING rpc.id;
 
 -- name: DeleteAllRoadmapPostComments :many

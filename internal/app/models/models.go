@@ -139,6 +139,7 @@ type RoadmapPostCommentFormModel struct {
 type RoadmapPostCommentModel struct {
 	Comment         *string
 	IsPinned        bool
+	IsDeleted       bool
 	ReplyCount      int64
 	ParentCommentID *int32
 	Reactions       []RoadmapPostReactionActivityModel

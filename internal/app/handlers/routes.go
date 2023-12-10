@@ -1285,6 +1285,7 @@ func (a *AppHandler) GetRoadmapPostActivity(c *fiber.Ctx) error {
 			Type:      models.ActivityTypeComment,
 			CommentActivity: &models.RoadmapPostCommentModel{
 				IsPinned:        cmt.Ispinned,
+				IsDeleted:       cmt.Isdeleted,
 				ReplyCount:      cmt.Replycount,
 				ParentCommentID: commentId,
 				Reactions:       []models.RoadmapPostReactionActivityModel{},
@@ -1468,8 +1469,9 @@ func (a *AppHandler) DeleteRoadmapPostComment(c *fiber.Ctx) error {
 		projectId = &viewer.ProjectID
 	}
 
-	_, err = a.RoadmapService.DeleteRoadmapPostComment(c.Context(), int32(postId), *projectId, *i32CommentId, authorId, viewerId, nil)
+	_, err = a.RoadmapService.DeleteRoadmapPostComment(c.Context(), *i32CommentId, int32(postId), *projectId, authorId, viewerId, nil)
 	if err != nil {
+		fmt.Println(err.Error())
 		return fiber.NewError(fiber.StatusInternalServerError, "error saving reaction")
 	}
 

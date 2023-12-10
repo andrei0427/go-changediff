@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/andrei0427/go-changediff/internal/app/models"
@@ -580,6 +581,8 @@ func (s *RoadmapService) DeleteRoadmapPostComment(ctx context.Context, id int32,
 		queries = s.db
 
 	}
+
+	fmt.Println(params)
 
 	return queries.DeleteRoadmapPostComment(ctx, params)
 }

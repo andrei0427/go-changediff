@@ -57,7 +57,7 @@
 
               <button
                 class="text-emerald"
-                hx-put="/admin/roadmap/post/activity/{{postId}}/delete/{{a.ID}}"
+                hx-delete="/admin/roadmap/post/activity/{{postId}}/delete/{{a.ID}}"
                 hx-swap="none"
                 _="on click remove #post-comment-{{a.ID}}"
               >
@@ -95,7 +95,11 @@
             {%endif%}
           </div>
           <div class="mt-2 text-sm text-gray-700">
+            {%if a.CommentActivity.IsDeleted%}
+            <p class="italic text-gray-400">This comment has been removed</p>
+            {%else%}
             <p>{{a.CommentActivity.Comment}}</p>
+            {%endif%}
           </div>
 
           <div class="mt-2">

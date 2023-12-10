@@ -1,4 +1,4 @@
-<li>
+<li id="post-comment-{{a.ID}}">
   <div class="relative pb-8">
     {% if !isLast(a, activity) %}
     <span
@@ -30,50 +30,77 @@
           </svg>
         </span>
       </div>
+
       <div class="min-w-0 flex-1">
-        <div>
-          <div class="text-sm">
-            <span class="font-medium text-gray-900">{{a.Who}}</span>
-          </div>
-          <p class="mt-0.5 text-sm text-gray-500">
-            Commented {{formatDuration(a.CreatedOn)}}
+        {%if a.CommentActivity.IsPinned%}
+        <div class="relative text-orange-500 italic text-sm">Pinned</div>
+        {%endif%}
+        <div
+          class="{%if a.CommentActivity.IsPinned%}border border-solid rounded-md border-orange-500 p-4{%endif%}"
+        >
+          <div>
+            <div class="text-sm">
+              <span class="font-medium text-gray-900">{{a.Who}}</span>
+            </div>
+            <p class="mt-0.5 text-sm text-gray-500">
+              Commented {{formatDuration(a.CreatedOn)}}
 
+              <button
+                class="text-emerald"
+                hx-put="/admin/roadmap/post/activity/{{postId}}/pin/{{a.ID}}"
+                hx-swap="{%if a.CommentActivity.ParentCommentID%}outerHTML{%else%}innerHTML{%endif%}"
+                hx-target="{%if a.CommentActivity.ParentCommentID%}#post-comment-{{a.ID}}{%else%}#activity-container{%endif%}"
+                _="on click if my innerHTML is 'Pin' then set my innerHTML to 'Unpin' else set my innerHTML to 'Pin' then remove #post-comment-{{a.ID}}"
+              >
+                {%if a.CommentActivity.IsPinned%}Unpin{%else%}Pin{%endif%}
+              </button>
+
+              <button
+                class="text-emerald"
+                hx-put="/admin/roadmap/post/activity/{{postId}}/delete/{{a.ID}}"
+                hx-swap="none"
+                _="on click remove #post-comment-{{a.ID}}"
+              >
+                Delete
+              </button>
+
+              <button
+                class="text-emerald"
+                id="reply-{{a.ID}}"
+                onclick="document.querySelector('#comment-container-{{a.ID}}')?.classList.remove('hidden'); event.target.classList.add('hidden');"
+              >
+                Reply
+              </button>
+            </p>
+
+            {%if a.CommentActivity.ReplyCount%}
             <button
-              class="text-emerald"
-              id="reply-{{a.ID}}"
-              onclick="document.querySelector('#comment-container-{{a.ID}}')?.classList.remove('hidden'); event.target.classList.add('hidden');"
-            >
-              Reply
-            </button>
-          </p>
-
-          {%if a.CommentActivity.ReplyCount%}
-          <button
-            hx-get="/admin/roadmap/post/activity/{{postId}}/{{a.ID}}"
-            hx-swap="afterbegin"
-            hx-target="#reply-container-{{a.ID}}"
-            hx-trigger="click once"
-            hx-on::after-request="document.querySelector('#comment-container-{{a.ID}}')?.classList.remove('hidden'); document.querySelector('#reply-{{a.ID}}').classList.add('hidden');"
-            class="mt-0.5 text-sm italic text-emerald"
-            _="on click
+              hx-get="/admin/roadmap/post/activity/{{postId}}/{{a.ID}}"
+              hx-swap="afterbegin"
+              hx-target="#reply-container-{{a.ID}}"
+              hx-trigger="click once"
+              hx-on::after-request="document.querySelector('#comment-container-{{a.ID}}')?.classList.remove('hidden'); document.querySelector('#reply-{{a.ID}}').classList.add('hidden');"
+              class="mt-0.5 text-sm italic text-emerald"
+              _="on click
               if #toggle-label-{{a.ID}}.innerHTML does not match 'Hide' then
                   show #reply-container-{{a.ID}}
                   put 'Hide' into #toggle-label-{{a.ID}} 
               else 
                 hide #reply-container-{{a.ID}}
                 then put 'Show' into #toggle-label-{{a.ID}}"
-          >
-            <span id="toggle-label-{{a.ID}}">Show</span>
-            {{a.CommentActivity.ReplyCount}} replies
-          </button>
-          {%endif%}
-        </div>
-        <div class="mt-2 text-sm text-gray-700">
-          <p>{{a.CommentActivity.Comment}}</p>
-        </div>
+            >
+              <span id="toggle-label-{{a.ID}}">Show</span>
+              {{a.CommentActivity.ReplyCount}} replies
+            </button>
+            {%endif%}
+          </div>
+          <div class="mt-2 text-sm text-gray-700">
+            <p>{{a.CommentActivity.Comment}}</p>
+          </div>
 
-        <div class="mt-2">
-          {% include "partials/components/roadmap/reaction_container.html" %}
+          <div class="mt-2">
+            {% include "partials/components/roadmap/reaction_container.html" %}
+          </div>
         </div>
       </div>
     </div>

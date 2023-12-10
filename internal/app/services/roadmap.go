@@ -598,3 +598,11 @@ func (s *RoadmapService) DeleteRoadmapPostComments(ctx context.Context, postId i
 
 	return queries.DeleteAllRoadmapPostComments(ctx, params)
 }
+
+func (s *RoadmapService) ToggleRoadmapPostCommentPin(ctx context.Context, postId int32, projectId int32, commentId int32) (int32, error) {
+	return s.db.TogglePinRoadmapPostComment(ctx, data.TogglePinRoadmapPostCommentParams{
+		ID:        commentId,
+		ID_2:      postId,
+		ProjectID: projectId,
+	})
+}

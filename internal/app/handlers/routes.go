@@ -115,6 +115,8 @@ func InitRoutes(app *app.App) {
 	roadmapPost.Get("/activity/:postId/:commentId?", appHandler.GetRoadmapPostActivity)
 	roadmapPost.Post("/activity/:postId/comment/:commentId?", appHandler.PostRoadmapPostComment)
 	roadmapPost.Put("/activity/:postId/reaction/:reaction/:commentId?", appHandler.ToggleRoadmapPostReaction)
+	roadmapPost.Put("/activity/:postId/pin/:commentId", appHandler.ToggleRoadmapPostCommentPin)
+	roadmapPost.Delete("/activity/:postId/delete/:commentId", appHandler.DeleteRoadmapPostComment)
 	roadmapPost.Post("/save", appHandler.SaveRoadmapPost)
 	roadmapPost.Delete("/delete/:id", appHandler.DeleteRoadmapPost)
 	roadmapPost.Delete("/confirm-delete/:id", appHandler.ConfirmDeleteRoadmapPost)
@@ -1164,7 +1166,7 @@ func (a *AppHandler) GetRoadmapPostActivity(c *fiber.Ctx) error {
 
 	var commentId *int32
 	paramCommentId, err := c.ParamsInt("commentId")
-	if err == nil {
+	if err == nil && c.Locals("timeline") == nil {
 		if paramCommentId > 0 {
 			i32CommentId := int32(paramCommentId)
 			commentId = &i32CommentId
@@ -1339,11 +1341,20 @@ func (a *AppHandler) GetRoadmapPostActivity(c *fiber.Ctx) error {
 		postComments = append(postComments, newActivity)
 	}
 
-	sort.Slice(activity, func(i int, j int) bool {
+	sort.SliceStable(activity, func(i int, j int) bool {
+		iActivity := activity[i]
+		jActivity := activity[j]
+
+		if iActivity.Type == models.ActivityTypeComment && iActivity.CommentActivity.IsPinned {
+			return true
+		} else if jActivity.Type == models.ActivityTypeComment && jActivity.CommentActivity.IsPinned {
+			return false
+		}
+
 		return activity[i].CreatedOn.After(activity[j].CreatedOn)
 	})
 
-	if commentId != nil {
+	if c.Locals("timeline") == nil && commentId != nil {
 		return c.Render("partials/components/roadmap/post_comment_list", fiber.Map{"postId": postId, "activity": activity, "comments": postComments, "availableReactions": a.RoadmapService.GetAvailableReactions(), "Reactions": Reactions})
 	}
 
@@ -1423,6 +1434,70 @@ func (a *AppHandler) SaveRoadmapPostStatus(c *fiber.Ctx) error {
 	a.RoadmapService.InsertPostActivity(c.Context(), fromStatusId, toStatusId, post.ID, curUser.Author.ID)
 
 	return c.Render("partials/components/roadmap/board_post", fiber.Map{"p": saved, "StatusUpdated": true})
+}
+
+func (a *AppHandler) DeleteRoadmapPostComment(c *fiber.Ctx) error {
+	curUser := c.Locals("user").(*models.SessionUser)
+	viewerAny := c.Locals("viewer")
+
+	postId, err := c.ParamsInt("postId")
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "bad post id given")
+	}
+
+	commentId, err := c.ParamsInt("commentId")
+	var i32CommentId *int32
+	if commentId > 0 {
+		parsedCommentId := int32(commentId)
+		i32CommentId = &parsedCommentId
+	}
+
+	if err != nil || commentId <= 0 {
+		return fiber.NewError(fiber.StatusBadRequest, "bad comment id given")
+	}
+
+	var projectId *int32
+	var authorId *int32
+	var viewerId *int32
+	if curUser != nil {
+		authorId = &curUser.Author.ID
+		projectId = &curUser.Project.ID
+	} else {
+		viewer := viewerAny.(data.Viewer)
+		viewerId = &viewer.ID
+		projectId = &viewer.ProjectID
+	}
+
+	_, err = a.RoadmapService.DeleteRoadmapPostComment(c.Context(), int32(postId), *projectId, *i32CommentId, authorId, viewerId, nil)
+	if err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, "error saving reaction")
+	}
+
+	return a.GetRoadmapPostActivity(c)
+}
+
+func (a *AppHandler) ToggleRoadmapPostCommentPin(c *fiber.Ctx) error {
+	curUser := c.Locals("user").(*models.SessionUser)
+
+	postId, err := c.ParamsInt("postId")
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "bad post id given")
+	}
+
+	commentId, _ := c.ParamsInt("commentId")
+	var i32CommentId *int32
+	if commentId > 0 {
+		parsedCommentId := int32(commentId)
+		i32CommentId = &parsedCommentId
+	}
+
+	_, err = a.RoadmapService.ToggleRoadmapPostCommentPin(c.Context(), int32(postId), curUser.Project.ID, *i32CommentId)
+	if err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, "error saving reaction")
+	}
+
+	c.Locals("timeline", true)
+	return a.GetRoadmapPostActivity(c)
 }
 
 func (a *AppHandler) ToggleRoadmapPostReaction(c *fiber.Ctx) error {

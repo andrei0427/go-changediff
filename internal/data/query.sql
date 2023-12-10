@@ -400,7 +400,14 @@ delete from roadmap_post_comments rpc
 RETURNING rpc.id;
 
 -- name: TogglePinRoadmapPostComment :one
-update roadmap_post_comments set is_pinned = !is_pinned where id = $1 RETURNING id;
+update roadmap_post_comments rpc
+set is_pinned = not rpc.is_pinned 
+from roadmap_posts rp
+where rpc.roadmap_post_id = rp.id
+  and rpc.id = $1
+  and rp.id = $2
+  and rp.project_id = $3
+RETURNING rpc.id;
 
 -- name: InsertRoadmapPostReaction :one
 insert into roadmap_post_reactions (emoji, comment_id, roadmap_post_id, author_id, viewer_id) VALUES ($1, $2, $3, $4, $5) RETURNING *;
@@ -408,7 +415,7 @@ insert into roadmap_post_reactions (emoji, comment_id, roadmap_post_id, author_i
 -- name: DeleteRoadmapPostReaction :many
 delete from roadmap_post_reactions rpr 
    using roadmap_posts rp 
-   where rpr.roadmap_post_id = rp.id 
+   where roadmap_post_id = rp.id 
      and ($1 = '' or rpr.emoji = $1)
      and rp.id = $2 
      and rp.project_id = $3 

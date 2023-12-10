@@ -364,7 +364,7 @@ func (q *Queries) DeleteRoadmapPostComment(ctx context.Context, arg DeleteRoadma
 const deleteRoadmapPostReaction = `-- name: DeleteRoadmapPostReaction :many
 delete from roadmap_post_reactions rpr 
    using roadmap_posts rp 
-   where rpr.roadmap_post_id = rp.id 
+   where roadmap_post_id = rp.id 
      and ($1 = '' or rpr.emoji = $1)
      and rp.id = $2 
      and rp.project_id = $3 
@@ -2152,11 +2152,25 @@ func (q *Queries) ToggleLockRoadmapPost(ctx context.Context, id int32) (int32, e
 }
 
 const togglePinRoadmapPostComment = `-- name: TogglePinRoadmapPostComment :one
-update roadmap_post_comments set is_pinned = !is_pinned where id = $1 RETURNING id
+update roadmap_post_comments rpc
+set is_pinned = not rpc.is_pinned 
+from roadmap_posts rp
+where rpc.roadmap_post_id = rp.id
+  and rpc.id = $1
+  and rp.id = $2
+  and rp.project_id = $3
+RETURNING rpc.id
 `
 
-func (q *Queries) TogglePinRoadmapPostComment(ctx context.Context, id int32) (int32, error) {
-	row := q.db.QueryRowContext(ctx, togglePinRoadmapPostComment, id)
+type TogglePinRoadmapPostCommentParams struct {
+	ID        int32
+	ID_2      int32
+	ProjectID int32
+}
+
+func (q *Queries) TogglePinRoadmapPostComment(ctx context.Context, arg TogglePinRoadmapPostCommentParams) (int32, error) {
+	row := q.db.QueryRowContext(ctx, togglePinRoadmapPostComment, arg.ID, arg.ID_2, arg.ProjectID)
+	var id int32
 	err := row.Scan(&id)
 	return id, err
 }

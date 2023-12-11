@@ -254,7 +254,21 @@ INSERT INTO roadmap_posts (title, body, due_date, is_private, author_id, is_idea
 UPDATE roadmap_posts SET title = $1, body = $2, due_date = $3, is_private = $4, board_id = $5, status_id = $6 WHERE id = $7 AND project_id = $8 RETURNING *;
 
 -- name: GetRoadmapPost :one
-SELECT p.id, p.title, p.is_private, p.body, p.due_date, p.status_id, p.board_id, p.created_on, COUNT(v.id) as Votes FROM roadmap_posts p left join roadmap_post_votes v on p.id = v.roadmap_post_id WHERE p.id = $1 AND p.project_id = $2 GROUP BY p.id, p.title, p.is_private, p.body, p.due_date, p.status_id, p.board_id, p.created_on;
+SELECT p.id, 
+p.title, 
+p.is_private, 
+p.body,
+p.due_date,
+p.status_id,
+p.board_id, 
+p.created_on, 
+COUNT(v.id) as Votes,
+$3 = any(array_agg(v.author_id))
+or $4 = any(array_agg(v.viewer_id)) as Voted
+FROM roadmap_posts p 
+  left join roadmap_post_votes v on p.id = v.roadmap_post_id 
+WHERE p.id = $1 AND p.project_id = $2 
+GROUP BY p.id, p.title, p.is_private, p.body, p.due_date, p.status_id, p.board_id, p.created_on;
 
 -- name: UpdateRoadmapPostStatus :one
 UPDATE roadmap_posts SET status_id = $1, board_id = $2 WHERE id = $3 AND project_id = $4 RETURNING *;

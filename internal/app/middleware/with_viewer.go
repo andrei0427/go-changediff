@@ -58,23 +58,27 @@ func UseWithViewer(c *fiber.Ctx,
 			viewer = &savedViewer
 		}
 
-		cachedViewer = *viewer
+		viewerToCache := *viewer
+
+		cachedViewer = &viewerToCache
 		cacheService.Set(viewerCacheKey, cachedViewer, nil)
 	}
 
-	viewer := cachedViewer.(data.Viewer)
+	viewer := cachedViewer.(*data.Viewer)
 	if (!viewer.UserID.Valid && userInfo.ID != nil) ||
 		(!viewer.UserName.Valid && userInfo.Name != nil) ||
 		(!viewer.UserEmail.Valid && userInfo.Email != nil) ||
 		(!viewer.UserRole.Valid && userInfo.Role != nil) ||
 		(!viewer.UserData.Valid && userInfo.Info != nil) {
+
 		updatedViewer, err := viewerService.SaveViewer(c.Context(), *userUuid, c.IP(), c.Get("User-Agent"), userLocale, userInfo, viewer.ProjectID)
 
 		if err != nil {
 			return fiber.NewError(fiber.StatusInternalServerError, "error saving viewer")
 		}
 
-		cachedViewer = &updatedViewer
+		viewerToCache := updatedViewer
+		cachedViewer = &viewerToCache
 		cacheService.Set(viewerCacheKey, updatedViewer, nil)
 	}
 

@@ -174,8 +174,18 @@ func (s *RoadmapService) GetPostsForBoard(ctx context.Context, boardId int32, pr
 	return s.db.GetPostsForBoard(ctx, data.GetPostsForBoardParams{BoardID: sql.NullInt32{Int32: boardId, Valid: true}, ProjectID: projectId})
 }
 
-func (s *RoadmapService) GetPostById(ctx context.Context, postId int32, projectId int32) (data.GetRoadmapPostRow, error) {
-	return s.db.GetRoadmapPost(ctx, data.GetRoadmapPostParams{ID: postId, ProjectID: projectId})
+func (s *RoadmapService) GetPostById(ctx context.Context, postId int32, projectId int32, authorId *int32, viewerId *int32) (data.GetRoadmapPostRow, error) {
+	params := data.GetRoadmapPostParams{ID: postId, ProjectID: projectId}
+
+	if authorId != nil {
+		params.AuthorID = sql.NullInt32{Int32: *authorId, Valid: true}
+	}
+
+	if viewerId != nil {
+		params.ViewerID = sql.NullInt32{Int32: *viewerId, Valid: true}
+	}
+
+	return s.db.GetRoadmapPost(ctx, params)
 }
 
 func (s *RoadmapService) InsertPost(ctx context.Context, post models.RoadmapPostModel, authorId *int32, viewerId *int32, projectId int32, userLocation *time.Location, isIdea bool) (data.RoadmapPost, error) {

@@ -195,7 +195,7 @@ func (a *AppHandler) WidgetChangelogPosts(c *fiber.Ctx) error {
 	model := new(models.Search)
 	c.BodyParser(model)
 
-	viewer := c.Locals("viewer").(data.Viewer)
+	viewer := c.Locals("viewer").(*data.Viewer)
 	pageNo := 1
 	if paramPageNo > 0 {
 		pageNo = paramPageNo
@@ -215,7 +215,7 @@ func (a *AppHandler) WidgetChangelogPosts(c *fiber.Ctx) error {
 }
 
 func (a *AppHandler) WidgetChangelogReaction(c *fiber.Ctx) error {
-	viewer := c.Locals("viewer").(data.Viewer)
+	viewer := c.Locals("viewer").(*data.Viewer)
 	reaction := c.Params("reaction")
 	postId, err := c.ParamsInt("postId")
 
@@ -252,7 +252,7 @@ func (a *AppHandler) WidgetChangelogReaction(c *fiber.Ctx) error {
 }
 
 func (a *AppHandler) WidgetChangelogComment(c *fiber.Ctx) error {
-	viewer := c.Locals("viewer").(data.Viewer)
+	viewer := c.Locals("viewer").(*data.Viewer)
 	postId, err := c.ParamsInt("postId")
 	body := new(models.ChangelogComment)
 
@@ -1068,6 +1068,7 @@ func (a *AppHandler) GetBoard(c *fiber.Ctx) error {
 
 func (a *AppHandler) GetRoadmapComposeForm(c *fiber.Ctx) error {
 	curUser := c.Locals("user").(*models.SessionUser)
+	viewer := c.Locals("viewer").(*data.Viewer)
 	id := c.QueryInt("id", 0)
 	statusId := c.QueryInt("statusId", 0)
 	boardId := c.QueryInt("boardId", 0)
@@ -1107,7 +1108,7 @@ func (a *AppHandler) GetRoadmapComposeForm(c *fiber.Ctx) error {
 			}
 		}
 	} else {
-		post, err := a.RoadmapService.GetPostById(c.Context(), int32(id), curUser.Project.ID)
+		post, err := a.RoadmapService.GetPostById(c.Context(), int32(id), curUser.Project.ID, &curUser.Author.ID, &viewer.ID)
 		if err != nil {
 			return fiber.NewError(fiber.StatusInternalServerError, "error fetching post")
 		}
@@ -1138,15 +1139,13 @@ func (a *AppHandler) GetRoadmapComposeForm(c *fiber.Ctx) error {
 
 func (a *AppHandler) GetRoadmapPostActivity(c *fiber.Ctx) error {
 	curUser := c.Locals("user").(*models.SessionUser)
-	viewerAny := c.Locals("viewer")
+	viewer := c.Locals("viewer").(*data.Viewer)
 
 	var viewerId *int32
 	var projectId *int32
-	if viewerAny != nil {
-		if v, ok := viewerAny.(data.Viewer); ok {
-			viewerId = &v.ID
-			projectId = &v.ProjectID
-		}
+	if viewer != nil {
+		viewerId = &viewer.ID
+		projectId = &viewer.ProjectID
 	}
 
 	var authorId *int32
@@ -1364,13 +1363,25 @@ func (a *AppHandler) GetRoadmapPostActivity(c *fiber.Ctx) error {
 
 func (a *AppHandler) SaveRoadmapPostStatus(c *fiber.Ctx) error {
 	curUser := c.Locals("user").(*models.SessionUser)
+	viewer := c.Locals("viewer").(*data.Viewer)
+
+	var projectId *int32
+	var authorId *int32
+	var viewerId *int32
+	if curUser != nil {
+		projectId = &curUser.Project.ID
+		authorId = &curUser.Author.ID
+	} else if viewer != nil {
+		projectId = &viewer.ProjectID
+		viewerId = &viewer.ID
+	}
 
 	postId, err := c.ParamsInt("id")
 	if err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, "could not read post id")
 	}
 
-	post, err := a.RoadmapService.GetPostById(c.Context(), int32(postId), curUser.Project.ID)
+	post, err := a.RoadmapService.GetPostById(c.Context(), int32(postId), *projectId, authorId, viewerId)
 	if err != nil {
 		return fiber.NewError(fiber.StatusForbidden, "post id does not belong to this user")
 	}
@@ -1439,7 +1450,7 @@ func (a *AppHandler) SaveRoadmapPostStatus(c *fiber.Ctx) error {
 
 func (a *AppHandler) DeleteRoadmapPostComment(c *fiber.Ctx) error {
 	curUser := c.Locals("user").(*models.SessionUser)
-	viewerAny := c.Locals("viewer")
+	viewer := c.Locals("viewer").(*data.Viewer)
 
 	postId, err := c.ParamsInt("postId")
 	if err != nil {
@@ -1464,7 +1475,6 @@ func (a *AppHandler) DeleteRoadmapPostComment(c *fiber.Ctx) error {
 		authorId = &curUser.Author.ID
 		projectId = &curUser.Project.ID
 	} else {
-		viewer := viewerAny.(data.Viewer)
 		viewerId = &viewer.ID
 		projectId = &viewer.ProjectID
 	}
@@ -1506,7 +1516,7 @@ func (a *AppHandler) ToggleRoadmapPostReaction(c *fiber.Ctx) error {
 	viewPath := "partials/components/roadmap/post_reaction"
 	reaction := c.Params("reaction")
 	curUser := c.Locals("user").(*models.SessionUser)
-	viewerAny := c.Locals("viewer")
+	viewer := c.Locals("viewer").(*data.Viewer)
 
 	postId, err := c.ParamsInt("postId")
 	if err != nil {
@@ -1528,9 +1538,9 @@ func (a *AppHandler) ToggleRoadmapPostReaction(c *fiber.Ctx) error {
 		projectId = &curUser.Project.ID
 		Who = &curUser.Metadata.FullName
 	}
+
 	var viewerId *int32
-	if viewerAny != nil {
-		viewer := viewerAny.(data.Viewer)
+	if viewer != nil {
 		viewerId = &viewer.ID
 		projectId = &viewer.ProjectID
 
@@ -1613,7 +1623,7 @@ func (a *AppHandler) ToggleRoadmapPostReaction(c *fiber.Ctx) error {
 func (a *AppHandler) PostRoadmapPostComment(c *fiber.Ctx) error {
 	viewPath := "partials/components/roadmap/post_comment"
 	curUser := c.Locals("user").(*models.SessionUser)
-	viewerAny := c.Locals("viewer")
+	viewer := c.Locals("viewer").(*data.Viewer)
 
 	postId, err := c.ParamsInt("postId")
 	if err != nil {
@@ -1644,8 +1654,7 @@ func (a *AppHandler) PostRoadmapPostComment(c *fiber.Ctx) error {
 		}
 	}
 	var viewerId *int32
-	if viewerAny != nil {
-		viewer := viewerAny.(data.Viewer)
+	if viewer != nil {
 		viewerId = &viewer.ID
 
 		if viewer.UserName.Valid {

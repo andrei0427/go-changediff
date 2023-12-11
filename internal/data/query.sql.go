@@ -1186,12 +1186,28 @@ func (q *Queries) GetReaction(ctx context.Context, arg GetReactionParams) ([]sql
 }
 
 const getRoadmapPost = `-- name: GetRoadmapPost :one
-SELECT p.id, p.title, p.is_private, p.body, p.due_date, p.status_id, p.board_id, p.created_on, COUNT(v.id) as Votes FROM roadmap_posts p left join roadmap_post_votes v on p.id = v.roadmap_post_id WHERE p.id = $1 AND p.project_id = $2 GROUP BY p.id, p.title, p.is_private, p.body, p.due_date, p.status_id, p.board_id, p.created_on
+SELECT p.id, 
+p.title, 
+p.is_private, 
+p.body,
+p.due_date,
+p.status_id,
+p.board_id, 
+p.created_on, 
+COUNT(v.id) as Votes,
+$3 = any(array_agg(v.author_id))
+or $4 = any(array_agg(v.viewer_id)) as Voted
+FROM roadmap_posts p 
+  left join roadmap_post_votes v on p.id = v.roadmap_post_id 
+WHERE p.id = $1 AND p.project_id = $2 
+GROUP BY p.id, p.title, p.is_private, p.body, p.due_date, p.status_id, p.board_id, p.created_on
 `
 
 type GetRoadmapPostParams struct {
 	ID        int32
 	ProjectID int32
+	AuthorID  sql.NullInt32
+	ViewerID  sql.NullInt32
 }
 
 type GetRoadmapPostRow struct {
@@ -1204,10 +1220,16 @@ type GetRoadmapPostRow struct {
 	BoardID   sql.NullInt32
 	CreatedOn time.Time
 	Votes     int64
+	Voted     sql.NullBool
 }
 
 func (q *Queries) GetRoadmapPost(ctx context.Context, arg GetRoadmapPostParams) (GetRoadmapPostRow, error) {
-	row := q.db.QueryRowContext(ctx, getRoadmapPost, arg.ID, arg.ProjectID)
+	row := q.db.QueryRowContext(ctx, getRoadmapPost,
+		arg.ID,
+		arg.ProjectID,
+		arg.AuthorID,
+		arg.ViewerID,
+	)
 	var i GetRoadmapPostRow
 	err := row.Scan(
 		&i.ID,
@@ -1219,6 +1241,7 @@ func (q *Queries) GetRoadmapPost(ctx context.Context, arg GetRoadmapPostParams) 
 		&i.BoardID,
 		&i.CreatedOn,
 		&i.Votes,
+		&i.Voted,
 	)
 	return i, err
 }

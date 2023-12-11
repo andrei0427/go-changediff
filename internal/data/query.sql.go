@@ -1363,7 +1363,7 @@ from
   left join roadmap_post_comments c on r.comment_id = c.id
 where
   r.roadmap_post_id = $1
-  and (($2 = 0 and c.in_reply_to_id is null) or ($2 = r.comment_id and c.in_reply_to_id is not null))
+  and (($2 = 0 and r.comment_id is null) or $2 = r.comment_id)
   and p.project_id = $3
   and ($6 = '' OR emoji = $6)
 group by

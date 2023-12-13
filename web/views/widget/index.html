@@ -16,7 +16,7 @@
   </head>
 
   <body class="h-full">
-    <nav class="bg-white shadow">
+    <nav class="bg-white dark:bg-slate-800 shadow">
       <div class="mx-auto max-w-7xl px-2 sm:px-4 lg:px-8">
         <div class="flex h-16 justify-between">
           <div class="flex px-2 lg:px-0">
@@ -62,7 +62,7 @@
             {% if isEmbedded %}
             <button
               type="button"
-              class="relative flex-shrink-0 rounded-full bg-white p-1 text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2"
+              class="relative flex-shrink-0 rounded-full bg-white dark:bg-slate-800 p-1 text-gray-400 hover:text-gray-500 dark:text-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2"
               style="--tw-ring-color: {{Project.AccentColor}}"
               onclick="window.parent.postMessage('close', '*')"
             >
@@ -113,12 +113,12 @@
       };expires=${laterToday.toUTCString()};`;
 
       function updateNav(tabName) {
-        const activeLinkClasses = "text-gray-900";
+        const activeLinkClasses = "text-gray-900 dark:text-white";
         const otherLinkClasses = [
-          "text-gray-500",
+          "text-gray-500 dark:text-slate-50",
           "border-transparent",
           "hover:border-gray-300",
-          "hover:text-gray-700",
+          "hover:text-gray-700 dark:text-slate-100",
         ];
 
         for (const elm of document.getElementsByClassName("nav-item")) {

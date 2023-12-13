@@ -3,7 +3,7 @@
   {% include "partials/components/roadmap/reaction_container.html" %}
 
   <!-- New comment form -->
-  <label class="block text-sm font-medium leading-6 text-gray-900 pt-2 pb-4"
+  <label class="block text-sm font-medium leading-6 text-gray-900 dark:text-white pt-2 pb-4"
     >Leave a comment</label
   >
   <div class="mb-6 flex gap-x-3">
@@ -17,7 +17,7 @@
   </div>
 
   <div class="flow-root">
-    <label class="block text-sm font-medium leading-6 text-gray-900 pt-2 pb-4"
+    <label class="block text-sm font-medium leading-6 text-gray-900 dark:text-white pt-2 pb-4"
       >Activity</label
     >
     <ul id="activity-list" role="list" class="-mb-8">
@@ -35,12 +35,12 @@
           <div class="relative flex items-start space-x-3">
             <div class="relative">
               <img
-                class="flex h-10 w-10 items-center justify-center rounded-full bg-gray-400 ring-8 ring-white"
+                class="flex h-10 w-10 items-center justify-center rounded-full bg-gray-400 ring-8 ring-white dark:ring-slate-800"
                 src="{%if a.WhoPictureUrl %}{{ CDNUrl(a.WhoPictureUrl) }}{%else%}/favicon.png{%endif%}"
                 alt=""
               />
               <span
-                class="absolute -bottom-1 -right-2 rounded-xl bg-white px-0.5 py-px"
+                class="absolute -bottom-1 -right-2 rounded-xl bg-white dark:bg-slate-800 px-0.5 py-px"
               >
                 <svg
                   class="h-5 w-5 text-gray-400"
@@ -57,8 +57,8 @@
               </span>
             </div>
             <div class="min-w-0 flex-1 py-0">
-              <div class="text-sm leading-8 text-gray-500">
-                <span class="font-medium text-gray-900">{{a.Who}}</span>
+              <div class="text-sm leading-8 text-gray-500 dark:text-slate-50">
+                <span class="font-medium text-gray-900 dark:text-white">{{a.Who}}</span>
                 created this post
                 <span class="whitespace-nowrap"
                   >{{formatDuration(a.CreatedOn)}}</span
@@ -80,12 +80,12 @@
           <div class="relative flex items-start space-x-3">
             <div class="relative">
               <img
-                class="flex h-10 w-10 items-center justify-center rounded-full bg-gray-400 ring-8 ring-white"
+                class="flex h-10 w-10 items-center justify-center rounded-full bg-gray-400 ring-8 ring-white dark:ring-slate-800"
                 src="{%if a.WhoPictureUrl %}{{ CDNUrl(a.WhoPictureUrl) }}{%else%}/favicon.png{%endif%}"
                 alt=""
               />
               <span
-                class="absolute -bottom-1 -right-2 rounded-xl bg-white px-0.5 py-px"
+                class="absolute -bottom-1 -right-2 rounded-xl bg-white dark:bg-slate-800 px-0.5 py-px"
               >
                 <svg
                   class="h-5 w-5 text-gray-400"
@@ -102,15 +102,15 @@
               </span>
             </div>
             <div class="min-w-0 flex-1 py-0">
-              <div class="text-sm leading-8 text-gray-500">
+              <div class="text-sm leading-8 text-gray-500 dark:text-slate-50">
                 <span class="mr-0.5">
-                  <span class="font-medium text-gray-900">{{a.Who}}</span>
+                  <span class="font-medium text-gray-900 dark:text-white">{{a.Who}}</span>
                   updated changed status
                 </span>
                 <span class="mr-0.5">
                   from
                   <span
-                    class="inline-flex items-center gap-x-1.5 rounded-full px-2 py-1 text-xs font-medium text-gray-900 ring-1 ring-inset ring-gray-200"
+                    class="inline-flex items-center gap-x-1.5 rounded-full px-2 py-1 text-xs font-medium text-gray-900 dark:text-white ring-1 ring-inset ring-gray-200"
                   >
                     <svg
                       class="h-1.5 w-1.5"
@@ -126,7 +126,7 @@
                 <span class="mr-0.5">
                   to
                   <span
-                    class="inline-flex items-center gap-x-1.5 rounded-full px-2 py-1 text-xs font-medium text-gray-900 ring-1 ring-inset ring-gray-200"
+                    class="inline-flex items-center gap-x-1.5 rounded-full px-2 py-1 text-xs font-medium text-gray-900 dark:text-white ring-1 ring-inset ring-gray-200"
                   >
                     <svg
                       class="h-1.5 w-1.5"

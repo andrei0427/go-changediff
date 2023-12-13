@@ -4,7 +4,7 @@
       <div class="relative">
       <button
         type="button"
-        class="relative flex items-center justify-center rounded-full text-gray-400 hover:text-gray-500"
+        class="relative flex items-center justify-center rounded-full text-gray-400 hover:text-gray-500 dark:text-slate-50"
         aria-haspopup="listbox"
         aria-expanded="true"
         aria-labelledby="listbox-label"
@@ -42,7 +42,7 @@
 
         <div class="absolute bottom-10 z-10 -ml-6">
           <ul
-            class="flex flex-row gap-x-5 px-2 rounded-lg bg-white py-3 text-base shadow ring-1 ring-black ring-opacity-5 focus:outline-none sm:ml-auto sm:text-sm"
+            class="flex flex-row gap-x-5 px-2 rounded-lg bg-white dark:bg-slate-800 py-3 text-base shadow ring-1 ring-black ring-opacity-5 focus:outline-none sm:ml-auto sm:text-sm"
             tabindex="-1"
             role="listbox"
             aria-labelledby="listbox-label"
@@ -51,11 +51,11 @@
             <!--
 			Select option, manage highlight styles based on mouseenter/mouseleave and keyboard navigation.
 
-			Highlighted: "bg-gray-100", Not Highlighted: "bg-white"
+			Highlighted: "bg-gray-100", Not Highlighted: "bg-white dark:bg-slate-800"
 		  -->
             {%for r in availableReactions%}
             <li
-              class="bg-white relative select-none hover:bg-gray-100 p-2 cursor-pointer rounded-lg"
+              class="bg-white dark:bg-slate-800 relative select-none hover:bg-gray-100 p-2 cursor-pointer rounded-lg"
               id="listbox-option-0"
               role="option"
             >

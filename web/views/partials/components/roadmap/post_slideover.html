@@ -19,7 +19,7 @@
       class="transform transition translate-x-full ease-in-out duration-500 sm:duration-700 pointer-events-auto w-screen max-w-4xl"
     >
       <div
-        class="flex h-full justify-between flex-col overflow-y-scroll bg-white pt-6 shadow-xl"
+        class="flex h-full justify-between flex-col overflow-y-scroll bg-white dark:bg-slate-800 pt-6 shadow-xl"
       >
         <div>
           {% include "partials/components/roadmap/post_slideover_form.html" %}
@@ -37,7 +37,7 @@
           <button
             type="button"
             onclick="closeSlideOver()"
-            class="rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:ring-gray-400"
+            class="rounded-md bg-white dark:bg-slate-800 px-3 py-2 text-sm font-semibold text-gray-900 dark:text-white shadow-sm ring-1 ring-inset ring-gray-300 hover:ring-gray-400"
           >
             Cancel
           </button>
@@ -46,14 +46,14 @@
             hx-delete="/admin/roadmap/post/confirm-delete/{{form.ID}}"
             hx-target="body"
             hx-swap="beforeend"
-            class="rounded-md bg-white px-3 py-2 text-sm font-semibold text-red-700 shadow-sm ring-1 ring-inset ring-red-700 hover:bg-red-700 hover:text-white"
+            class="rounded-md bg-white dark:bg-slate-800 px-3 py-2 text-sm font-semibold text-red-700 shadow-sm ring-1 ring-inset ring-red-700 hover:bg-red-700 hover:text-white"
           >
             Delete
           </button>
           <button
             type="submit"
             form="post-form"
-            class="inline-flex justify-center rounded-md bg-emerald px-3 py-2 text-sm font-semibold text-white shadow-sm hover:text-emerald hover:bg-white hover:outline-emerald hover:outline hover:outline-1 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald"
+            class="inline-flex justify-center rounded-md bg-emerald px-3 py-2 text-sm font-semibold text-white shadow-sm hover:text-emerald hover:bg-white dark:bg-slate-800 hover:outline-emerald hover:outline hover:outline-1 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald"
           >
             Save
           </button>

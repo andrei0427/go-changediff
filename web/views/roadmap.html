@@ -4,7 +4,7 @@
 
 <div class="min-w-0 flex-1">
   <h2
-    class="text-2xl font-bold leading-7 text-gray-900 sm:truncate sm:text-3xl sm:tracking-tight"
+    class="text-2xl font-bold leading-7 text-gray-900 dark:text-white sm:truncate sm:text-3xl sm:tracking-tight"
   >
     Your Roadmap
   </h2>
@@ -16,7 +16,7 @@
   <div>
     <button
       type="button"
-      class="inline-flex w-full items-center gap-x-1.5 rounded-md font-semibold text-gray-900"
+      class="inline-flex w-full items-center gap-x-1.5 rounded-md font-semibold text-gray-900 dark:text-white"
       id="menu-button"
       aria-expanded="true"
       aria-haspopup="true"
@@ -24,7 +24,7 @@
     >
       <h3
         id="selected-board-name"
-        class="text-base font-semibold leading-6 text-gray-900"
+        class="text-base font-semibold leading-6 text-gray-900 dark:text-white"
       >
         Boards
       </h3>
@@ -44,7 +44,7 @@
   </div>
 
   <div
-    class="absolute hidden left-0 transform ease-out opacity-0 scale-95 right-0 z-10 mt-2 w-56 origin-top-right divide-y divide-gray-100 rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
+    class="absolute hidden left-0 transform ease-out opacity-0 scale-95 right-0 z-10 mt-2 w-56 origin-top-right divide-y divide-gray-100 rounded-md bg-white dark:bg-slate-800 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
     role="menu"
     id="ddlBoards"
     aria-orientation="vertical"
@@ -52,16 +52,16 @@
     tabindex="-1"
   >
     <div class="px-4 py-3" role="none">
-      <p class="truncate text-sm font-medium text-gray-900" role="none">
+      <p class="truncate text-sm font-medium text-gray-900 dark:text-white" role="none">
         Public boards
       </p>
     </div>
     <div class="py-1" role="none">
-      <!-- Active: "bg-gray-100 text-gray-900", Not Active: "text-gray-700" -->
+      <!-- Active: "bg-gray-100 text-gray-900 dark:text-white", Not Active: "text-gray-700 dark:text-slate-100" -->
 
       {%for b in PublicBoards%}
       <a
-        class="text-gray-700 block px-4 py-2 text-sm hover:bg-gray-100 w-full text-left"
+        class="text-gray-700 dark:text-slate-100 block px-4 py-2 text-sm hover:bg-gray-100 w-full text-left"
         role="menuitem"
         tabindex="-1"
         href="#{{b.ID}}"
@@ -77,15 +77,15 @@
 
     {%if HasPrivateBoards%}
     <div class="px-4 py-3" role="none">
-      <p class="truncate text-sm font-medium text-gray-900" role="none">
+      <p class="truncate text-sm font-medium text-gray-900 dark:text-white" role="none">
         Private boards
       </p>
     </div>
     <div class="py-1" role="none">
-      <!-- Active: "bg-gray-100 text-gray-900", Not Active: "text-gray-700" -->
+      <!-- Active: "bg-gray-100 text-gray-900 dark:text-white", Not Active: "text-gray-700 dark:text-slate-100" -->
       {%for b in PrivateBoards%}
       <a
-        class="text-gray-700 block px-4 py-2 text-sm hover:bg-gray-100 w-full text-left"
+        class="text-gray-700 dark:text-slate-100 block px-4 py-2 text-sm hover:bg-gray-100 w-full text-left"
         role="menuitem"
         tabindex="-1"
         href="#{{b.ID}}"
@@ -99,7 +99,7 @@
 
     <div class="py-1" role="none">
       <button
-        class="text-gray-900 block px-4 py-2 text-sm font-medium hover:bg-gray-100 w-full text-left"
+        class="text-gray-900 dark:text-white block px-4 py-2 text-sm font-medium hover:bg-gray-100 w-full text-left"
         role="menuitem"
         tabindex="-1"
         hx-get="/admin/settings/roadmap/boards/open"

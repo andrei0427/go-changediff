@@ -1,5 +1,5 @@
 <button
-  class="cursor-pointer border border-solid {%if r.Reacted%}border-emerald text-emerald font-bold bg-green-50{%else%}border-gray-700 text-gray-700{%endif%} w-16 text-center flex flex-row justify-center items-center gap-x-2"
+  class="cursor-pointer border border-solid {%if r.Reacted%}border-emerald text-emerald font-bold bg-green-50 dark:bg-slate-700{%else%}border-gray-700 text-gray-700 dark:text-slate-100{%endif%} w-16 text-center flex flex-row justify-center items-center gap-x-2"
   hx-put="/admin/roadmap/post/activity/{{postId}}/reaction/{{r.Emoji}}/{{a.ID}}"
   hx-swap="none"
   _="on click remove me on hover log('lol')"

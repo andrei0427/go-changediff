@@ -6,21 +6,21 @@
   <input type="hidden" name="id" value="{{label.ID}}" />
   {%endif%}
   <td
-    class="w-64 whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-0"
+    class="w-64 whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 dark:text-white sm:pl-0"
   >
     <input
       type="text"
       name="label"
       value="{{label.Label}}"
       placeholder="Label"
-      class="w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-emerald"
+      class="w-full rounded-md border-0 py-1.5 text-gray-900 dark:text-white shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-emerald"
     />
   </td>
-  <td class="w-1/4 min-w-[165px] whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+  <td class="w-1/4 min-w-[165px] whitespace-nowrap px-3 py-4 text-sm text-gray-500 dark:text-slate-50">
     <div>
       <div class="flex rounded-md shadow-sm">
         <span
-          class="inline-flex items-center rounded-l-md border border-r-0 border-gray-300 px-3 text-gray-500 sm:text-sm"
+          class="inline-flex items-center rounded-l-md border border-r-0 border-gray-300 px-3 text-gray-500 dark:text-slate-50 sm:text-sm"
         >
           <input
             type="color"
@@ -28,14 +28,14 @@
             required
             value="{{label.Color}}"
             style="background: none"
-            class="block w-7 h-7 cursor-pointer border-0 text-gray-900"
+            class="block w-7 h-7 cursor-pointer border-0 text-gray-900 dark:text-white"
             onchange="handleColorPickerChange(event)"
         /></span>
         <input
           type="text"
           name="color_hex"
           id="color_hex"
-          class="inline-flex w-full min-w-0 flex-1 rounded-none rounded-r-md border-0 py-1.5 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-emerald sm:text-sm sm:leading-6"
+          class="inline-flex w-full min-w-0 flex-1 rounded-none rounded-r-md border-0 py-1.5 text-gray-900 dark:text-white ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-emerald sm:text-sm sm:leading-6"
           value="{{label.Color}}"
           onchange="handleColorPickerChange(event)"
         />

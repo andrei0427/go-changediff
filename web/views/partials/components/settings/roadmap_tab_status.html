@@ -15,8 +15,8 @@
       d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"
     />
   </svg>
-  <h3 class="mt-2 text-sm font-semibold text-gray-900">No statuses</h3>
-  <p class="mt-1 text-sm text-gray-500">Get started by creating a status.</p>
+  <h3 class="mt-2 text-sm font-semibold text-gray-900 dark:text-white">No statuses</h3>
+  <p class="mt-1 text-sm text-gray-500 dark:text-slate-50">Get started by creating a status.</p>
 </div>
 {%else%}
 <div class="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
@@ -27,7 +27,7 @@
           <th scole="col"></th>
           <th
             scope="col"
-            class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900"
+            class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-white"
           >
             Name
           </th>
@@ -46,7 +46,7 @@
         {% for status in Statuses %}
         <tr class="hover:bg-slate-100">
           <td
-            class="w-1/12 whitespace-wrap text-center py-4 pl-8 pr-4 text-sm font-medium text-gray-900 xs:pl-0"
+            class="w-1/12 whitespace-wrap text-center py-4 pl-8 pr-4 text-sm font-medium text-gray-900 dark:text-white xs:pl-0"
           >
             <div
               class="w-5 h-5 rounded-md"
@@ -55,7 +55,7 @@
             ></div>
           </td>
           <td
-            class="w-8/12 whitespace-nowrap px-3 py-4 text-sm font-medium text-gray-900"
+            class="w-8/12 whitespace-nowrap px-3 py-4 text-sm font-medium text-gray-900 dark:text-white"
           >
             {{status.Status}}
           </td>

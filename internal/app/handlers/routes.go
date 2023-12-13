@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"database/sql"
 	"fmt"
 	"html/template"
 	"net/url"
@@ -115,6 +116,7 @@ func InitRoutes(app *app.App) {
 	roadmapPost.Get("/activity/:postId/:commentId?", appHandler.GetRoadmapPostActivity)
 	roadmapPost.Post("/activity/:postId/comment/:commentId?", appHandler.PostRoadmapPostComment)
 	roadmapPost.Put("/activity/:postId/reaction/:reaction/:commentId?", appHandler.ToggleRoadmapPostReaction)
+	roadmapPost.Put("/activity/:postId/vote", appHandler.ToggleRoadmapPostVote)
 	roadmapPost.Put("/activity/:postId/pin/:commentId", appHandler.ToggleRoadmapPostCommentPin)
 	roadmapPost.Delete("/activity/:postId/delete/:commentId", appHandler.DeleteRoadmapPostComment)
 	roadmapPost.Post("/save", appHandler.SaveRoadmapPost)
@@ -1020,8 +1022,27 @@ func (a *AppHandler) GetRoadmap(c *fiber.Ctx) error {
 }
 
 func (a *AppHandler) GetBoard(c *fiber.Ctx) error {
-	curUser := c.Locals("user").(*models.SessionUser)
+	curUserAny := c.Locals("user")
+	viewerAny := c.Locals("viewer")
 	boardId := c.QueryInt("id")
+
+	var curUser *models.SessionUser
+	var viewer *data.Viewer
+	if curUserAny != nil {
+		curUser = curUserAny.(*models.SessionUser)
+	}
+	if viewerAny != nil {
+		viewer = viewerAny.(*data.Viewer)
+	}
+
+	var authorId *int32
+	var viewerId *int32
+	if curUser != nil {
+		authorId = &curUser.Author.ID
+	}
+	if viewer != nil {
+		viewerId = &viewer.ID
+	}
 
 	board, err := a.RoadmapService.GetBoard(c.Context(), int32(boardId), curUser.Project.ID)
 	if err != nil {
@@ -1033,7 +1054,7 @@ func (a *AppHandler) GetBoard(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusInternalServerError, "error fetching statuses")
 	}
 
-	posts, err := a.RoadmapService.GetPostsForBoard(c.Context(), board.ID, curUser.Project.ID)
+	posts, err := a.RoadmapService.GetPostsForBoard(c.Context(), board.ID, curUser.Project.ID, authorId, viewerId)
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, "error fetching posts")
 	}
@@ -1068,7 +1089,6 @@ func (a *AppHandler) GetBoard(c *fiber.Ctx) error {
 
 func (a *AppHandler) GetRoadmapComposeForm(c *fiber.Ctx) error {
 	curUser := c.Locals("user").(*models.SessionUser)
-	viewer := c.Locals("viewer").(*data.Viewer)
 	id := c.QueryInt("id", 0)
 	statusId := c.QueryInt("statusId", 0)
 	boardId := c.QueryInt("boardId", 0)
@@ -1084,6 +1104,10 @@ func (a *AppHandler) GetRoadmapComposeForm(c *fiber.Ctx) error {
 	}
 
 	form := models.RoadmapPostModel{StatusID: 0}
+	VoteCounter := models.RoadmapPostVoteCount{
+		Count: 1,
+		Voted: true,
+	}
 
 	if id <= 0 {
 		if statusId > 0 {
@@ -1108,7 +1132,7 @@ func (a *AppHandler) GetRoadmapComposeForm(c *fiber.Ctx) error {
 			}
 		}
 	} else {
-		post, err := a.RoadmapService.GetPostById(c.Context(), int32(id), curUser.Project.ID, &curUser.Author.ID, &viewer.ID)
+		post, err := a.RoadmapService.GetPostById(c.Context(), int32(id), curUser.Project.ID, &curUser.Author.ID, nil)
 		if err != nil {
 			return fiber.NewError(fiber.StatusInternalServerError, "error fetching post")
 		}
@@ -1129,17 +1153,33 @@ func (a *AppHandler) GetRoadmapComposeForm(c *fiber.Ctx) error {
 		form.Title = post.Title
 		form.IsPrivate = post.IsPrivate
 		form.ID = &post.ID
+
+		VoteCounter.Count = post.Votes
+		if post.Voted.Valid {
+			VoteCounter.Voted = post.Voted.Bool
+		} else {
+			VoteCounter.Voted = false
+		}
 	}
 
 	statuses = append([]data.GetStatusesRow{{ID: 0, Status: "Unassigned", SortOrder: -1, Color: "#DDDDDD"}}, statuses...)
 
-	return c.Render("partials/components/roadmap/post_slideover", fiber.Map{"form": form, "Statuses": statuses, "Boards": boards})
+	return c.Render("partials/components/roadmap/post_slideover", fiber.Map{"form": form, "Statuses": statuses, "Boards": boards, "VoteCounter": VoteCounter, "postId": id})
 
 }
 
 func (a *AppHandler) GetRoadmapPostActivity(c *fiber.Ctx) error {
-	curUser := c.Locals("user").(*models.SessionUser)
-	viewer := c.Locals("viewer").(*data.Viewer)
+	curUserAny := c.Locals("user")
+	viewerAny := c.Locals("viewer")
+
+	var curUser *models.SessionUser
+	var viewer *data.Viewer
+	if curUserAny != nil {
+		curUser = curUserAny.(*models.SessionUser)
+	}
+	if viewerAny != nil {
+		viewer = viewerAny.(*data.Viewer)
+	}
 
 	var viewerId *int32
 	var projectId *int32
@@ -1362,8 +1402,19 @@ func (a *AppHandler) GetRoadmapPostActivity(c *fiber.Ctx) error {
 }
 
 func (a *AppHandler) SaveRoadmapPostStatus(c *fiber.Ctx) error {
-	curUser := c.Locals("user").(*models.SessionUser)
-	viewer := c.Locals("viewer").(*data.Viewer)
+	curUserAny := c.Locals("user")
+	viewerAny := c.Locals("viewer")
+
+	var curUser *models.SessionUser
+	var viewer *data.Viewer
+
+	if curUserAny != nil {
+		curUser = curUserAny.(*models.SessionUser)
+	}
+
+	if viewerAny != nil {
+		viewer = viewerAny.(*data.Viewer)
+	}
 
 	var projectId *int32
 	var authorId *int32
@@ -1426,7 +1477,7 @@ func (a *AppHandler) SaveRoadmapPostStatus(c *fiber.Ctx) error {
 		BoardID = &i32BoardId
 	}
 
-	saved, err := a.RoadmapService.UpdatePostStatus(c.Context(), int32(max(0, statusId)), BoardID, int32(postId), curUser.Project.ID)
+	_, err = a.RoadmapService.UpdatePostStatus(c.Context(), int32(max(0, statusId)), BoardID, int32(postId), curUser.Project.ID)
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, "error saving status")
 	}
@@ -1441,11 +1492,14 @@ func (a *AppHandler) SaveRoadmapPostStatus(c *fiber.Ctx) error {
 	if statusId > 0 {
 		i32StatusId := int32(statusId)
 		toStatusId = &i32StatusId
+		post.StatusID = sql.NullInt32{Int32: int32(statusId), Valid: true}
+	} else {
+		post.StatusID = sql.NullInt32{Valid: false}
 	}
 
 	a.RoadmapService.InsertPostActivity(c.Context(), fromStatusId, toStatusId, post.ID, curUser.Author.ID)
 
-	return c.Render("partials/components/roadmap/board_post", fiber.Map{"p": saved, "StatusUpdated": true})
+	return c.Render("partials/components/roadmap/board_post", fiber.Map{"p": post, "StatusUpdated": true})
 }
 
 func (a *AppHandler) DeleteRoadmapPostComment(c *fiber.Ctx) error {
@@ -1510,6 +1564,75 @@ func (a *AppHandler) ToggleRoadmapPostCommentPin(c *fiber.Ctx) error {
 
 	c.Locals("timeline", true)
 	return a.GetRoadmapPostActivity(c)
+}
+
+func (a *AppHandler) ToggleRoadmapPostVote(c *fiber.Ctx) error {
+	viewPath := "partials/components/roadmap/post_vote_counter"
+	curUserAny := c.Locals("user")
+	viewerAny := c.Locals("viewer")
+
+	var curUser *models.SessionUser
+	var viewer *data.Viewer
+	if curUserAny != nil {
+		curUser = curUserAny.(*models.SessionUser)
+	}
+	if viewerAny != nil {
+		viewer = viewerAny.(*data.Viewer)
+	}
+
+	postId, err := c.ParamsInt("postId")
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "bad post id given")
+	}
+
+	var authorId *int32
+	var projectId *int32
+	if curUser != nil {
+		authorId = &curUser.Author.ID
+		projectId = &curUser.Project.ID
+	}
+
+	var viewerId *int32
+	if viewer != nil {
+		viewerId = &viewer.ID
+		projectId = &viewer.ProjectID
+	}
+
+	if authorId == nil && viewerId == nil {
+		return fiber.NewError(fiber.StatusForbidden, "author or viewer id required")
+	}
+
+	if projectId == nil {
+		return fiber.NewError(fiber.StatusForbidden, "could not determine project")
+	}
+
+	VoteCounter := models.RoadmapPostVoteCount{Count: 1, Voted: true}
+	voteStatus, err := a.RoadmapService.GetRoadmapPostVoteStatus(c.Context(), int32(postId), *projectId, authorId, viewerId)
+	if err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, "error saving vote")
+	}
+
+	if voteStatus.Voteid != nil {
+		voteId := int32(voteStatus.Voteid.(int64))
+		_, err := a.RoadmapService.DeleteRoadmapPostVote(c.Context(), &voteId, int32(postId), *projectId, authorId, viewerId, nil)
+
+		if err != nil {
+			return fiber.NewError(fiber.StatusInternalServerError, "error saving vote")
+		}
+
+		VoteCounter.Voted = false
+		VoteCounter.Count = voteStatus.Votes - 1
+	} else {
+		_, err := a.RoadmapService.InsertRoadmapPostVote(c.Context(), int32(postId), *projectId, authorId, viewerId)
+		if err != nil {
+			return fiber.NewError(fiber.StatusInternalServerError, "error saving vote")
+		}
+
+		VoteCounter.Voted = true
+		VoteCounter.Count = voteStatus.Votes + 1
+	}
+
+	return c.Render(viewPath, fiber.Map{"VoteCounter": VoteCounter, "postId": postId})
 }
 
 func (a *AppHandler) ToggleRoadmapPostReaction(c *fiber.Ctx) error {
@@ -1747,7 +1870,8 @@ func (a *AppHandler) SaveRoadmapPost(c *fiber.Ctx) error {
 		return c.Render(viewPath, fiber.Map{"error": "Could not locate user timezone", "form": form, "Statuses": statuses, "Boards": boards})
 	}
 
-	var savedPost data.RoadmapPost
+	var savedPost *data.RoadmapPost
+	var VoteCounter *models.RoadmapPostVoteCount
 	if form.ID != nil && *form.ID > 0 {
 		savedPost, err = a.RoadmapService.UpdatePost(c.Context(), *form, curUser.Project.ID, loc)
 		if err != nil {
@@ -1771,10 +1895,24 @@ func (a *AppHandler) SaveRoadmapPost(c *fiber.Ctx) error {
 			form.Content = template.HTMLEscapeString(form.Content)
 			return c.Render(viewPath, fiber.Map{"error": err.Error(), "form": form, "Statuses": statuses, "Boards": boards})
 		}
+
+		VoteCounter = &models.RoadmapPostVoteCount{
+			Count: 1,
+			Voted: true,
+		}
 	}
 
 	savedPost.Body = template.HTMLEscapeString(form.Content)
-	return c.Render(viewPath, fiber.Map{"Post": savedPost, "Statuses": statuses, "Boards": boards, "Success": true, "Message": "Post saved successfully.", "Close": true})
+	return c.Render(viewPath, fiber.Map{
+		"Post":        savedPost,
+		"Statuses":    statuses,
+		"Boards":      boards,
+		"VoteCounter": VoteCounter,
+		"postId":      savedPost.ID,
+		"Success":     true,
+		"Message":     "Post saved successfully.",
+		"Close":       true,
+	})
 }
 
 func (a *AppHandler) DeleteRoadmapPost(c *fiber.Ctx) error {

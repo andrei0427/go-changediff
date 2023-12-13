@@ -19,12 +19,12 @@
       class="transform transition translate-x-full ease-in-out duration-500 sm:duration-700 pointer-events-auto w-screen max-w-4xl"
     >
       <div
-        class="flex h-full flex-col overflow-y-scroll bg-white py-6 shadow-xl"
+        class="flex h-full flex-col overflow-y-scroll bg-white dark:bg-slate-800 py-6 shadow-xl"
       >
         <div class="px-4 sm:px-6">
           <div class="flex items-start justify-between">
             <h2
-              class="text-base font-semibold leading-6 text-gray-900"
+              class="text-base font-semibold leading-6 text-gray-900 dark:text-white"
               id="slide-over-title"
             >
               {{Title}}
@@ -33,7 +33,7 @@
               <button
                 type="button"
                 onclick="closeSimpleSlideOver()"
-                class="relative rounded-md bg-white text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald focus:ring-offset-2"
+                class="relative rounded-md bg-white dark:bg-slate-800 text-gray-400 hover:text-gray-500 dark:text-slate-50 focus:outline-none focus:ring-2 focus:ring-emerald focus:ring-offset-2"
               >
                 <span class="absolute -inset-2.5"></span>
                 <span class="sr-only">Close panel</span>
@@ -61,15 +61,15 @@
           >
             {% for reaction in Reactions%}
             <div
-              class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2 bg-white px-4 py-10 sm:px-6 xl:px-8"
+              class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2 bg-white dark:bg-slate-800 px-4 py-10 sm:px-6 xl:px-8"
             >
-              <dt class="text-sm font-medium leading-6 text-gray-500">
+              <dt class="text-sm font-medium leading-6 text-gray-500 dark:text-slate-50">
                 {%if reaction.Reaction%} Reacted with
                 <span class="text-xl">{{reaction.Reaction}}</span>
                 {%else%} Views {%endif%}
               </dt>
               <dd
-                class="w-full flex-none text-3xl font-medium leading-10 tracking-tight text-gray-900"
+                class="w-full flex-none text-3xl font-medium leading-10 tracking-tight text-gray-900 dark:text-white"
               >
                 {{reaction.Count}}
               </dd>
@@ -77,11 +77,11 @@
             {% endfor %}
           </dl>
 
-          <div class="bg-white">
+          <div class="bg-white dark:bg-slate-800">
             <div
               class="mx-auto max-w-2xl px-4 py-16 sm:px-6 sm:py-24 lg:max-w-7xl lg:px-8"
             >
-              <h2 class="text-lg font-medium text-gray-900">
+              <h2 class="text-lg font-medium text-gray-900 dark:text-white">
                 Comments ({{CommentCount}})
               </h2>
               <div
@@ -93,14 +93,14 @@
                     class="lg:col-span-8 lg:col-start-5 xl:col-span-9 xl:col-start-4 xl:grid xl:grid-cols-3 xl:items-start xl:gap-x-8"
                   >
                     <div class="flex items-center xl:col-span-1">
-                      <p class="ml-3 text-sm text-gray-700">
+                      <p class="ml-3 text-sm text-gray-700 dark:text-slate-100">
                         Reaction: {%if c.Reaction.String%} {{c.Reaction.String}}
                         {%else%} None {%endif%}
                       </p>
                     </div>
 
                     <div class="xl:col-span-2 xl:mt-0">
-                      <div class="space-y-6 text-sm text-gray-500">
+                      <div class="space-y-6 text-sm text-gray-500 dark:text-slate-50">
                         {{c.Content.String}}
                       </div>
                     </div>
@@ -109,13 +109,13 @@
                   <div
                     class="mt-6 flex items-center text-sm lg:col-span-4 lg:col-start-1 lg:row-start-1 lg:mt-0 lg:flex-col lg:items-start xl:col-span-3"
                   >
-                    <p class="font-medium text-gray-900">
+                    <p class="font-medium text-gray-900 dark:text-white">
                       {%if c.Username%}{{c.Username}} {%else%} Someone {%endif%}
                       in {{c.Locale}}
                     </p>
                     <time
                       datetime="{{formatDateShort(c.CreatedOn)}}"
-                      class="ml-4 border-l border-gray-200 pl-4 text-gray-500 lg:ml-0 lg:mt-2 lg:border-0 lg:pl-0"
+                      class="ml-4 border-l border-gray-200 pl-4 text-gray-500 dark:text-slate-50 lg:ml-0 lg:mt-2 lg:border-0 lg:pl-0"
                     >
                       {{formatDate(convertDate(c.CreatedOn,user.Timezone))}}
                     </time>

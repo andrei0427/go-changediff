@@ -9,12 +9,12 @@
     <div class="relative flex items-start space-x-3">
       <div class="relative">
         <img
-          class="flex h-10 w-10 items-center justify-center rounded-full bg-gray-400 ring-8 ring-white"
+          class="flex h-10 w-10 items-center justify-center rounded-full bg-gray-400 ring-8 ring-white dark:ring-slate-800"
           src="{%if a.WhoPictureUrl %}{{ CDNUrl(a.WhoPictureUrl) }}{%else%}/favicon.png{%endif%}"
           alt=""
         />
         <span
-          class="absolute -bottom-1 -right-2 rounded-xl bg-white px-0.5 py-px"
+          class="absolute -bottom-1 -right-2 rounded-xl bg-white dark:bg-slate-800 px-0.5 py-px"
         >
           <svg
             class="h-5 w-5 text-gray-400"
@@ -58,9 +58,9 @@
         >
           <div>
             <div class="text-sm">
-              <span class="font-medium text-gray-900">{{a.Who}}</span>
+              <span class="font-medium text-gray-900 dark:text-white">{{a.Who}}</span>
             </div>
-            <p class="mt-0.5 text-sm text-gray-500">
+            <p class="mt-0.5 text-sm text-gray-500 dark:text-slate-50">
               Commented {{formatDuration(a.CreatedOn)}}
 
               <button
@@ -138,7 +138,7 @@
             </button>
             {%endif%}
           </div>
-          <div class="mt-2 text-sm text-gray-700">
+          <div class="mt-2 text-sm text-gray-700 dark:text-slate-100">
             {%if a.CommentActivity.IsDeleted%}
             <p class="italic text-gray-400">This comment has been removed</p>
             {%else%}

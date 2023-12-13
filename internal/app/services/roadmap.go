@@ -170,8 +170,21 @@ func (s *RoadmapService) DeleteStatus(ctx context.Context, boardId int32, projec
 	return err
 }
 
-func (s *RoadmapService) GetPostsForBoard(ctx context.Context, boardId int32, projectId int32) ([]data.GetPostsForBoardRow, error) {
-	return s.db.GetPostsForBoard(ctx, data.GetPostsForBoardParams{BoardID: sql.NullInt32{Int32: boardId, Valid: true}, ProjectID: projectId})
+func (s *RoadmapService) GetPostsForBoard(ctx context.Context, boardId int32, projectId int32, authorId *int32, viewerId *int32) ([]data.GetPostsForBoardRow, error) {
+	params := data.GetPostsForBoardParams{
+		BoardID:   sql.NullInt32{Int32: boardId, Valid: true},
+		ProjectID: projectId,
+	}
+
+	if authorId != nil {
+		params.AuthorID = sql.NullInt32{Int32: *authorId, Valid: true}
+	}
+
+	if viewerId != nil {
+		params.ViewerID = sql.NullInt32{Int32: *viewerId, Valid: true}
+	}
+
+	return s.db.GetPostsForBoard(ctx, params)
 }
 
 func (s *RoadmapService) GetPostById(ctx context.Context, postId int32, projectId int32, authorId *int32, viewerId *int32) (data.GetRoadmapPostRow, error) {
@@ -188,7 +201,7 @@ func (s *RoadmapService) GetPostById(ctx context.Context, postId int32, projectI
 	return s.db.GetRoadmapPost(ctx, params)
 }
 
-func (s *RoadmapService) InsertPost(ctx context.Context, post models.RoadmapPostModel, authorId *int32, viewerId *int32, projectId int32, userLocation *time.Location, isIdea bool) (data.RoadmapPost, error) {
+func (s *RoadmapService) InsertPost(ctx context.Context, post models.RoadmapPostModel, authorId *int32, viewerId *int32, projectId int32, userLocation *time.Location, isIdea bool) (*data.RoadmapPost, error) {
 	toInsert := data.InsertRoadmapPostParams{
 		Title:     post.Title,
 		Body:      post.Content,
@@ -201,7 +214,7 @@ func (s *RoadmapService) InsertPost(ctx context.Context, post models.RoadmapPost
 	if len(post.DueDate) > 0 {
 		parsedDate, err := time.ParseInLocation("2006-01-02T15:04", post.DueDate, userLocation)
 		if err != nil {
-			return data.RoadmapPost{}, errors.New("error parsing publish date")
+			return nil, errors.New("error parsing publish date")
 		}
 
 		toInsert.DueDate = sql.NullTime{Time: parsedDate.UTC(), Valid: true}
@@ -220,10 +233,18 @@ func (s *RoadmapService) InsertPost(ctx context.Context, post models.RoadmapPost
 	} else if viewerId != nil {
 		toInsert.ViewerID = sql.NullInt32{Int32: *viewerId, Valid: true}
 	} else {
-		return data.RoadmapPost{}, errors.New("eithor author id or user uuid are required")
+		return nil, errors.New("eithor author id or user uuid are required")
 	}
 
-	return s.db.InsertRoadmapPost(ctx, toInsert)
+	savedPost, postErr := s.db.InsertRoadmapPost(ctx, toInsert)
+	if postErr != nil {
+		return nil, postErr
+	}
+
+	// Insert creator's vote
+	s.InsertRoadmapPostVote(ctx, savedPost.ID, projectId, authorId, viewerId)
+
+	return &savedPost, postErr
 }
 
 func (s *RoadmapService) DeletePost(ctx context.Context, postId int32, projectId int32) (bool, error) {
@@ -301,9 +322,9 @@ func (s *RoadmapService) GetAvailableReactions() []string {
 	}
 }
 
-func (s *RoadmapService) UpdatePost(ctx context.Context, post models.RoadmapPostModel, projectId int32, userLocation *time.Location) (data.RoadmapPost, error) {
+func (s *RoadmapService) UpdatePost(ctx context.Context, post models.RoadmapPostModel, projectId int32, userLocation *time.Location) (*data.RoadmapPost, error) {
 	if post.ID == nil {
-		return data.RoadmapPost{}, errors.New("ID is required when updating")
+		return nil, errors.New("ID is required when updating")
 	}
 
 	toUpdate := data.UpdateRoadmapPostParams{
@@ -318,7 +339,7 @@ func (s *RoadmapService) UpdatePost(ctx context.Context, post models.RoadmapPost
 	if len(post.DueDate) > 0 {
 		parsedDate, err := time.ParseInLocation("2006-01-02T15:04", post.DueDate, userLocation)
 		if err != nil {
-			return data.RoadmapPost{}, errors.New("error parsing publish date")
+			return nil, errors.New("error parsing publish date")
 		}
 
 		toUpdate.DueDate = sql.NullTime{Time: parsedDate.UTC(), Valid: true}
@@ -332,7 +353,9 @@ func (s *RoadmapService) UpdatePost(ctx context.Context, post models.RoadmapPost
 		toUpdate.BoardID = sql.NullInt32{Int32: int32(*post.BoardID), Valid: true}
 	}
 
-	return s.db.UpdateRoadmapPost(ctx, toUpdate)
+	savedPost, err := s.db.UpdateRoadmapPost(ctx, toUpdate)
+
+	return &savedPost, err
 }
 
 func (s *RoadmapService) GetRoadmapPostActivity(ctx context.Context, postId int32, projectId int32) (data.GetRoadmapPostActivityRow, error) {
@@ -504,6 +527,25 @@ func (s *RoadmapService) InsertRoadmapPostReaction(ctx context.Context, postId i
 	}
 
 	return &inserted, err
+}
+
+func (s *RoadmapService) GetRoadmapPostVoteStatus(ctx context.Context, postId int32, projectId int32, authorId *int32, viewerId *int32) (data.GetRoadmapPostVoteStatusRow, error) {
+	params := data.GetRoadmapPostVoteStatusParams{
+		ID:        postId,
+		ProjectID: projectId,
+		AuthorID:  sql.NullInt32{Valid: false},
+		ViewerID:  sql.NullInt32{Valid: false},
+	}
+
+	if authorId != nil {
+		params.AuthorID = sql.NullInt32{Int32: *authorId, Valid: true}
+	}
+
+	if viewerId != nil {
+		params.ViewerID = sql.NullInt32{Int32: *viewerId, Valid: true}
+	}
+
+	return s.db.GetRoadmapPostVoteStatus(ctx, params)
 }
 
 func (s *RoadmapService) InsertRoadmapPostVote(ctx context.Context, postId int32, projectId int32, authorId *int32, viewerId *int32) (*data.RoadmapPostVote, error) {

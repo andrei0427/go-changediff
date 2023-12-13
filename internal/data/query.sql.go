@@ -889,58 +889,45 @@ func (q *Queries) GetPosts(ctx context.Context, projectID int32) ([]GetPostsRow,
 }
 
 const getPostsForBoard = `-- name: GetPostsForBoard :many
-SELECT rp.id, title, body, due_date, board_id, rp.project_id, status_id, rp.created_on, is_private, author_id, viewer_id, is_idea, is_pinned, is_locked, a.id, first_name, last_name, picture_url, a.user_id, a.project_id, a.created_on, updated_on, v.id, user_uuid, ip_addr, user_agent, locale, user_data, v.user_id, user_name, user_email, user_role, v.project_id, v.created_on
+SELECT rp.id,
+  rp.status_id,
+  rp.board_id,
+  rp.title,
+  COUNT(rpv.id) as Votes,  
+  $3 = any(array_agg(rpv.author_id))
+    or $4 = any(array_agg(rpv.viewer_id)) as Voted
 from roadmap_posts rp 
   left join authors a on a.id = rp.author_id
   left join viewers v on v.id = rp.viewer_id
+  left join roadmap_post_votes rpv on rpv.roadmap_post_id = rp.id
 where (rp.board_id IS NULL OR rp.board_id = $1) and rp.project_id = $2
+group by rp.id, rp.board_id, rp.status_id, rp.title
 order by due_date
 `
 
 type GetPostsForBoardParams struct {
 	BoardID   sql.NullInt32
 	ProjectID int32
+	AuthorID  sql.NullInt32
+	ViewerID  sql.NullInt32
 }
 
 type GetPostsForBoardRow struct {
-	ID          int32
-	Title       string
-	Body        string
-	DueDate     sql.NullTime
-	BoardID     sql.NullInt32
-	ProjectID   int32
-	StatusID    sql.NullInt32
-	CreatedOn   time.Time
-	IsPrivate   bool
-	AuthorID    sql.NullInt32
-	ViewerID    sql.NullInt32
-	IsIdea      bool
-	IsPinned    bool
-	IsLocked    bool
-	ID_2        sql.NullInt32
-	FirstName   sql.NullString
-	LastName    sql.NullString
-	PictureUrl  sql.NullString
-	UserID      uuid.NullUUID
-	ProjectID_2 sql.NullInt32
-	CreatedOn_2 sql.NullTime
-	UpdatedOn   sql.NullTime
-	ID_3        sql.NullInt32
-	UserUuid    uuid.NullUUID
-	IpAddr      sql.NullString
-	UserAgent   sql.NullString
-	Locale      sql.NullString
-	UserData    pqtype.NullRawMessage
-	UserID_2    sql.NullString
-	UserName    sql.NullString
-	UserEmail   sql.NullString
-	UserRole    sql.NullString
-	ProjectID_3 sql.NullInt32
-	CreatedOn_3 sql.NullTime
+	ID       int32
+	StatusID sql.NullInt32
+	BoardID  sql.NullInt32
+	Title    string
+	Votes    int64
+	Voted    sql.NullBool
 }
 
 func (q *Queries) GetPostsForBoard(ctx context.Context, arg GetPostsForBoardParams) ([]GetPostsForBoardRow, error) {
-	rows, err := q.db.QueryContext(ctx, getPostsForBoard, arg.BoardID, arg.ProjectID)
+	rows, err := q.db.QueryContext(ctx, getPostsForBoard,
+		arg.BoardID,
+		arg.ProjectID,
+		arg.AuthorID,
+		arg.ViewerID,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -950,39 +937,11 @@ func (q *Queries) GetPostsForBoard(ctx context.Context, arg GetPostsForBoardPara
 		var i GetPostsForBoardRow
 		if err := rows.Scan(
 			&i.ID,
-			&i.Title,
-			&i.Body,
-			&i.DueDate,
-			&i.BoardID,
-			&i.ProjectID,
 			&i.StatusID,
-			&i.CreatedOn,
-			&i.IsPrivate,
-			&i.AuthorID,
-			&i.ViewerID,
-			&i.IsIdea,
-			&i.IsPinned,
-			&i.IsLocked,
-			&i.ID_2,
-			&i.FirstName,
-			&i.LastName,
-			&i.PictureUrl,
-			&i.UserID,
-			&i.ProjectID_2,
-			&i.CreatedOn_2,
-			&i.UpdatedOn,
-			&i.ID_3,
-			&i.UserUuid,
-			&i.IpAddr,
-			&i.UserAgent,
-			&i.Locale,
-			&i.UserData,
-			&i.UserID_2,
-			&i.UserName,
-			&i.UserEmail,
-			&i.UserRole,
-			&i.ProjectID_3,
-			&i.CreatedOn_3,
+			&i.BoardID,
+			&i.Title,
+			&i.Votes,
+			&i.Voted,
 		); err != nil {
 			return nil, err
 		}
@@ -1526,6 +1485,41 @@ func (q *Queries) GetRoadmapPostStatusActivity(ctx context.Context, arg GetRoadm
 		return nil, err
 	}
 	return items, nil
+}
+
+const getRoadmapPostVoteStatus = `-- name: GetRoadmapPostVoteStatus :one
+select 
+   CASE WHEN $1 = any(array_agg(rpv.author_id)) OR $2 = any(array_agg(rpv.viewer_id)) THEN rpv.id ELSE null END as VoteID,
+   COUNT(rpv.id) as Votes
+from roadmap_posts rp left join roadmap_post_votes rpv on rp.id = rpv.roadmap_post_id
+where
+  rp.id = $3 and
+  rp.project_id = $4
+group by rpv.id
+`
+
+type GetRoadmapPostVoteStatusParams struct {
+	AuthorID  sql.NullInt32
+	ViewerID  sql.NullInt32
+	ID        int32
+	ProjectID int32
+}
+
+type GetRoadmapPostVoteStatusRow struct {
+	Voteid interface{}
+	Votes  int64
+}
+
+func (q *Queries) GetRoadmapPostVoteStatus(ctx context.Context, arg GetRoadmapPostVoteStatusParams) (GetRoadmapPostVoteStatusRow, error) {
+	row := q.db.QueryRowContext(ctx, getRoadmapPostVoteStatus,
+		arg.AuthorID,
+		arg.ViewerID,
+		arg.ID,
+		arg.ProjectID,
+	)
+	var i GetRoadmapPostVoteStatusRow
+	err := row.Scan(&i.Voteid, &i.Votes)
+	return i, err
 }
 
 const getStatus = `-- name: GetStatus :one

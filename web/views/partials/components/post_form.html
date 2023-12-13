@@ -6,17 +6,17 @@
   hx-target="#post-form"
 >
   {%if firstPost %}
-  <div class="bg-white px-6 py-12 sm:py-16 lg:px-8">
+  <div class="bg-white dark:bg-slate-800 px-6 py-12 sm:py-16 lg:px-8">
     <div class="mx-auto max-w-2xl text-center">
       <p class="text-base font-semibold leading-7 text-emerald">
         Write your first post
       </p>
       <h2
-        class="mt-2 text-4xl font-bold tracking-tight text-gray-900 sm:text-6xl"
+        class="mt-2 text-4xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-6xl"
       >
         Almost there!
       </h2>
-      <p class="mt-6 text-lg leading-8 text-gray-600">
+      <p class="mt-6 text-lg leading-8 text-gray-600 dark:text-slate-100">
         Now it's time to write and publish your first post.
       </p>
     </div>
@@ -26,7 +26,7 @@
   <div class="md:flex md:items-center md:justify-between">
     <div class="min-w-0 flex-1">
       <h2
-        class="text-2xl font-bold leading-7 text-gray-900 sm:truncate sm:text-3xl sm:tracking-tight"
+        class="text-2xl font-bold leading-7 text-gray-900 dark:text-white sm:truncate sm:text-3xl sm:tracking-tight"
       >
         {% if Id%}Edit{% else %}Create{% endif %} a post
       </h2>
@@ -34,7 +34,7 @@
     <div class="mt-4 flex md:ml-4 md:mt-0">
       <a
         href="/admin/posts"
-        class="inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
+        class="inline-flex items-center rounded-md bg-white dark:bg-slate-800 px-3 py-2 text-sm font-semibold text-gray-900 dark:text-white shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700"
         >Back</a
       >
     </div>
@@ -51,7 +51,7 @@
             <div class="sm:col-span-4">
               <label
                 for="title"
-                class="block text-sm font-medium leading-6 text-gray-900"
+                class="block text-sm font-medium leading-6 text-gray-900 dark:text-white"
                 >Title</label
               >
               <div class="mt-2">
@@ -62,7 +62,7 @@
                   value="{{form.Title}}"
                   aria-describedby="title-error"
                   placeholder="Announcement: HUGE Update Incoming!"
-                  class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-emerald"
+                  class="block w-full rounded-md border-0 py-1.5 dark:bg-slate-700 text-gray-900 dark:text-white shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-emerald"
                 />
 
                 {% if errors['Title']%}
@@ -76,7 +76,7 @@
             <div class="col-span-2">
               <label
                 for="labelId"
-                class="block text-sm font-medium leading-6 text-gray-900"
+                class="block text-sm font-medium leading-6 text-gray-900 dark:text-white"
                 >Label</label
               >
               <div class="relative inline-block text-left mt-2">
@@ -84,7 +84,7 @@
                   <button
                     type="button"
                     onclick="toggleLabelDDL()"
-                    class="inline-flex w-full justify-center gap-x-1.5 rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
+                    class="inline-flex w-full justify-center gap-x-1.5 rounded-md bg-white dark:bg-slate-800 px-3 py-2 text-sm font-semibold text-gray-900 dark:text-white shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700"
                     id="label-ddl-button"
                     aria-expanded="true"
                     aria-haspopup="true"
@@ -122,7 +122,7 @@
 
                 <div
                   id="ddlLabel"
-                  class="hidden ddl absolute right-0 z-10 mt-2 max-w-56 origin-top-right divide-y divide-gray-100 rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
+                  class="hidden ddl absolute right-0 z-10 mt-2 max-w-56 origin-top-right divide-y divide-gray-100 rounded-md bg-white dark:bg-slate-800 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
                   role="menu"
                   aria-orientation="vertical"
                   aria-labelledby="menu-button"
@@ -133,7 +133,7 @@
                     <button
                       onclick="handleLabelSelected({{label.ID}}, '{{label.Color}}', '{{label.Label}}'); return false;"
                       aria-valuetext="{{label.ID}}"
-                      class="w-full gap-x-1.5 hover:bg-gray-50 {%if form.LabelId == label.ID%}bg-gray-100 text-gray-900{%else%}text-gray-700{%endif%} group font-semibold flex items-center px-4 py-2 text-sm"
+                      class="w-full gap-x-1.5 dark:hover:bg-slate-700 hover:bg-gray-50 {%if form.LabelId == label.ID%}bg-gray-100 dark:bg-slate-700 text-gray-900 dark:text-white{%else%}text-gray-700 dark:text-slate-100{%endif%} group font-semibold flex items-center px-4 py-2 text-sm"
                       role="menuitem"
                       tabindex="-1"
                       id="menu-item-{{label.ID}}"
@@ -160,7 +160,7 @@
             <div class="col-span-2">
               <label
                 for="published_on"
-                class="block text-sm font-medium leading-6 text-gray-900"
+                class="block text-sm font-medium leading-6 text-gray-900 dark:text-white"
                 >Publish Date</label
               >
               <div class="mt-2">
@@ -171,7 +171,7 @@
                   value="{%if form.PublishedOn %}{{formatHTMLInputDateTime(convertDate(parseDateTime(form.PublishedOn), user.Timezone))}}{%endif%}"
                   aria-describedby="published-on-error"
                   required
-                  class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-emerald"
+                  class="block w-full rounded-md border-0 py-1.5 dark:bg-slate-700 text-gray-900 dark:text-white shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-emerald"
                 />
 
                 {% if errors['PublishedOn']%}
@@ -185,7 +185,7 @@
             <div class="col-span-2">
               <label
                 for="expires_on"
-                class="block text-sm font-medium leading-6 text-gray-900"
+                class="block text-sm font-medium leading-6 text-gray-900 dark:text-white"
                 >Expiry date</label
               >
               <div class="mt-2">
@@ -195,7 +195,7 @@
                   id="expires_on"
                   value="{%if form.ExpiresOn%}{{formatHTMLInputDateTime(convertDate(parseDateTime(form.ExpiresOn), user.Timezone))}}{%endif%}"
                   aria-describedby="published-on-error"
-                  class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-emerald"
+                  class="block w-full rounded-md border-0 py-1.5 text-gray-900 dark:bg-slate-700 dark:text-white shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-emerald"
                 />
 
                 {% if errors['ExpiresOn']%}
@@ -214,16 +214,16 @@
                     aria-describedby="is_published-description"
                     name="is_published"
                     type="checkbox"
-                    class="h-4 w-4 rounded border-gray-300 text-emerald focus:ring-emerald"
+                    class="h-4 w-4 rounded border-gray-300 text-emerald focus:ring-emerald dark:bg-slate-700"
                     style="position: unset"
                     {%if form.IsPublished%}checked{%endif%}
                   />
                 </div>
                 <div class="ml-3 text-sm leading-6">
-                  <label for="is_published" class="font-medium text-gray-900"
+                  <label for="is_published" class="font-medium text-gray-900 dark:text-white"
                     >Published</label
                   >
-                  <p id="is_published-description" class="text-gray-500">
+                  <p id="is_published-description" class="text-gray-500 dark:text-slate-50">
                     Unticking this will hide the post publically and put it in a
                     draft state.
                   </p>
@@ -232,13 +232,13 @@
             </div>
 
             <div class="col-span-full">
-              <label class="block text-sm font-medium leading-6 text-gray-900"
+              <label class="block text-sm font-medium leading-6 text-gray-900 dark:text-white"
                 >Body</label
               >
               <div class="mt-2">
                 <div
                   id="root"
-                  class="block w-full rounded-md border-0 p-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-emerald"
+                  class="block w-full rounded-md border-0 p-1.5 text-gray-900 dark:bg-slate-700  dark:text-white shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-emerald"
                 ></div>
                 <input
                   type="hidden"
@@ -296,12 +296,12 @@
     const ddlElms = document.querySelectorAll(".ddl button");
 
     ddlElms.forEach((elm) => {
-      elm.classList.remove("bg-gray-100", "text-gray-900", "text-gray-700");
+      elm.classList.remove("bg-gray-100", "text-gray-900", "dark:text-white", "text-gray-700", "dark:text-slate-100", "dark:bg-slate-700");
 
       if (elm.getAttribute("aria-valuetext") == labelId) {
-        elm.classList.add("bg-gray-100", "text-gray-900");
+        elm.classList.add("bg-gray-100", "text-gray-900", "dark:text-white", "dark:bg-slate-700");
       } else {
-        elm.classList.add("text-gray-700");
+        elm.classList.add("text-gray-700", "dark:text-slate-100");
       }
     });
 

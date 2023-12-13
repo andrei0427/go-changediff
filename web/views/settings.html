@@ -3,7 +3,7 @@
 {% endblock %} {% block content %}
 <div class="relative mx-auto max-w-4xl">
   <div class="px-4 sm:px-6 lg:px-0">
-    <h1 class="text-3xl font-bold tracking-tight text-gray-900">Settings</h1>
+    <h1 class="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">Settings</h1>
   </div>
   <div class="px-4 sm:px-6 lg:px-0">
     <div class="py-6">
@@ -13,7 +13,7 @@
         <select
           id="selected-tab"
           name="selected-tab"
-          class="mt-1 block w-full rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-emerald sm:text-sm sm:leading-6"
+          class="mt-1 block w-full rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 dark:text-white ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-emerald sm:text-sm sm:leading-6"
           onchange="navTabsChanged(event)"
         >
           <option selected value="general">General</option>
@@ -40,7 +40,7 @@
             <button
               onclick="updateNavTabs('organisation')"
               disabled
-              class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium"
+              class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-slate-100 whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium"
             >
               Organisation
 
@@ -49,19 +49,19 @@
             </button>
             <button
               onclick="updateNavTabs('changelog')"
-              class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium"
+              class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-slate-100 whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium"
             >
               Changelog
             </button>
             <button
               onclick="updateNavTabs('roadmap')"
-              class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium"
+              class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-slate-100 whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium"
             >
               Roadmap
             </button>
             <button
               onclick="updateNavTabs('ideas')"
-              class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium"
+              class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-slate-100 whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium"
               disabled
             >
               Ideas
@@ -71,7 +71,7 @@
             </button>
             <button
               onclick="updateNavTabs('nps')"
-              class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium"
+              class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-slate-100 whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium"
               disabled
             >
               NPS
@@ -81,7 +81,7 @@
             </button>
             <button
               onclick="updateNavTabs('csat')"
-              class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium"
+              class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-slate-100 whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium"
               disabled
             >
               CSAT
@@ -92,7 +92,7 @@
             <button
               onclick="updateNavTabs('integrations')"
               disabled
-              class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium"
+              class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-slate-100 whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium"
             >
               Integrations
 
@@ -131,8 +131,10 @@
     const defaultClasses = [
       "border-transparent",
       "text-gray-500",
+      "dark:text-slate-50",
       "hover:border-gray-300",
       "hover:text-gray-700",
+      "dark:text-slate-100",
     ];
     const currentClasses = ["border-emerald", "text-emerald"];
 

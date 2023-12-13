@@ -158,6 +158,11 @@ type RoadmapPostReactionActivityModel struct {
 	ParentCommentID *int32
 }
 
+type RoadmapPostVoteCount struct {
+	Count int64
+	Voted bool
+}
+
 type RoadmapBoardStatusWithPosts struct {
 	Status data.GetStatusesRow
 	Posts  []data.GetPostsForBoardRow

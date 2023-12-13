@@ -240,11 +240,19 @@ SELECT COUNT(*) FROM roadmap_posts WHERE board_id = $1;
 SELECT COUNT(*) FROM roadmap_posts WHERE status_id = $1;
 
 -- name: GetPostsForBoard :many
-SELECT *
+SELECT rp.id,
+  rp.status_id,
+  rp.board_id,
+  rp.title,
+  COUNT(rpv.id) as Votes,  
+  $3 = any(array_agg(rpv.author_id))
+    or $4 = any(array_agg(rpv.viewer_id)) as Voted
 from roadmap_posts rp 
   left join authors a on a.id = rp.author_id
   left join viewers v on v.id = rp.viewer_id
+  left join roadmap_post_votes rpv on rpv.roadmap_post_id = rp.id
 where (rp.board_id IS NULL OR rp.board_id = $1) and rp.project_id = $2
+group by rp.id, rp.board_id, rp.status_id, rp.title
 order by due_date;
 
 -- name: InsertRoadmapPost :one
@@ -374,6 +382,16 @@ group by
 insert into roadmap_post_votes (roadmap_post_id, author_id, viewer_id) 
   select $1, $2, $3 from roadmap_posts p where p.id = $1 and p.project_id = $4
 RETURNING *;
+
+-- name: GetRoadmapPostVoteStatus :one
+select 
+   CASE WHEN $1 = any(array_agg(rpv.author_id)) OR $2 = any(array_agg(rpv.viewer_id)) THEN rpv.id ELSE null END as VoteID,
+   COUNT(rpv.id) as Votes
+from roadmap_posts rp left join roadmap_post_votes rpv on rp.id = rpv.roadmap_post_id
+where
+  rp.id = $3 and
+  rp.project_id = $4
+group by rpv.id;
 
 -- name: GetRoadmapPostOwner :one
 select author_id, viewer_id from roadmap_post_votes where id = $1;

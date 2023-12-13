@@ -13,8 +13,8 @@
   <!-- Description list with inline editing -->
   <div class="mt-10 divide-y divide-gray-200">
     <div class="space-y-1">
-      <h3 class="text-lg font-medium leading-6 text-gray-900">Account</h3>
-      <p class="max-w-2xl text-sm text-gray-500">
+      <h3 class="text-lg font-medium leading-6 text-gray-900 dark:text-white">Account</h3>
+      <p class="max-w-2xl text-sm text-gray-500 dark:text-slate-50">
         Your name and image will be shown in all posts and comments you write.
       </p>
     </div>
@@ -23,8 +23,8 @@
         <div
           class="py-4 sm:grid sm:grid-cols-3 items-center sm:gap-4 sm:py-5 sm:pt-5"
         >
-          <dt class="text-sm font-medium text-gray-500">First Name</dt>
-          <dd class="mt-1 flex text-sm text-gray-900 sm:col-span-2 sm:mt-0">
+          <dt class="text-sm font-medium text-gray-500 dark:text-slate-50">First Name</dt>
+          <dd class="mt-1 flex text-sm text-gray-900 dark:text-white sm:col-span-2 sm:mt-0">
             <input
               type="text"
               name="first_name"
@@ -32,7 +32,7 @@
               value="{{Form.FirstName}}"
               aria-describedby="firstname-error"
               placeholder="Elon"
-              class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-emerald"
+              class="block w-full rounded-md border-0 py-1.5 text-gray-900 dark:text-white shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-emerald"
             />
 
             {% if Errors['FirstName']%}
@@ -46,8 +46,8 @@
         <div
           class="py-4 sm:grid sm:grid-cols-3 items-center sm:gap-4 sm:py-5 sm:pt-5"
         >
-          <dt class="text-sm font-medium text-gray-500">Last Name</dt>
-          <dd class="mt-1 flex text-sm text-gray-900 sm:col-span-2 sm:mt-0">
+          <dt class="text-sm font-medium text-gray-500 dark:text-slate-50">Last Name</dt>
+          <dd class="mt-1 flex text-sm text-gray-900 dark:text-white sm:col-span-2 sm:mt-0">
             <input
               type="text"
               name="last_name"
@@ -55,7 +55,7 @@
               value="{{Form.LastName}}"
               aria-describedby="lastname-error"
               placeholder="Musk"
-              class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-emerald"
+              class="block w-full rounded-md border-0 py-1.5 text-gray-900 dark:text-white shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-emerald"
             />
 
             {% if Errors['LastName']%}
@@ -69,8 +69,8 @@
         <div
           class="py-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:py-5 sm:pt-5 items-center"
         >
-          <dt class="text-sm font-medium text-gray-500">Display Picture</dt>
-          <dd class="mt-1 flex text-sm text-gray-900 sm:col-span-2 sm:mt-0">
+          <dt class="text-sm font-medium text-gray-500 dark:text-slate-50">Display Picture</dt>
+          <dd class="mt-1 flex text-sm text-gray-900 dark:text-white sm:col-span-2 sm:mt-0">
             <span class="flex-grow">
               <img
                 class="h-10 w-10 rounded-full bg-gray-50"
@@ -82,21 +82,21 @@
               <input
                 type="file"
                 name="display_picture"
-                class="rounded-md bg-white font-medium text-emerald hover:text-emerald focus:outline-none focus:ring-2 focus:ring-emerald focus:ring-offset-2"
+                class="rounded-md bg-white dark:bg-slate-800 font-medium text-emerald hover:text-emerald focus:outline-none focus:ring-2 focus:ring-emerald focus:ring-offset-2"
               />
             </span>
           </dd>
         </div>
 
         <div class="py-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:py-5 sm:pt-5">
-          <dt class="text-sm font-medium text-gray-500">Email</dt>
-          <dd class="mt-1 flex text-sm text-gray-900 sm:col-span-2 sm:mt-0">
+          <dt class="text-sm font-medium text-gray-500 dark:text-slate-50">Email</dt>
+          <dd class="mt-1 flex text-sm text-gray-900 dark:text-white sm:col-span-2 sm:mt-0">
             <span class="flex-grow">{{user.Email}}</span>
           </dd>
         </div>
         <div class="py-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:py-5 sm:pt-5">
-          <dt class="text-sm font-medium text-gray-500">Timezone</dt>
-          <dd class="mt-1 flex text-sm text-gray-900 sm:col-span-2 sm:mt-0">
+          <dt class="text-sm font-medium text-gray-500 dark:text-slate-50">Timezone</dt>
+          <dd class="mt-1 flex text-sm text-gray-900 dark:text-white sm:col-span-2 sm:mt-0">
             <span class="flex-grow">{{user.Timezone}}</span>
           </dd>
         </div>
@@ -106,8 +106,8 @@
 
   <div class="mt-10 divide-y divide-gray-200">
     <div class="space-y-1">
-      <h3 class="text-lg font-medium leading-6 text-gray-900">Project</h3>
-      <p class="max-w-2xl text-sm text-gray-500">
+      <h3 class="text-lg font-medium leading-6 text-gray-900 dark:text-white">Project</h3>
+      <p class="max-w-2xl text-sm text-gray-500 dark:text-slate-50">
         Customize how your product is displayed to your clients.
       </p>
     </div>
@@ -116,8 +116,8 @@
         <div
           class="py-4 sm:grid sm:grid-cols-3 items-center sm:gap-4 sm:py-5 sm:pt-5"
         >
-          <dt class="text-sm font-medium text-gray-500">Name</dt>
-          <dd class="mt-1 flex text-sm text-gray-900 sm:col-span-2 sm:mt-0">
+          <dt class="text-sm font-medium text-gray-500 dark:text-slate-50">Name</dt>
+          <dd class="mt-1 flex text-sm text-gray-900 dark:text-white sm:col-span-2 sm:mt-0">
             <input
               type="text"
               name="name"
@@ -125,7 +125,7 @@
               value="{{Form.Name}}"
               aria-describedby="title-error"
               placeholder="Best Todo App Ever"
-              class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-emerald"
+              class="block w-full rounded-md border-0 py-1.5 text-gray-900 dark:text-white shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-emerald"
             />
 
             {% if Errors['Name']%}
@@ -138,8 +138,8 @@
         <div
           class="py-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:py-5 sm:pt-5 items-center"
         >
-          <dt class="text-sm font-medium text-gray-500">Logo</dt>
-          <dd class="mt-1 flex text-sm text-gray-900 sm:col-span-2 sm:mt-0">
+          <dt class="text-sm font-medium text-gray-500 dark:text-slate-50">Logo</dt>
+          <dd class="mt-1 flex text-sm text-gray-900 dark:text-white sm:col-span-2 sm:mt-0">
             <span class="flex-grow">
               <img
                 class="h-8 w-8"
@@ -151,7 +151,7 @@
               <input
                 type="file"
                 name="photo"
-                class="rounded-md bg-white font-medium text-emerald hover:text-emerald focus:outline-none focus:ring-2 focus:ring-emerald focus:ring-offset-2"
+                class="rounded-md bg-white dark:bg-slate-800 font-medium text-emerald hover:text-emerald focus:outline-none focus:ring-2 focus:ring-emerald focus:ring-offset-2"
               />
             </span>
           </dd>
@@ -159,8 +159,8 @@
         <div
           class="py-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:border-b sm:border-gray-200 sm:py-5"
         >
-          <dt class="text-sm font-medium text-gray-500">Description</dt>
-          <dd class="mt-1 flex text-sm text-gray-900 sm:col-span-2 sm:mt-0">
+          <dt class="text-sm font-medium text-gray-500 dark:text-slate-50">Description</dt>
+          <dd class="mt-1 flex text-sm text-gray-900 dark:text-white sm:col-span-2 sm:mt-0">
             <textarea
               id="description"
               name="description"
@@ -168,7 +168,7 @@
               required
               placeholder="Saves AND does your todos for you..."
               aria-describedby="desc-error"
-              class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-emerald"
+              class="block w-full rounded-md border-0 py-1.5 text-gray-900 dark:text-white shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-emerald"
             >
 {{Form.Description}}</textarea
             >
@@ -181,11 +181,11 @@
           </dd>
         </div>
         <div class="py-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:py-5 items-center">
-          <dt class="text-sm font-medium text-gray-500">Accent Color</dt>
-          <dd class="mt-1 flex text-sm text-gray-900 sm:col-span-2 sm:mt-0">
+          <dt class="text-sm font-medium text-gray-500 dark:text-slate-50">Accent Color</dt>
+          <dd class="mt-1 flex text-sm text-gray-900 dark:text-white sm:col-span-2 sm:mt-0">
             <div class="mt-2 flex rounded-md shadow-sm">
               <span
-                class="inline-flex items-center rounded-l-md border border-r-0 border-gray-300 px-3 text-gray-500 sm:text-sm"
+                class="inline-flex items-center rounded-l-md border border-r-0 border-gray-300 px-3 text-gray-500 dark:text-slate-50 sm:text-sm"
               >
                 <input
                   type="color"
@@ -195,14 +195,14 @@
                   aria-describedby="color-error"
                   value="{{Form.AccentColor}}"
                   style="background: none"
-                  class="block w-7 h-7 cursor-pointer border-0 text-gray-900"
+                  class="block w-7 h-7 cursor-pointer border-0 text-gray-900 dark:text-white"
                   onchange="handleColorPickerChange(event)"
               /></span>
               <input
                 type="text"
                 name="accent_color_hex"
                 id="accent_color_hex"
-                class="block w-full min-w-0 flex-1 rounded-none rounded-r-md border-0 py-1.5 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-emerald sm:text-sm sm:leading-6"
+                class="block w-full min-w-0 flex-1 rounded-none rounded-r-md border-0 py-1.5 text-gray-900 dark:text-white ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-emerald sm:text-sm sm:leading-6"
                 value="{{Form.AccentColor}}"
                 onchange="handleColorPickerChange(event)"
               />
@@ -218,9 +218,9 @@
         <div
           class="py-4 sm:grid sm:grid-cols-3 items-center sm:gap-4 sm:py-5 sm:pt-5"
         >
-          <dt class="text-sm font-medium text-gray-500">App Key</dt>
+          <dt class="text-sm font-medium text-gray-500 dark:text-slate-50">App Key</dt>
           <dd
-            class="mt-1 flex text-sm cursor-pointer text-gray-900 sm:col-span-2 sm:mt-0"
+            class="mt-1 flex text-sm cursor-pointer text-gray-900 dark:text-white sm:col-span-2 sm:mt-0"
             onclick="navigator.clipboard.writeText('{{Form.AppKey}}'); document.getElementById('copied').classList.remove('hidden');"
           >
             <div class="relative w-full">
@@ -230,7 +230,7 @@
                 name="appkey"
                 id="appkey"
                 value="{{user.Project.AppKey}}"
-                class="pointer-events-none block w-full rounded-md border-0 py-1.5 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 bg-gray-200 focus:ring-2 focus:ring-inset focus:ring-emerald sm:text-sm sm:leading-6"
+                class="pointer-events-none block w-full rounded-md border-0 py-1.5 pr-10 text-gray-900 dark:text-white ring-1 ring-inset ring-gray-300 bg-gray-200 focus:ring-2 focus:ring-inset focus:ring-emerald sm:text-sm sm:leading-6"
               />
               <div
                 class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3"

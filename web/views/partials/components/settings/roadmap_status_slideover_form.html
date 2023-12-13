@@ -11,7 +11,7 @@
   <div class="px-4 sm:px-6">
     <div class="flex items-start justify-between">
       <h2
-        class="text-base font-semibold leading-6 text-gray-900"
+        class="text-base font-semibold leading-6 text-gray-900 dark:text-white"
         id="slide-over-title"
       >
         {%if Status.ID%}Edit{%else%}Create{%endif%} Status
@@ -20,7 +20,7 @@
         <button
           type="button"
           onclick="closeSlideOver()"
-          class="relative rounded-md bg-white text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald focus:ring-offset-2"
+          class="relative rounded-md bg-white dark:bg-slate-800 text-gray-400 hover:text-gray-500 dark:text-slate-50 focus:outline-none focus:ring-2 focus:ring-emerald focus:ring-offset-2"
         >
           <span class="absolute -inset-2.5"></span>
           <span class="sr-only">Close panel</span>
@@ -50,7 +50,7 @@
           <div>
             <label
               for="status"
-              class="block text-sm font-medium leading-6 text-gray-900"
+              class="block text-sm font-medium leading-6 text-gray-900 dark:text-white"
               >Status</label
             >
             <div class="mt-2">
@@ -59,7 +59,7 @@
                 name="status"
                 id="status"
                 value="{{Status.Status}}"
-                class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-emerald sm:text-sm sm:leading-6"
+                class="block w-full rounded-md border-0 py-1.5 text-gray-900 dark:text-white shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-emerald sm:text-sm sm:leading-6"
               />
             </div>
 
@@ -72,7 +72,7 @@
           <div>
             <label
               for="description"
-              class="block text-sm font-medium leading-6 text-gray-900"
+              class="block text-sm font-medium leading-6 text-gray-900 dark:text-white"
               >Description</label
             >
             <div class="mt-2">
@@ -80,7 +80,7 @@
                 id="description"
                 name="description"
                 rows="4"
-                class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-emerald sm:text-sm sm:leading-6"
+                class="block w-full rounded-md border-0 py-1.5 text-gray-900 dark:text-white shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-emerald sm:text-sm sm:leading-6"
               >
 {{Status.Description}}</textarea
               >
@@ -90,7 +90,7 @@
           <div>
             <label
               for="color"
-              class="block text-sm font-medium leading-6 text-gray-900"
+              class="block text-sm font-medium leading-6 text-gray-900 dark:text-white"
               >Color</label
             >
             <div class="mt-4">
@@ -101,7 +101,7 @@
                 required
                 aria-describedby="color-error"
                 value="{{Status.Color}}"
-                class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-emerald"
+                class="block w-full rounded-md border-0 py-1.5 text-gray-900 dark:text-white shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-emerald"
               />
 
               {% if errors['Color']%}

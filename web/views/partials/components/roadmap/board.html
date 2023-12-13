@@ -3,12 +3,12 @@
     class="border-b border-gray-200 pb-5 mb-5 sm:flex sm:items-center sm:justify-between"
   >
     <div>
-      <p class="mt-2 max-w-4xl text-sm text-gray-500">{{Board.Description}}</p>
+      <p class="mt-2 max-w-4xl text-sm text-gray-500 dark:text-slate-50">{{Board.Description}}</p>
     </div>
     <div class="mt-4 flex gap-x-2 md:ml-4 md:mt-0">
       <a
         href="/admin/settings#roadmap"
-        class="inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
+        class="inline-flex items-center rounded-md bg-white dark:bg-slate-800 px-3 py-2 text-sm font-semibold text-gray-900 dark:text-white shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -108,14 +108,14 @@
     >
       <div class="rounded-xl border overflow-hidden border-gray-200">
         <div
-          class="flex justify-between border-b border-gray-900/5 bg-gray-50 p-6"
+          class="flex justify-between border-b border-gray-900/5 bg-gray-50 dark:bg-slate-700 p-6"
         >
           <div class="flex items-center gap-x-4">
             <div
               class="w-7 h-7 rounded-md"
               style="background-color: {{s.Status.Color}}"
             ></div>
-            <div class="text-sm font-medium leading-6 text-gray-900">
+            <div class="text-sm font-medium leading-6 text-gray-900 dark:text-white">
               {{s.Status.Status}} (<span class="status-post-count">0</span>)
             </div>
           </div>
@@ -145,7 +145,7 @@
         </div>
         <div
           id="status-{{s.Status.ID}}"
-          class="draggable-container divide-y space-y-4 divide-gray-100 px-6 py-4 text-sm leading-6 overflow-y-auto h-[60vh]"
+          class="draggable-container divide-y space-y-4 dark:divide-slate-800 divide-gray-100 px-6 py-4 text-sm leading-6 overflow-y-auto h-[60vh]"
         >
           {%for p in s.Posts%} {%include 'partials/components/roadmap/board_post.html'%} {%endfor%}
         </div>

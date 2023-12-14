@@ -109,6 +109,7 @@ type RoadmapPostModel struct {
 	Content   string `form:"content"`
 	IsPrivate bool   `form:"is_private"`
 	DueDate   string `form:"due_date"`
+	IsIdea    bool   `form:"is_idea"`
 
 	Reactions []RoadmapPostReactionActivityModel
 }
@@ -166,4 +167,9 @@ type RoadmapPostVoteCount struct {
 type RoadmapBoardStatusWithPosts struct {
 	Status data.GetStatusesRow
 	Posts  []data.GetPostsForBoardRow
+}
+
+type RoadmapPostPinModel struct {
+	ID       int32
+	IsPinned bool
 }

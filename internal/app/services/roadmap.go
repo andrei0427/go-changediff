@@ -187,6 +187,24 @@ func (s *RoadmapService) GetPostsForBoard(ctx context.Context, boardId int32, pr
 	return s.db.GetPostsForBoard(ctx, params)
 }
 
+func (s *RoadmapService) GetIdeas(ctx context.Context, projectId int32, authorId *int32, viewerId *int32) ([]data.GetIdeasRow, error) {
+	params := data.GetIdeasParams{
+		ProjectID: projectId,
+		Column2:   0,
+		Column3:   0,
+	}
+
+	if authorId != nil {
+		params.Column2 = *authorId
+	}
+
+	if viewerId != nil {
+		params.Column3 = *viewerId
+	}
+
+	return s.db.GetIdeas(ctx, params)
+}
+
 func (s *RoadmapService) GetPostById(ctx context.Context, postId int32, projectId int32, authorId *int32, viewerId *int32) (data.GetRoadmapPostRow, error) {
 	params := data.GetRoadmapPostParams{ID: postId, ProjectID: projectId}
 
@@ -658,6 +676,13 @@ func (s *RoadmapService) ToggleRoadmapPostCommentPin(ctx context.Context, postId
 	return s.db.TogglePinRoadmapPostComment(ctx, data.TogglePinRoadmapPostCommentParams{
 		ID:        commentId,
 		ID_2:      postId,
+		ProjectID: projectId,
+	})
+}
+
+func (s *RoadmapService) ToggleRoadmapPostPin(ctx context.Context, postId int32, projectId int32) (bool, error) {
+	return s.db.ToggleRoadmapPostPin(ctx, data.ToggleRoadmapPostPinParams{
+		ID:        postId,
 		ProjectID: projectId,
 	})
 }

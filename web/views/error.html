@@ -1,7 +1,6 @@
-{% include "index.html" %}
-
+{%if curUser or viewer%}{%else%}{%include "index.html"%}{%endif%}
 <main
-  class="dark:bg-slate-900 mx-auto flex w-full max-w-7xl flex-auto flex-col justify-center px-6 py-24 sm:py-64 lg:px-8"
+  class="dark:bg-slate-800 mx-auto flex w-full max-w-7xl flex-auto flex-col justify-center px-6 py-24 sm:py-64 lg:px-8"
 >
   <p class="text-base font-semibold leading-8 text-emerald" id="code">
     {{Code}}

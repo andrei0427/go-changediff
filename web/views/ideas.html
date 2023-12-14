@@ -1,0 +1,8 @@
+{% extends 'partials/base/auth_base.html' %} {% block head %}
+<title>ReleaseRover - Ideas</title>
+{% endblock %} {% block content %}
+<div class="idea-content" hx-get="/admin/ideas/load" hx-trigger="load"></div>
+
+<script type="module" src="/static/lexical/main.9d8dd8ca.js"></script>
+<link rel="stylesheet" href="/static/lexical/main.8197594a.css" />
+{% endblock %}

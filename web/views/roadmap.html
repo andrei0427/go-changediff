@@ -61,7 +61,7 @@
 
       {%for b in PublicBoards%}
       <a
-        class="text-gray-700 dark:text-slate-100 block px-4 py-2 text-sm hover:bg-gray-100 w-full text-left"
+        class="text-gray-700 dark:text-slate-100 block px-4 py-2 text-sm dark:hover:bg-slate-700 hover:bg-gray-100 w-full text-left"
         role="menuitem"
         tabindex="-1"
         href="#{{b.ID}}"
@@ -85,7 +85,7 @@
       <!-- Active: "bg-gray-100 text-gray-900 dark:text-white", Not Active: "text-gray-700 dark:text-slate-100" -->
       {%for b in PrivateBoards%}
       <a
-        class="text-gray-700 dark:text-slate-100 block px-4 py-2 text-sm hover:bg-gray-100 w-full text-left"
+        class="text-gray-700 dark:text-slate-100 block px-4 py-2 text-sm dark:hover:bg-slate-700 hover:bg-gray-100 w-full text-left"
         role="menuitem"
         tabindex="-1"
         href="#{{b.ID}}"
@@ -99,7 +99,7 @@
 
     <div class="py-1" role="none">
       <button
-        class="text-gray-900 dark:text-white block px-4 py-2 text-sm font-medium hover:bg-gray-100 w-full text-left"
+        class="text-gray-900 dark:text-white block px-4 py-2 text-sm font-medium hover:bg-gray-100 dark:hover:bg-slate-700 w-full text-left"
         role="menuitem"
         tabindex="-1"
         hx-get="/admin/settings/roadmap/boards/open"

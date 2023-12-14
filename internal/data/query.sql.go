@@ -613,6 +613,83 @@ func (q *Queries) GetBoards(ctx context.Context, projectID int32) ([]GetBoardsRo
 	return items, nil
 }
 
+const getIdeas = `-- name: GetIdeas :many
+SELECT rp.id, 
+  rp.title,
+  rp.created_on,
+  rp.is_private, 
+  rp.status_id,
+  rp.board_id,
+  rs.status,
+  rs.color,
+  rb.name,
+  COALESCE(a.first_name, v.user_name, 'Someone') as Who
+from roadmap_posts rp 
+  left join roadmap_statuses rs on rs.id = rp.status_id
+  left join roadmap_boards rb on rb.id = rp.board_id
+  left join authors a on a.id = rp.author_id
+  left join viewers v on v.id = rp.viewer_id
+where rp.project_id = $1
+  and rp.is_idea = true
+  and ($2 = 0 or a.id = $2)
+  and ($3 = 0 or v.id = $3)
+order by rp.created_on desc
+`
+
+type GetIdeasParams struct {
+	ProjectID int32
+	Column2   interface{}
+	Column3   interface{}
+}
+
+type GetIdeasRow struct {
+	ID        int32
+	Title     string
+	CreatedOn time.Time
+	IsPrivate bool
+	StatusID  sql.NullInt32
+	BoardID   sql.NullInt32
+	Status    sql.NullString
+	Color     sql.NullString
+	Name      sql.NullString
+	Who       string
+}
+
+// IDEAS --
+func (q *Queries) GetIdeas(ctx context.Context, arg GetIdeasParams) ([]GetIdeasRow, error) {
+	rows, err := q.db.QueryContext(ctx, getIdeas, arg.ProjectID, arg.Column2, arg.Column3)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetIdeasRow
+	for rows.Next() {
+		var i GetIdeasRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Title,
+			&i.CreatedOn,
+			&i.IsPrivate,
+			&i.StatusID,
+			&i.BoardID,
+			&i.Status,
+			&i.Color,
+			&i.Name,
+			&i.Who,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getLabels = `-- name: GetLabels :many
 SELECT id, label, color, project_id, created_on, updated_on from labels WHERE project_id = $1 ORDER BY created_on
 `
@@ -893,6 +970,8 @@ SELECT rp.id,
   rp.status_id,
   rp.board_id,
   rp.title,
+  rp.is_idea,
+  rp.is_pinned,
   COUNT(rpv.id) as Votes,  
   $3 = any(array_agg(rpv.author_id))
     or $4 = any(array_agg(rpv.viewer_id)) as Voted
@@ -900,9 +979,9 @@ from roadmap_posts rp
   left join authors a on a.id = rp.author_id
   left join viewers v on v.id = rp.viewer_id
   left join roadmap_post_votes rpv on rpv.roadmap_post_id = rp.id
-where (rp.board_id IS NULL OR rp.board_id = $1) and rp.project_id = $2
+where (rp.board_id IS NULL OR rp.board_id = $1) and rp.project_id = $2 
 group by rp.id, rp.board_id, rp.status_id, rp.title
-order by due_date
+order by is_pinned DESC, due_date
 `
 
 type GetPostsForBoardParams struct {
@@ -917,6 +996,8 @@ type GetPostsForBoardRow struct {
 	StatusID sql.NullInt32
 	BoardID  sql.NullInt32
 	Title    string
+	IsIdea   bool
+	IsPinned bool
 	Votes    int64
 	Voted    sql.NullBool
 }
@@ -940,6 +1021,8 @@ func (q *Queries) GetPostsForBoard(ctx context.Context, arg GetPostsForBoardPara
 			&i.StatusID,
 			&i.BoardID,
 			&i.Title,
+			&i.IsIdea,
+			&i.IsPinned,
 			&i.Votes,
 			&i.Voted,
 		); err != nil {
@@ -1151,6 +1234,8 @@ p.is_private,
 p.body,
 p.due_date,
 p.status_id,
+p.is_pinned,
+p.is_idea,
 p.board_id, 
 p.created_on, 
 COUNT(v.id) as Votes,
@@ -1176,6 +1261,8 @@ type GetRoadmapPostRow struct {
 	Body      string
 	DueDate   sql.NullTime
 	StatusID  sql.NullInt32
+	IsPinned  bool
+	IsIdea    bool
 	BoardID   sql.NullInt32
 	CreatedOn time.Time
 	Votes     int64
@@ -1197,6 +1284,8 @@ func (q *Queries) GetRoadmapPost(ctx context.Context, arg GetRoadmapPostParams) 
 		&i.Body,
 		&i.DueDate,
 		&i.StatusID,
+		&i.IsPinned,
+		&i.IsIdea,
 		&i.BoardID,
 		&i.CreatedOn,
 		&i.Votes,
@@ -2191,6 +2280,22 @@ func (q *Queries) TogglePinRoadmapPostComment(ctx context.Context, arg TogglePin
 	var id int32
 	err := row.Scan(&id)
 	return id, err
+}
+
+const toggleRoadmapPostPin = `-- name: ToggleRoadmapPostPin :one
+UPDATE roadmap_posts SET is_pinned = not is_pinned WHERE id = $1 AND project_id = $2 RETURNING is_pinned
+`
+
+type ToggleRoadmapPostPinParams struct {
+	ID        int32
+	ProjectID int32
+}
+
+func (q *Queries) ToggleRoadmapPostPin(ctx context.Context, arg ToggleRoadmapPostPinParams) (bool, error) {
+	row := q.db.QueryRowContext(ctx, toggleRoadmapPostPin, arg.ID, arg.ProjectID)
+	var is_pinned bool
+	err := row.Scan(&is_pinned)
+	return is_pinned, err
 }
 
 const unsetLabels = `-- name: UnsetLabels :many

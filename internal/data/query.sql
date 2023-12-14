@@ -195,6 +195,29 @@ FROM viewers v
 WHERE $2 = 0 OR v.id = $2
 GROUP BY v.user_id, v.user_uuid, v.id, UserName, UserEmail, UserRole, v.locale, UserData;
 
+-- IDEAS --
+-- name: GetIdeas :many
+SELECT rp.id, 
+  rp.title,
+  rp.created_on,
+  rp.is_private, 
+  rp.status_id,
+  rp.board_id,
+  rs.status,
+  rs.color,
+  rb.name,
+  COALESCE(a.first_name, v.user_name, 'Someone') as Who
+from roadmap_posts rp 
+  left join roadmap_statuses rs on rs.id = rp.status_id
+  left join roadmap_boards rb on rb.id = rp.board_id
+  left join authors a on a.id = rp.author_id
+  left join viewers v on v.id = rp.viewer_id
+where rp.project_id = $1
+  and rp.is_idea = true
+  and ($2 = 0 or a.id = $2)
+  and ($3 = 0 or v.id = $3)
+order by rp.created_on desc;
+
 -- ROADMAP --
 
 -- name: GetBoards :many
@@ -244,6 +267,8 @@ SELECT rp.id,
   rp.status_id,
   rp.board_id,
   rp.title,
+  rp.is_idea,
+  rp.is_pinned,
   COUNT(rpv.id) as Votes,  
   $3 = any(array_agg(rpv.author_id))
     or $4 = any(array_agg(rpv.viewer_id)) as Voted
@@ -251,15 +276,18 @@ from roadmap_posts rp
   left join authors a on a.id = rp.author_id
   left join viewers v on v.id = rp.viewer_id
   left join roadmap_post_votes rpv on rpv.roadmap_post_id = rp.id
-where (rp.board_id IS NULL OR rp.board_id = $1) and rp.project_id = $2
+where (rp.board_id IS NULL OR rp.board_id = $1) and rp.project_id = $2 
 group by rp.id, rp.board_id, rp.status_id, rp.title
-order by due_date;
+order by is_pinned DESC, due_date;
 
 -- name: InsertRoadmapPost :one
 INSERT INTO roadmap_posts (title, body, due_date, is_private, author_id, is_idea, viewer_id, board_id, status_id, project_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *;
 
 -- name: UpdateRoadmapPost :one
 UPDATE roadmap_posts SET title = $1, body = $2, due_date = $3, is_private = $4, board_id = $5, status_id = $6 WHERE id = $7 AND project_id = $8 RETURNING *;
+
+-- name: ToggleRoadmapPostPin :one
+UPDATE roadmap_posts SET is_pinned = not is_pinned WHERE id = $1 AND project_id = $2 RETURNING is_pinned;
 
 -- name: GetRoadmapPost :one
 SELECT p.id, 
@@ -268,6 +296,8 @@ p.is_private,
 p.body,
 p.due_date,
 p.status_id,
+p.is_pinned,
+p.is_idea,
 p.board_id, 
 p.created_on, 
 COUNT(v.id) as Votes,

@@ -64,6 +64,7 @@
                 hx-put="/admin/roadmap/post/activity/{{postId}}/reaction/{{r}}/{{a.ID}}"
                 hx-swap="afterbegin"
                 hx-target="#reaction-container-{{a.ID}}"
+                _="on click transition .emoji-selector's opacity to 0 over 50ms"
               >
                 {{r}}
               </button>

@@ -288,7 +288,14 @@
         elm.addEventListener("dragover", (e) => {
           e.preventDefault();
           const item = document.querySelector(".dragging");
-          elm.appendChild(item);
+
+          const pinnedPosts = elm.querySelectorAll('.pinned');
+          if (!pinnedPosts.length || item.classList.contains("pinned")){
+            elm.prepend(item);
+          }else{
+            const lastPinnedPost = pinnedPosts[pinnedPosts.length - 1];
+            lastPinnedPost.insertAdjacentElement("afterend", item);
+          }
         });
 
         eventListenerElmIds.add(elm.id);

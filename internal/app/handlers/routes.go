@@ -1523,9 +1523,9 @@ func (a *AppHandler) SaveRoadmapPostStatus(c *fiber.Ctx) error {
 
 	var fromStatusId *int32
 	var toStatusId *int32
-
 	if post.StatusID.Valid {
-		fromStatusId = &post.StatusID.Int32
+		currentStatusId := post.StatusID.Int32
+		fromStatusId = &currentStatusId
 	}
 
 	if statusId > 0 {
@@ -1699,8 +1699,17 @@ func (a *AppHandler) ToggleRoadmapPostVote(c *fiber.Ctx) error {
 func (a *AppHandler) ToggleRoadmapPostReaction(c *fiber.Ctx) error {
 	viewPath := "partials/components/roadmap/post_reaction"
 	reaction := c.Params("reaction")
-	curUser := c.Locals("user").(*models.SessionUser)
-	viewer := c.Locals("viewer").(*data.Viewer)
+	curUserAny := c.Locals("user")
+	viewerAny := c.Locals("viewer")
+
+	var curUser *models.SessionUser
+	var viewer *data.Viewer
+	if curUserAny != nil {
+		curUser = curUserAny.(*models.SessionUser)
+	}
+	if viewerAny != nil {
+		viewer = viewerAny.(*data.Viewer)
+	}
 
 	postId, err := c.ParamsInt("postId")
 	if err != nil {
@@ -1806,8 +1815,17 @@ func (a *AppHandler) ToggleRoadmapPostReaction(c *fiber.Ctx) error {
 
 func (a *AppHandler) PostRoadmapPostComment(c *fiber.Ctx) error {
 	viewPath := "partials/components/roadmap/post_comment"
-	curUser := c.Locals("user").(*models.SessionUser)
-	viewer := c.Locals("viewer").(*data.Viewer)
+	curUserAny := c.Locals("user")
+	viewerAny := c.Locals("viewer")
+
+	var curUser *models.SessionUser
+	var viewer *data.Viewer
+	if curUserAny != nil {
+		curUser = curUserAny.(*models.SessionUser)
+	}
+	if viewerAny != nil {
+		viewer = viewerAny.(*data.Viewer)
+	}
 
 	postId, err := c.ParamsInt("postId")
 	if err != nil {

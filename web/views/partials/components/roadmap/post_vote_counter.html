@@ -4,7 +4,7 @@
   hx-swap="outerHTML"
 >
   <span
-    class="{% if p.Voted %}px-2 py-1{%else%}p-4{%endif%} text-center text-xl text-gray-900 dark:text-white bg-white dark:bg-slate-800 border-2 border-solid {%if VoteCounter.Voted || p.Voted.Bool%}border-emerald{%else%}border-gray-200 dark:border-slate-700{%endif%}"
+    class="px-2 py-1 text-center text-xl text-gray-900 dark:text-white bg-white dark:bg-slate-800 border-2 border-solid {%if VoteCounter.Voted || p.Voted.Bool%}border-emerald{%else%}border-gray-200 dark:border-slate-700{%endif%}"
   >
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -20,7 +20,6 @@
         d="M4.5 15.75l7.5-7.5 7.5 7.5"
       />
     </svg>
-    {{VoteCounter.Count}}
-	{{p.Votes}}
+    {{VoteCounter.Count}} {{p.Votes}}
   </span>
 </div>

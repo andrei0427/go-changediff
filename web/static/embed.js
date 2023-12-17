@@ -9,9 +9,9 @@
     iframe.src = "/widget/".concat(options.appKey).concat("?embed=1");
     iframe.id = "releaserover";
     iframe.style.top = "0";
-    iframe.style.right = "-500px";
-    iframe.style.position = "absolute";
-    iframe.style.width = "499px";
+    iframe.style.right = "-750px";
+    iframe.style.position = "fixed";
+    iframe.style.width = "749px";
     iframe.style.border = "none";
     iframe.style.borderLeft = "1px solid #eee";
     iframe.style.transition = "right 0.2s ease-out";
@@ -87,7 +87,7 @@
   };
 
   window.changediff.close = function () {
-    this.iframe.style.right = "-500px";
+    this.iframe.style.right = "-750px";
     this.backdrop.style.opacity = 0;
 
     document

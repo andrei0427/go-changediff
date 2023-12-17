@@ -2,7 +2,10 @@
 <main
   class="dark:bg-slate-800 mx-auto flex w-full max-w-7xl flex-auto flex-col justify-center px-6 py-24 sm:py-64 lg:px-8"
 >
-  <p class="text-base font-semibold leading-8 text-emerald" id="code">
+  <p
+    class="text-base font-semibold leading-8 {%if curUser%}text-emerald{%else%}text-gray-400{%endif%}"
+    id="code"
+  >
     {{Code}}
   </p>
   <h1
@@ -10,6 +13,7 @@
   >
     {{Message}}
   </h1>
+  {%if curUser%}
   <div class="mt-10">
     <a
       href="/admin/dashboard"
@@ -17,6 +21,7 @@
       ><span aria-hidden="true">&larr;</span> Back to Dashboard</a
     >
   </div>
+  {%endif%}
 </main>
 
 <script type="text/javascript">

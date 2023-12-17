@@ -74,6 +74,7 @@ func InitRoutes(app *app.App) {
 	changelog := widget.Group("/changelog")
 	changelog.Get("/", appHandler.WidgetChangelog)
 	changelog.Get("/posts/:pageNo?", appHandler.WidgetChangelogPosts)
+	changelog.Post("/posts/:pageNo?", appHandler.WidgetChangelogPosts)
 	changelog.Put("/posts/view/:postId/:reaction?", appHandler.WidgetChangelogReaction)
 	changelog.Put("/posts/comment/:postId", appHandler.WidgetChangelogComment)
 

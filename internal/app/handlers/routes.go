@@ -77,8 +77,10 @@ func InitRoutes(app *app.App) {
 	changelog.Put("/posts/view/:postId/:reaction?", appHandler.WidgetChangelogReaction)
 	changelog.Put("/posts/comment/:postId", appHandler.WidgetChangelogComment)
 
-	widget.Get("/roadmap", appHandler.WidgetRoadmap)
-	widget.Get("/ideas", appHandler.WidgetFeedback)
+	widgetRoadmap := widget.Group("/roadmap")
+	widgetRoadmap.Get("/", appHandler.WidgetRoadmap)
+
+	widget.Get("/feedback", appHandler.WidgetFeedback)
 
 	admin := app.Fiber.Group("/admin", middleware.UseAuth)
 	admin.Get("/dashboard", appHandler.Dashboard)
@@ -286,12 +288,58 @@ func (a *AppHandler) WidgetChangelogComment(c *fiber.Ctx) error {
 
 func (a *AppHandler) WidgetRoadmap(c *fiber.Ctx) error {
 	key := c.Params("key")
+
 	project, err := a.ProjectService.GetProjectByKey(c.Context(), a.CacheService, key)
 	if err != nil {
-		return fiber.NewError(404, "Project not found")
+		return fiber.NewError(fiber.StatusNotFound, "Project not found")
 	}
 
-	return c.Render("widget/tabs/roadmap", fiber.Map{"Project": project})
+	var statusesWithPosts []models.WidgetRoadmapData
+	roadmapData, err := a.RoadmapService.GetWidgetRoadmap(c.Context(), project.ID)
+	if err != nil {
+		fmt.Println(err.Error())
+		return fiber.NewError(fiber.StatusInternalServerError, "error retrieving roadmap")
+	}
+
+	for _, row := range roadmapData {
+		var idx int
+		var found bool
+		for sI, s := range statusesWithPosts {
+			if s.ID == row.ID_2 {
+				idx = sI
+				found = true
+				break
+			}
+		}
+
+		post := models.WidgetRoadmapPostModel{
+			ID:           row.ID,
+			Title:        row.Title,
+			CreatedOn:    row.CreatedOn,
+			IsPinned:     row.IsPinned,
+			IsIdea:       row.IsIdea,
+			CommentCount: row.Commentcount,
+			Board:        row.Name,
+		}
+
+		if row.DueDate.Valid {
+			post.DueDate = row.DueDate.Time
+			post.HasDueDate = true
+		}
+
+		if found {
+			statusesWithPosts[idx].Posts = append(statusesWithPosts[idx].Posts, post)
+		} else {
+			statusesWithPosts = append(statusesWithPosts, models.WidgetRoadmapData{
+				ID:     row.ID_2,
+				Status: row.Status,
+				Color:  row.Color,
+				Posts:  []models.WidgetRoadmapPostModel{post},
+			})
+		}
+	}
+
+	return c.Render("widget/tabs/roadmap", fiber.Map{"Project": project, "Data": statusesWithPosts})
 }
 
 func (a *AppHandler) WidgetFeedback(c *fiber.Ctx) error {
@@ -870,7 +918,7 @@ func (a *AppHandler) GetProject(c *fiber.Ctx) error {
 		return c.Render("partials/components/post_form", fiber.Map{"project": curUser.Project, "firstPost": true, "Labels": labels})
 	}
 
-	return c.Render("partials/components/dashboard_widget", fiber.Map{"Project": curUser.Project, "PostCount": posts})
+	return c.Render("partials/components/dashboard_widget", fiber.Map{"Project": curUser.Project})
 }
 
 func (a *AppHandler) PostOnboarding(c *fiber.Ctx) error {
@@ -1574,7 +1622,6 @@ func (a *AppHandler) DeleteRoadmapPostComment(c *fiber.Ctx) error {
 
 	_, err = a.RoadmapService.DeleteRoadmapPostComment(c.Context(), *i32CommentId, int32(postId), *projectId, authorId, viewerId, nil)
 	if err != nil {
-		fmt.Println(err.Error())
 		return fiber.NewError(fiber.StatusInternalServerError, "error saving reaction")
 	}
 
@@ -1591,7 +1638,6 @@ func (a *AppHandler) ToggleRoadmapPostPin(c *fiber.Ctx) error {
 
 	isPinned, err := a.RoadmapService.ToggleRoadmapPostPin(c.Context(), int32(postId), curUser.Project.ID)
 	if err != nil {
-		fmt.Println(err.Error())
 		return fiber.NewError(fiber.StatusInternalServerError, "error saving reaction")
 	}
 
@@ -1897,7 +1943,6 @@ func (a *AppHandler) SaveRoadmapPost(c *fiber.Ctx) error {
 
 	form := new(models.RoadmapPostModel)
 	if err := c.BodyParser(form); err != nil {
-		fmt.Print(1, err.Error())
 		return c.Render(viewPath, fiber.Map{"error": err.Error()})
 	}
 
@@ -1942,13 +1987,11 @@ func (a *AppHandler) SaveRoadmapPost(c *fiber.Ctx) error {
 
 	if len(errs) > 0 {
 		form.Content = template.HTMLEscapeString(form.Content)
-		fmt.Print(2, errs)
 		return c.Render(viewPath, fiber.Map{"form": form, "errors": errs, "Statuses": statuses, "Boards": boards})
 	}
 
 	loc, err := time.LoadLocation(curUser.Timezone)
 	if err != nil {
-		fmt.Print(3, err.Error())
 		return c.Render(viewPath, fiber.Map{"error": "Could not locate user timezone", "form": form, "Statuses": statuses, "Boards": boards})
 	}
 
@@ -1958,7 +2001,6 @@ func (a *AppHandler) SaveRoadmapPost(c *fiber.Ctx) error {
 		savedPost, err = a.RoadmapService.UpdatePost(c.Context(), *form, curUser.Project.ID, loc)
 		if err != nil {
 			form.Content = template.HTMLEscapeString(form.Content)
-			fmt.Print(4, err.Error())
 			return c.Render(viewPath, fiber.Map{"error": err.Error(), "form": form, "Statuses": statuses, "Boards": boards})
 		}
 	} else {
@@ -1969,14 +2011,12 @@ func (a *AppHandler) SaveRoadmapPost(c *fiber.Ctx) error {
 		}
 
 		if author == nil && userUuid == nil {
-			fmt.Print(5, err.Error())
 			return c.Render(viewPath, fiber.Map{"error": "Author or user uuid not supplied", "form": form, "Statuses": statuses, "Boards": boards})
 		}
 
 		savedPost, err = a.RoadmapService.InsertPost(c.Context(), *form, &author.ID, nil, curUser.Project.ID, loc, form.IsIdea)
 		if err != nil {
 			form.Content = template.HTMLEscapeString(form.Content)
-			fmt.Print(6, err.Error())
 			return c.Render(viewPath, fiber.Map{"error": err.Error(), "form": form, "Statuses": statuses, "Boards": boards})
 		}
 

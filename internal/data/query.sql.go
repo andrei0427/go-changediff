@@ -1765,6 +1765,77 @@ func (q *Queries) GetViewersByProject(ctx context.Context, projectID int32) ([]V
 	return items, nil
 }
 
+const getWidgetRoadmapData = `-- name: GetWidgetRoadmapData :many
+select 
+ rp.id,
+ s.id,
+ s.status,
+ s.color,
+ b.name,
+ rp.title, 
+ rp.created_on,
+ rp.due_date,
+ rp.is_pinned,
+ rp.is_idea,
+ COUNT(rpc.id) as CommentCount
+from roadmap_posts rp
+  inner join roadmap_statuses s on s.id = rp.status_id and s.is_private = false
+  inner join roadmap_boards b on b.id = rp.board_id and b.is_private = false
+  left join roadmap_post_comments rpc on rpc.roadmap_post_id = rp.id
+where rp.project_id = $1 and rp.is_private = false
+group by rp.id, s.id, s.status, s.color, b.name, rp.title, rp.created_on, rp.due_date, rp.is_pinned, rp.is_idea
+order by s.sort_order ASC, rp.is_pinned DESC, rp.created_on ASC
+`
+
+type GetWidgetRoadmapDataRow struct {
+	ID           int32
+	ID_2         int32
+	Status       string
+	Color        string
+	Name         string
+	Title        string
+	CreatedOn    time.Time
+	DueDate      sql.NullTime
+	IsPinned     bool
+	IsIdea       bool
+	Commentcount int64
+}
+
+func (q *Queries) GetWidgetRoadmapData(ctx context.Context, projectID int32) ([]GetWidgetRoadmapDataRow, error) {
+	rows, err := q.db.QueryContext(ctx, getWidgetRoadmapData, projectID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetWidgetRoadmapDataRow
+	for rows.Next() {
+		var i GetWidgetRoadmapDataRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.ID_2,
+			&i.Status,
+			&i.Color,
+			&i.Name,
+			&i.Title,
+			&i.CreatedOn,
+			&i.DueDate,
+			&i.IsPinned,
+			&i.IsIdea,
+			&i.Commentcount,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const hasPostsForBoard = `-- name: HasPostsForBoard :one
 SELECT COUNT(*) FROM roadmap_posts WHERE board_id = $1
 `

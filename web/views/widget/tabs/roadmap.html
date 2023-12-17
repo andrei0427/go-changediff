@@ -1,1 +1,15 @@
-roadamap is a test!
+<ul
+  role="list"
+  class="space-y-6"
+  _="init add .hidden to the last .link-line in me"
+>
+  {% for s in Data %} {%include "widget/components/roadmap_status.html"%}
+  {%endfor%}
+</ul>
+
+<style>
+  .roadmap-post:hover p,
+  .roadmap-post:hover span{
+    color: {{Project.AccentColor}};
+  }
+</style>

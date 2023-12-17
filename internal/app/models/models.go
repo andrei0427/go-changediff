@@ -173,3 +173,21 @@ type RoadmapPostPinModel struct {
 	ID       int32
 	IsPinned bool
 }
+
+type WidgetRoadmapPostModel struct {
+	ID           int32
+	Title        string
+	Board        string
+	CreatedOn    time.Time
+	DueDate      time.Time
+	HasDueDate   bool
+	IsPinned     bool
+	IsIdea       bool
+	CommentCount int64
+}
+type WidgetRoadmapData struct {
+	ID     int32
+	Status string
+	Color  string
+	Posts  []WidgetRoadmapPostModel
+}

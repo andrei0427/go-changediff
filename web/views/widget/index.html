@@ -29,28 +29,22 @@
             </div>
             <div class="ml-6 flex space-x-4">
               <button
-                hx-get="/widget/{{Project.AppKey}}/changelog"
-                hx-target="#content"
-                hx-on::before-request="updateNav('tabChangelog')"
-                id="tabChangelog"
+                onclick="updateNav('changelog')"
+                id="changelog"
                 class="nav-item inline-flex items-center border-b-2 px-1 pt-1 text-xs font-medium"
               >
                 Changelog
               </button>
               <button
-                hx-get="/widget/{{Project.AppKey}}/roadmap"
-                hx-target="#content"
-                hx-on::before-request="updateNav('tabRoadmap')"
-                id="tabRoadmap"
+                onclick="updateNav('roadmap')"
+                id="roadmap"
                 class="nav-item inline-flex items-center border-b-2 px-1 pt-1 text-xs font-medium"
               >
                 Roadmap
               </button>
               <button
-                hx-get="/widget/{{Project.AppKey}}/ideas"
-                hx-target="#content"
-                hx-on::before-request="updateNav('tabFeedback')"
-                id="tabFeedback"
+                onclick="updateNav('feedback')"
+                id="feedback"
                 class="nav-item inline-flex items-center border-b-2 px-1 pt-1 text-xs font-medium"
               >
                 Ideas
@@ -94,7 +88,7 @@
       class="h-screen mx-auto max-w-7xl p-2 sm:p-4 lg:p-8"
       hx-get="/widget/{{Project.AppKey}}/changelog"
       hx-swap="innerHtml"
-      hx-trigger="load"
+      hx-trigger="tabchange"
     ></main>
 
     <script
@@ -102,6 +96,7 @@
       integrity="sha384-zUfuhFKKZCbHTY6aRR46gxiqszMk5tcHjsVFxnUo8VMus4kHGVdIYVbOYYNlKmHV"
       crossorigin="anonymous"
     ></script>
+    <script src="https://unpkg.com/hyperscript.org@0.9.12"></script>
 
     <script type="text/javascript">
       const today = new Date();
@@ -113,20 +108,23 @@
       };expires=${laterToday.toUTCString()};`;
 
       function updateNav(tabName) {
-        const activeLinkClasses = "text-gray-900 dark:text-white";
+        const activeLinkClasses = ["text-gray-900", "dark:text-white"];
         const otherLinkClasses = [
-          "text-gray-500 dark:text-slate-50",
+          "text-gray-500",
+          "dark:text-slate-50",
           "border-transparent",
           "hover:border-gray-300",
-          "hover:text-gray-700 dark:text-slate-100",
+          "hover:text-gray-700",
+          "dark:text-slate-100",
         ];
 
         for (const elm of document.getElementsByClassName("nav-item")) {
-          elm.classList.remove(activeLinkClasses);
+          elm.classList.remove(...activeLinkClasses);
           elm.classList.add(...otherLinkClasses);
           elm.setAttribute("style", "");
         }
 
+        window.location.hash = tabName;
         const activeElm = document.getElementById(tabName);
 
         if (!activeElm) {
@@ -134,7 +132,7 @@
         }
 
         activeElm.classList.remove(...otherLinkClasses);
-        activeElm.classList.add(activeLinkClasses);
+        activeElm.classList.add(...activeLinkClasses);
         activeElm.setAttribute(
           "style",
           "border-color: {{Project.AccentColor}}"
@@ -145,7 +143,27 @@
         document.cookie = `user_id={{newUserId}};`;
       }
 
-      updateNav("tabChangelog");
+      window.addEventListener("load", function () {
+        if (!window.location.hash) {
+          updateNav("changelog");
+        } else {
+          updateNav(window.location.hash.replace("#", ""));
+          window.onhashchange();
+        }
+      });
+
+      window.onhashchange = function () {
+        const contentElm = document.getElementById("content");
+        contentElm.setAttribute(
+          "hx-get",
+          "/widget/{{Project.AppKey}}/".concat(
+            window.location.hash.replace("#", "")
+          )
+        );
+
+        htmx.process(contentElm);
+        htmx.trigger(contentElm, "tabchange");
+      };
 
       window.isEmbedded = "{{isEmbedded}}" === "True" ? 1 : 0;
 

@@ -487,3 +487,25 @@ RETURNING rpr.id;
 -- name: ToggleLockRoadmapPost :one
 update roadmap_posts set is_locked = !is_locked where id = $1 RETURNING id;
 
+-- name: GetWidgetRoadmapData :many
+select 
+ rp.id,
+ s.id,
+ s.status,
+ s.color,
+ b.name,
+ rp.title, 
+ rp.created_on,
+ rp.due_date,
+ rp.is_pinned,
+ rp.is_idea,
+ COUNT(rpc.id) as CommentCount
+from roadmap_posts rp
+  inner join roadmap_statuses s on s.id = rp.status_id and s.is_private = false
+  inner join roadmap_boards b on b.id = rp.board_id and b.is_private = false
+  left join roadmap_post_comments rpc on rpc.roadmap_post_id = rp.id
+where rp.project_id = $1 and rp.is_private = false
+group by rp.id, s.id, s.status, s.color, b.name, rp.title, rp.created_on, rp.due_date, rp.is_pinned, rp.is_idea
+order by s.sort_order ASC, rp.is_pinned DESC, rp.created_on ASC;
+
+

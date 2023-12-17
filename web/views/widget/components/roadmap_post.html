@@ -1,0 +1,88 @@
+<li class="roadmap-post relative flex gap-x-4 cursor-pointer">
+  <div
+    class="post-link-line absolute left-0 top-0 flex w-4 justify-center -bottom-6"
+  >
+    <div class="w-px bg-gray-200"></div>
+  </div>
+  <div
+    class="relative flex flex-none items-center justify-center w-4 bg-white font-medium py-0.5"
+  >
+    {%if p.IsIdea%}
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      class="h-4 w-4 rounded-full"
+      style="color: {{s.Color}}"
+    >
+      <path
+        d="M12 .75a8.25 8.25 0 00-4.135 15.39c.686.398 1.115 1.008 1.134 1.623a.75.75 0 00.577.706c.352.083.71.148 1.074.195.323.041.6-.218.6-.544v-4.661a6.714 6.714 0 01-.937-.171.75.75 0 11.374-1.453 5.261 5.261 0 002.626 0 .75.75 0 11.374 1.452 6.712 6.712 0 01-.937.172v4.66c0 .327.277.586.6.545.364-.047.722-.112 1.074-.195a.75.75 0 00.577-.706c.02-.615.448-1.225 1.134-1.623A8.25 8.25 0 0012 .75z"
+      />
+      <path
+        fill-rule="evenodd"
+        d="M9.013 19.9a.75.75 0 01.877-.597 11.319 11.319 0 004.22 0 .75.75 0 11.28 1.473 12.819 12.819 0 01-4.78 0 .75.75 0 01-.597-.876zM9.754 22.344a.75.75 0 01.824-.668 13.682 13.682 0 002.844 0 .75.75 0 11.156 1.492 15.156 15.156 0 01-3.156 0 .75.75 0 01-.668-.824z"
+        clip-rule="evenodd"
+      />
+    </svg>
+    {%else%}
+    <div
+      class="h-1.5 w-1.5 rounded-full opacity-50 bg-gray-100 ring-1 ring-gray-200"
+      style="background-color: {{s.Color}}"
+    ></div>
+    {%endif%}
+  </div>
+  <p class="flex-auto py-0.5 font-medium leading-4 text-sm text-gray-900">
+    {%if p.IsPinned%}
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      class="w-4 h-4 inline-flex"
+      style="color: {{s.Color}}"
+    >
+      <path
+        fill-rule="evenodd"
+        d="M6.32 2.577a49.255 49.255 0 0111.36 0c1.497.174 2.57 1.46 2.57 2.93V21a.75.75 0 01-1.085.67L12 18.089l-7.165 3.583A.75.75 0 013.75 21V5.507c0-1.47 1.073-2.756 2.57-2.93z"
+        clip-rule="evenodd"
+      />
+    </svg>
+    {%endif%} {{p.Title}}
+
+    <span class="text-xs font-light whitespace-nowrap"
+      >{{formatDuration(p.CreatedOn)}}</span
+    >
+
+    <span
+      class="pl-2 pb-2 inline-flex gap-x-0.5 text-xs font-light whitespace-nowrap"
+      >{{p.CommentCount}}
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke-width="1.5"
+        stroke="currentColor"
+        class="w-4 h-4"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          d="M12 20.25c4.97 0 9-3.694 9-8.25s-4.03-8.25-9-8.25S3 7.444 3 12c0 2.104.859 4.023 2.273 5.48.432.447.74 1.04.586 1.641a4.483 4.483 0 01-.923 1.785A5.969 5.969 0 006 21c1.282 0 2.47-.402 3.445-1.087.81.22 1.668.337 2.555.337z"
+        />
+      </svg>
+    </span>
+
+    <span
+      class="inline-flex items-center gap-x-1.5 rounded-full px-2 py-1 text-xs font-medium text-gray-900 ring-1 ring-inset ring-gray-200"
+    >
+      {{p.Board}}
+    </span>
+
+    {%if p.HasDueDate%}
+    <br />
+    <span class="text-xs font-light whitespace-nowrap">
+      Due {{formatDuration(p.DueDate)}}
+    </span>
+
+    {%endif%}
+  </p>
+</li>

@@ -686,3 +686,7 @@ func (s *RoadmapService) ToggleRoadmapPostPin(ctx context.Context, postId int32,
 		ProjectID: projectId,
 	})
 }
+
+func (s *RoadmapService) GetWidgetRoadmap(ctx context.Context, projectId int32) ([]data.GetWidgetRoadmapDataRow, error) {
+	return s.db.GetWidgetRoadmapData(ctx, projectId)
+}
